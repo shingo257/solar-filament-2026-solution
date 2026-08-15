@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import pickle
 import sys
 import time
 from collections import defaultdict
@@ -29,14 +30,38 @@ import pandas as pd
 import torch
 from pycocotools import mask as mask_util
 
+CHECKPOINT_EVERY = 25   # 観測25件ごとに保存。PC再起動時の損失をこの件数分に抑える
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.mediseg_models import MediSegUNet  # noqa: E402
 from src.metrics_official import PanopticQuality  # noqa: E402
 from scratch.run_refiner_pq_allfold import (  # noqa: E402
     ARTIFACTS, FOLDS, FOLDS_CSV, MIN_AREA, OOF_CACHE, PREPROC, TRAIN_JSON,
-    build_variant, greedy_disjoint, imread_unicode, iou_matrix, load_yolo_cache,
+    build_variant, greedy_disjoint, imread_unicode, iou_matrix,
     masks_to_rles, refine_batch, to_rle,
 )
+
+
+def load_yolo_cache_with_retry(path: Path, attempts: int = 4, backoff: float = 2.0):
+    """Google Drive のネットワークマウントは瞬断することがある (OSError errno 22)。
+
+    707観測の全件走査を1件のI/Oエラーで失うのは高くつくので、待機を挟んで再試行する。
+    """
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            data = np.load(path)
+            _, width = map(int, data["shape"])
+            packed = data["packed"]
+            if packed.size == 0:
+                return [], np.zeros(0, np.float32)
+            return ([np.unpackbits(item, axis=-1)[:, :width].astype(bool) for item in packed],
+                    data["confidences"].astype(np.float32))
+        except OSError as error:
+            last_error = error
+            if attempt < attempts - 1:
+                time.sleep(backoff * (attempt + 1))
+    raise RuntimeError(f"{path} の読み込みに{attempts}回失敗した: {last_error}")
 
 REFINER_METHOD = "shrink"
 REFINER_THRESHOLD = 0.45          # 全fold OOF での最良 (0.45〜0.65 は実質フラット)
@@ -67,6 +92,37 @@ def drop_contained_indices(masks, rles=None, threshold=CONTAINMENT):
     return [i for i in range(len(masks)) if i not in dropped]
 
 
+def imread_unicode_with_retry(path: Path, attempts: int = 4, backoff: float = 2.0):
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            return imread_unicode(path)
+        except OSError as error:
+            last_error = error
+            if attempt < attempts - 1:
+                time.sleep(backoff * (attempt + 1))
+    raise RuntimeError(f"{path} の読み込みに{attempts}回失敗した: {last_error}")
+
+
+def save_checkpoint(path: Path, state: dict) -> None:
+    """一時ファイル→アトミックリネームで保存する。
+
+    保存の途中でPCが落ちても、リネーム前の一時ファイルが壊れているだけで
+    直前の正常なチェックポイントは無傷のまま残る。
+    """
+    tmp_path = path.with_suffix(".tmp")
+    with open(tmp_path, "wb") as handle:
+        pickle.dump(state, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    tmp_path.replace(path)
+
+
+def load_checkpoint(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    with open(path, "rb") as handle:
+        return pickle.load(handle)
+
+
 def apply_ownership(masks, scores, rule):
     """排他化の規則ごとに occupancy 順序 (と drop) を決めて disjoint 化する。"""
     if not masks:
@@ -87,9 +143,12 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--threads", type=int, default=14)
     parser.add_argument("--out", type=Path, default=Path("output/v35"))
+    parser.add_argument("--fresh", action="store_true",
+                        help="既存チェックポイントを無視して最初からやり直す")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     torch.set_num_threads(args.threads)
+    checkpoint_path = args.out / "pipeline_stack_checkpoint.pkl"
 
     with open(TRAIN_JSON, encoding="utf-8") as handle:
         coco = json.load(handle)
@@ -125,20 +184,43 @@ def main() -> int:
     keys = [f"conf{c:.2f}|{o}" for c, o in combos]
     # 参照: refiner なし・現行構成 (conf 0.26 + conf_first)
     keys.append("BASELINE_yolo_conf0.26_conf_first")
-    overall = {k: PanopticQuality() for k in keys}
-    by_fold = {k: {f: PanopticQuality() for f in FOLDS} for k in keys}
-    near_miss = {k: 0 for k in keys}
-    counts = {k: [] for k in keys}
     conf_floor = min(CONF_GRID)
-    skipped = []
+
+    # --- チェックポイントからの再開 ---
+    # PC再起動でジョブが落ちても、直近 CHECKPOINT_EVERY 件分の損失だけで再開できる。
+    checkpoint = None if args.fresh else load_checkpoint(checkpoint_path)
+    if checkpoint is not None and checkpoint.get("targets_signature") == (len(targets), keys):
+        overall = checkpoint["overall"]
+        by_fold = checkpoint["by_fold"]
+        near_miss = checkpoint["near_miss"]
+        counts = checkpoint["counts"]
+        skipped = checkpoint["skipped"]
+        start_position = checkpoint["position"]
+        elapsed_before = checkpoint["elapsed_seconds"]
+        print(f"チェックポイントから再開: {start_position}/{len(targets)}件 完了済み "
+              f"(これまでの所要 {elapsed_before/60:.1f}分)")
+    else:
+        if checkpoint is not None:
+            print("チェックポイントの設定 (観測数・構成) が現在の設定と一致しないため、"
+                  "最初からやり直す")
+        overall = {k: PanopticQuality() for k in keys}
+        by_fold = {k: {f: PanopticQuality() for f in FOLDS} for k in keys}
+        near_miss = {k: 0 for k in keys}
+        counts = {k: [] for k in keys}
+        skipped = []
+        start_position = 0
+        elapsed_before = 0.0
 
     print({"観測": len(targets), "refiner": f"{REFINER_METHOD}@{REFINER_THRESHOLD}",
-           "conf掃引": CONF_GRID, "排他化": OWNERSHIPS, "threads": args.threads})
+           "conf掃引": CONF_GRID, "排他化": OWNERSHIPS, "threads": args.threads,
+           "再開位置": start_position})
 
     started = time.perf_counter()
     for position, name in enumerate(targets, 1):
+        if position <= start_position:
+            continue
         fold = fold_of_file[name]
-        masks, confidences = load_yolo_cache(
+        masks, confidences = load_yolo_cache_with_retry(
             OOF_CACHE / f"yolo_fold_{fold}" / f"{Path(name).stem}.npz")
         keep = [i for i, (m, s) in enumerate(zip(masks, confidences))
                 if s >= conf_floor and m.sum() >= MIN_AREA]
@@ -146,7 +228,7 @@ def main() -> int:
         scores = confidences[keep] if len(keep) else np.zeros(0, np.float32)
         variants_gt = [gt_rles[i] for i in file_to_ids[name]]
 
-        image = imread_unicode(PREPROC / name)
+        image = imread_unicode_with_retry(PREPROC / name)
         if image is None:
             skipped.append(name)
             if len(skipped) > max(3, len(targets) // 20):
@@ -187,6 +269,18 @@ def main() -> int:
             print(f"  {position}/{len(targets)}  {time.perf_counter() - started:.0f}s  "
                   f"best={best_now} {overall[best_now].score:.4f}", flush=True)
 
+        if position % CHECKPOINT_EVERY == 0 or position == len(targets):
+            save_checkpoint(checkpoint_path, {
+                "position": position,
+                "targets_signature": (len(targets), keys),
+                "overall": overall,
+                "by_fold": by_fold,
+                "near_miss": near_miss,
+                "counts": counts,
+                "skipped": skipped,
+                "elapsed_seconds": elapsed_before + (time.perf_counter() - started),
+            })
+
     table = pd.DataFrame({
         k: {**{n: overall[k].summary()[n] for n in ("pq", "sq", "rq", "tp", "fp", "fn")},
             **{f"pq_fold{f}": by_fold[k][f].score for f in FOLDS},
@@ -226,7 +320,10 @@ def main() -> int:
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("\n" + json.dumps({k: v for k, v in report.items() if k != "table"},
                             ensure_ascii=False, indent=2))
-    print(f"\n所要 {time.perf_counter() - started:.0f}s")
+    total_elapsed = elapsed_before + (time.perf_counter() - started)
+    print(f"\n所要 {total_elapsed:.0f}s (今回のみ {time.perf_counter() - started:.0f}s)")
+    print(f"完了。チェックポイント {checkpoint_path} は残してある"
+          f"（再実行時は --fresh を付けない限り自動的にスキップされる）。")
     return 0
 
 
