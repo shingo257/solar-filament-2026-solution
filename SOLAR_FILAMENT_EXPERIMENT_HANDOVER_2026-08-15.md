@@ -1,10 +1,11 @@
 # Solar Filament Segmentation Challenge 2026 実験経緯・技術引継ぎ
 
-- 更新日: 2026-08-15（改訂2: 公式指標の確定を反映）
+- 更新日: 2026-08-16（改訂3: fold1/2 refiner学習、全fold重畳検証の確定を反映）
 - 対象プロジェクト: `C:\work\code\ER-FlowScan\Solar_Filament_Segmentation`
 - 対象範囲: Kaggle提出形式の修正、V19～V34のモデル・後処理実験、Colab/Kaggle運用、既知の結果、未解決事項、次の推奨方針
 - 現在の結論: **確認できたPublic最高スコアは0.35。V34は全OOFゲート不合格のため提出していない。**
 - **改訂2の要点: リーダーボード指標は Panoptic Quality であり、V19〜V34が最適化してきた Hungarian matched Dice ではなかった。§2.1 を先に読むこと。§7・§8.1・§13.2・§26 の結論は §2.1 で差し替えている。**
+- **改訂3の要点: fold1/2のrefinerを学習し、refiner×排他化×confを全fold OOFで同時に確定した（リークなし、707観測）。最良構成は `conf 0.26 + shrink@0.45 + drop_contained_then_area_asc` で **PQ 0.4426**（生YOLOベースライン比 +0.0489）。新ゲートは **PQ > 0.4526**。§2.1.8.1・§2.1.8.2 を参照。V35最終提出ノートブックの骨格 (`build_v35_final_submission.py`) も用意済み。**
 
 ## 1. この文書の読み方と証拠の区分
 
@@ -178,13 +179,73 @@ fold別PQ（conf 0.26）: fold0 `0.3978` / fold1 `0.3882` / fold2 `0.3950`。**�
 3. **機序:** `shrink = refined & proposal`（YOLOマスクの内側しか削れない）に対し `guided = refined & dilate(proposal, k)`（外側へk画素まで足せる）。**足す方が悪い**ということは、YOLOの候補は既に過剰に覆っており、refinerの仕事は「削ること」であって「伸ばすこと」ではない。細構造を拾うために膨らませる直感は、IoUと0.5の崖の下では裏目に出る。
 4. near-missは 394 → 294 へ100件変換された。**まだ294件残っている。** 同じ算術で、残り全部が IoU 0.55 のTPになれば PQ は 0.4363 → 約 `0.497`。これは refiner では届かず、**検出器側（P2-2: 解像度）の課題**である。
 
-**留保:** fold0のみ。fold1/2のrefiner checkpointが存在しないため全foldで確認できていない。絶対値をゲートにせず、**方式の順位だけを読むこと。** `solar_filament_v35_refiner_folds12_colab.ipynb` でfold1/2を学習すれば全foldで確定できる（V30と完全同一条件、T4で30分・1CU未満）。
+**留保（改訂3で解消）:** fold0のみ。fold1/2のrefiner checkpointが存在しないため全foldで確認できていなかった。→ §2.1.8.1 で解消。
+
+### 2.1.8.1 fold1/2 refiner学習と全fold refinerアブレーション【確定・2026-08-16】
+
+`solar_filament_v35_refiner_folds12_colab.ipynb`（Colab T4）でfold1/2のrefinerを学習した。V30のレシピを一切変更していない（crop 320 / context 1.65 / 14 epoch / LR 2e-4 / crop Diceでbest選択）。
+
+| fold | best crop Dice | 学習時間 |
+|---|---:|---:|
+| fold0（既存） | 0.7933 | — |
+| fold1（新規） | 0.7864 | 104.8分 |
+| fold2（新規） | 0.7887 | 105.4分 |
+
+**実測は「T4で30分・1CU未満」という当初見積もりから7倍外れた。** 文書§28の「refiner 1 epoch約1分前後」を根拠にしたが、実測は1 epoch約5分だった。今後の時間見積もりでは§28の数値を鵜呑みにしないこと。
+
+3つのcheckpointが揃ったので、`scratch/run_refiner_pq_allfold.py` で**全fold OOF・リークなし**（各観測へ、その foldを学習から除いたcheckpointのみ適用）の方式比較を実施した。conf 0.26、707観測、ローカルCPUで87分。
+
+| variant | PQ | fold0 | fold1 | fold2 | near-miss | Δ vs YOLO native |
+|---|---:|---:|---:|---:|---:|---:|
+| **shrink@0.45** | **0.4379** | 0.4348 | 0.4379 | 0.4410 | 934 | **+0.0442** |
+| shrink@0.55 | 0.4375 | 0.4355 | 0.4371 | 0.4400 | 947 | +0.0438 |
+| shrink@0.65 | 0.4371 | 0.4363 | 0.4351 | 0.4400 | 952 | +0.0434 |
+| guided3@0.65 | 0.4357 | 0.4318 | 0.4350 | 0.4401 | 959 | +0.0420 |
+| guided7@0.45（V31の選択） | 0.4326 | 0.4242 | 0.4355 | 0.4382 | 963 | +0.0389 |
+| YOLO native | 0.3937 | 0.3978 | 0.3882 | 0.3950 | 1209 | — |
+
+**fold0限定の結論は方式の順位としては維持された**（shrinkがguidedに全閾値で優位、閾値は実質フラット）。ただし絶対値は訂正が必要。
+
+**訂正:** §2.1.8で「V31の選択ミスがPublic 0.35→0.34の低下を説明する」と書いたが、これは**過剰な帰属だった**。fold0限定では `guided7@0.45` との差が+0.0121だったが、全foldでは**+0.0053に縮小**する。`guided7@0.45`が悪く見えたのはfold0に限った現象（fold0での順位はworst=0.4242）で、他foldでは大きな問題ではなかった。**単一fold のbestを一般化してはいけない**という、この文書が§13.2で繰り返し警告してきたことを、改訂2執筆時の自分自身が踏み抜いていた。
+
+### 2.1.8.2 パイプライン重畳検証【確定・2026-08-16】
+
+`scratch/run_pipeline_stack.py`。refiner・排他化・confを単独最適化した値をそのまま組み合わせてよい保証はない。
+
+- ownership の `+0.0069`（§2.1.7）は**生YOLOマスク**で測った値。refine後はマスクが縮んで重なりが減るため、同じ利得が残るとは限らない
+- conf `0.26`（§2.1.6）も**refinerなし**で測った値。refinerはFPを減らすため、最適な動作点が動く可能性がある
+
+そこでrefiner `shrink@0.45`（§2.1.8.1で確定）を固定し、conf `{0.16, 0.20, 0.26, 0.32}` × 排他化規則 `{conf_first, area_asc, drop_contained_then_area_asc}` の全12通りを、全fold OOF・リークなし・707観測で同時に測った（ローカルCPU、約150分。Google Driveの瞬断で2回中断したため、25観測ごとのチェックポイント機構を追加して再開した）。
+
+| config | PQ | fold0 | fold1 | fold2 | Δ vs baseline |
+|---|---:|---:|---:|---:|---:|
+| **conf0.26 \| drop_contained_then_area_asc** | **0.4426** | 0.4393 | 0.4415 | 0.4471 | **+0.0489** |
+| conf0.26 \| area_asc | 0.4402 | 0.4355 | 0.4382 | 0.4468 | +0.0465 |
+| conf0.20 \| drop_contained_then_area_asc | 0.4383 | 0.4355 | 0.4383 | 0.4412 | +0.0446 |
+| conf0.26 \| conf_first | 0.4379 | 0.4348 | 0.4379 | 0.4410 | +0.0442 |
+| conf0.32 \| drop_contained_then_area_asc | 0.4371 | 0.4338 | 0.4362 | 0.4413 | +0.0434 |
+| conf0.16 \| conf_first | 0.4261 | 0.4230 | 0.4275 | 0.4279 | +0.0324 |
+| BASELINE（生YOLO + conf0.26 + conf_first、V30b相当） | 0.3937 | 0.3977 | 0.3882 | 0.3950 | — |
+
+（全12構成は `output/v35/pipeline_stack.csv` に保存。上位・両端のみ抜粋）
+
+**確定したこと:**
+
+1. **`conf 0.26` は refiner適用後も最適点のまま変わらなかった。** 「refinerがFPを減らすので最適confが下がるはず」という予想は**外れた**。conf 0.20/0.16 は refine 後も一貫して conf 0.26 に劣る
+2. **`drop_contained_then_area_asc` が全conf水準で `conf_first`／`area_asc` を上回った。** ownershipの改善は refine 後も**消えずに残る**（10観測の試走で見えた「refine後は逆効果」という兆候は、707観測全件では**再現しなかった**）。refine後の上乗せは `+0.0047`（0.4379→0.4426）で、生YOLOでの上乗せ`+0.0069`よりやや小さいが、方向は変わらない
+3. **単独最適化の合計値と、組み合わせ最適化の値はほぼ一致した。** refiner単独 `+0.0442` + ownership単独（生YOLO） `+0.0069` ≈ `+0.0511`。実測の組み合わせ利得は `+0.0489`で、差は`0.0022`と小さい。この課題ではP2-1とP2-3はほぼ独立に効いている
+
+**新ゲート:** all-fold PQ > `0.4526`（best `0.4426` + 0.010）。旧ゲート（§13.2の`0.4037`）を置き換える。
 
 ### 2.1.9 ローカル実装
 
 - `src/metrics_official.py`: `PanopticQuality`累積器（公式実装に準拠）、`summary()`でPQ=SQ×RQ分解、`marginal_prediction_threshold()`で損益分岐、副次指標としてMIoU
 - `tests/test_metrics_official.py`: 19件。うち1件は**公式コードの逐語移植との差分テスト**（乱数200ケース）、1件はIoU 0.50ちょうどがTPにならずFP+FN両方を生むことの固定、1件はアノテータのプーリングがvariant平均でないことの固定
 - `scratch/build_v35_metric_realignment.py`: 上記ノートブックのビルダー
+- `scratch/build_v35_refiner_folds12.py`: fold1/2 refiner学習ノートブックのビルダー（Colab T4、V30と完全同一レシピ）
+- `scratch/run_refiner_pq_allfold.py`: refiner方式×閾値の全fold OOF比較（リークなし、fold別checkpointを適用）
+- `scratch/run_pipeline_stack.py`: refiner×排他化×confの重畳検証。Google Driveのnpz/画像読み込みにリトライ（最大4回）、25観測ごとのアトミックチェックポイント保存・自動再開機構を持つ（`--fresh`で強制やり直し）
+- `scratch/build_v35_final_submission.py`: 最終提出ノートブックのビルダー。V30本体のfold間統合（IoUクラスタリング＋多数決投票、OOF検証不能なため変更なし）はそのまま流用し、refiner適用と排他化のみOOF確定実装に差し替えている。**V30本体のrefiner適用は31px膨張支持領域＋0.8:0.2ブレンドという、shrink/guided3/guided7のどれとも比較検証されていない独自方式だった**（提出前に気づいたので記録しておく）。実行前に `SUBMISSION_CONF=0.26` / `SUBMISSION_OWNERSHIP_RULE="drop_contained_then_area_asc"` になっていることを確認すること（§2.1.8.2の確定値と一致させてある）
 
 ## 3. データと課題の理解
 
@@ -696,13 +757,15 @@ V34のsemantic-firstを微調整するより、V30のinstance-firstを再設計�
 ### 13.2 最低acceptance gate
 
 > **【改訂2】以下のDiceベースのゲートは廃止した。** `0.552553` は (a) 公式でない Hungarian matched Dice の値であり、(b) fold 0 のみで探索したbestで選択バイアスがかかっている、という二重の理由で基準に使えない。差し替え後の基準は §2.1.4 を参照。
+>
+> **【改訂3】生YOLOベースのゲート（`0.403711`）も置き換えた。** refiner (`shrink@0.45`) と排他化 (`drop_contained_then_area_asc`) を組み込んだ構成で全fold OOFを測り直したところ（§2.1.8.2）、より高いベースラインが確定した。
 
-**現行ゲート（PQ基準・実測済み）:**
+**現行ゲート（PQ基準・実測済み、2026-08-16確定）:**
 
-ベースラインは `output/v35/pq_gate.json`。V30 YOLO 3-fold OOF、conf `0.26`、全707観測で **PQ `0.393711`**（SQ `0.652247` / RQ `0.603623`、TP 4765 / FP 2824 / FN 3434）。
+ベースラインは `output/v35/pipeline_stack.json`。V30 YOLO 3-fold OOF + refiner `shrink@0.45` + 排他化 `drop_contained_then_area_asc`、conf `0.26`、全707観測で **PQ `0.4426`**（fold別: fold0 `0.4393` / fold1 `0.4415` / fold2 `0.4471`）。
 
-- all-fold **Panoptic Quality** > `0.403711`
-- 最悪foldのPQが `0.388234` を下回らない
+- all-fold **Panoptic Quality** > `0.4526`
+- 最悪foldのPQが `0.4393` を下回らない
 - overlap pixels = `0`
 - null = `0`
 - duplicate filament ID = `0`
@@ -712,6 +775,7 @@ V34のsemantic-firstを微調整するより、V30のinstance-firstを再設計�
 
 - ~~all-fold strict instance Dice > `0.552553`、目標`0.56`以上~~
 - ~~mean absolute count error < `1.853107`~~
+- ~~all-fold Panoptic Quality > `0.403711`（生YOLO + conf先着排他化のみ、refiner未適用）~~
 
 count errorは指標として捨てるのではなく、PQの分母に入るFN/FPの内訳として見る（§2.1.2-5）。
 

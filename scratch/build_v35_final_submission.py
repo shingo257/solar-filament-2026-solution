@@ -1,4 +1,8 @@
-"""V35 最終提出ノートブックのビルダー（骨格。重畳検証の結果確定後にパラメータを埋める）。
+"""V35 最終提出ノートブックのビルダー。
+
+パラメータは確定済み（2026-08-16、全707観測・リークなしの重畳検証）:
+  conf 0.26 + refiner shrink@0.45 + 排他化 drop_contained_then_area_asc
+  → 全fold OOF PQ 0.4426（HANDOVER §2.1.8.2、output/v35/pipeline_stack.json）
 
 ## なぜこれが必要か
 
@@ -27,11 +31,12 @@ V30本体のtest推論 (`build_v30_prize_colab.py` セル[11/12]) を精査し�
 4. refinerの重みは all-data 版 (`mediseg_refiner_all_data_resume.pt`) を使う。
    これは test 推論専用で、OOF評価には使えない (§18.2)。
 
-## 実行前に必ずすること
+## パラメータの出典
 
-`CFG` 内の `REFINER_THRESHOLD` / `CONF` / `OWNERSHIP_RULE` は
-`output/v35/pipeline_stack.json` の `best_config` で上書きすること。
-現在入っている値は重畳検証の暫定途中経過であり、確定値ではない。
+`[2/9]` の `SUBMISSION_CONF` / `SUBMISSION_OWNERSHIP_RULE` / `REFINER_THRESHOLD` は
+`output/v35/pipeline_stack.json` の `best_config` (`conf0.26|drop_contained_then_area_asc`)
+と一致させてある。今後この値を変える場合は、必ず全fold OOF・リークなしで
+再測定してから更新すること（単一fold・生YOLOでの値をそのまま使い回さない）。
 """
 
 import json
@@ -55,15 +60,16 @@ cells = [
     markdown(
         """# 太陽フィラメント V35 — 最終提出（PQ整合版）
 
-**実行前に `[2/9]` の `SUBMISSION_CONF` を `output/v35/pipeline_stack.json` の
-`best_config` で更新すること。** 現在の値は重畳検証の暫定途中経過。
+パラメータは確定済み（`[2/9]` を参照）。全707観測・リークなしの重畳検証で
+`conf 0.26 + shrink@0.45 + drop_contained_then_area_asc` が全fold OOF PQ `0.4426`
+（生YOLOベースライン比 +0.0489）で最良だった（HANDOVER §2.1.8.2）。
 
 このノートブックは V30 の 3-fold 統合ロジックをそのまま使い、refiner適用と
 排他化だけを、今回の全fold OOF実験（リークなし）で確定した実装に差し替える。
 
 - fold間統合: V30本体と同一（IoUクラスタリング＋多数決投票）。OOFでは検証不能な部分
 - refiner: `shrink` 方式に統一（V30本体が使っていた未検証の独自ブレンド方式から変更）
-- 排他化: `output/v35/pipeline_stack.json` で確定した規則
+- 排他化: `drop_contained_then_area_asc`（全fold OOFで確定）
 
 GPU必須（YOLO推論・refiner推論）。T4で可。
 """
@@ -114,14 +120,14 @@ print({k: "OK" for k in required}, {"GPU": torch.cuda.get_device_name(0)})
 """
     ),
     code(
-        """# [2/9] ★ 提出パラメータ (重畳検証の結果でここを更新してから実行する) ★
+        """# [2/9] 提出パラメータ (確定済み、2026-08-16)
 #
 # 出典: output/v35/pipeline_stack.json の "best_config"
-# 現在の値は 2026-08-16 時点、707観測中350観測までの暫定途中経過。
-# 確定後、この形式の文字列 "confX.XX|rule_name" をパースして下2つに反映すること。
+# 全707観測・リークなしの重畳検証で最良だった構成。全fold OOF PQ 0.4426
+# (fold0 0.4393 / fold1 0.4415 / fold2 0.4471)。詳細は HANDOVER §2.1.8.2。
 
-SUBMISSION_CONF = 0.26                              # TODO: 確定値で上書き
-SUBMISSION_OWNERSHIP_RULE = "drop_contained_then_area_asc"  # TODO: 確定値で上書き
+SUBMISSION_CONF = 0.26
+SUBMISSION_OWNERSHIP_RULE = "drop_contained_then_area_asc"
 REFINER_METHOD = "shrink"                           # 確定済み (HANDOVER §2.1.8)
 REFINER_THRESHOLD = 0.45                            # 確定済み。0.45〜0.65はほぼフラット
 MIN_AREA = 20                                       # OOF実験と統一
