@@ -1,0 +1,61 @@
+{
+  "purpose": "アノテータ不一致が課すPQの天井 (GTのみ、モデル非依存)",
+  "metric": "Panoptic Quality (公式self-evaluation notebook準拠)",
+  "source_json": "G:\\マイドライブ\\solar_filament_v30\\competition_data\\MAGFiLO_1.0_Kaggle_2026\\train\\MAGFiLO_1.0_Annotations_kaggle2026_train.json",
+  "observations": 707,
+  "multi_annotator_observations": 296,
+  "total_annotations": 8199,
+  "ceilings": {
+    "reference_annotator_0": {
+      "pq": 0.758708882953707,
+      "sq": 0.9132874742827648,
+      "rq": 0.8307448687496194,
+      "tp": 6820,
+      "fp": 1400,
+      "fn": 1379,
+      "denominator": 8209.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "observations_used": 707
+    },
+    "reference_annotator_1": {
+      "pq": 0.6051441140929059,
+      "sq": 0.8364832160101553,
+      "rq": 0.7234384414541073,
+      "tp": 3602,
+      "fp": 1363,
+      "fn": 1391,
+      "denominator": 4979.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "observations_used": 296
+    },
+    "reference_annotator_2": {
+      "pq": 0.5569874370339389,
+      "sq": 0.810469165379901,
+      "rq": 0.68724074995852,
+      "tp": 2071,
+      "fp": 946,
+      "fn": 939,
+      "denominator": 3013.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "observations_used": 151
+    }
+  },
+  "primary_ceiling_pq": 0.758708882953707,
+  "inter_annotator": {
+    "compared_gt_instances": 2990,
+    "agree_at_iou_gt_0.5": 1611,
+    "agreement_rate": 0.5387959866220736,
+    "best_iou_mean": 0.4384035199481589,
+    "best_iou_median": 0.5234829811161908
+  },
+  "context": {
+    "own_best_public_pq": 0.35,
+    "leaderboard_top_snapshot": 0.48,
+    "note": "LBスナップショットは2026-08-12の再採点以前の可能性あり",
+    "own_best_as_fraction_of_ceiling": 0.4613,
+    "leaderboard_top_as_fraction_of_ceiling": 0.6327
+  }
+}

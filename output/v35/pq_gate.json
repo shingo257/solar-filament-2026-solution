@@ -1,0 +1,31 @@
+{
+  "metric": "Panoptic Quality (公式self-evaluation notebook準拠)",
+  "baseline_source": "V30 YOLO 3-fold OOF (V34 cache再利用, 学習なし)",
+  "observations_scored": 707,
+  "best_conf": 0.26,
+  "measured_all_fold_pq": 0.393711,
+  "measured_sq": 0.652247,
+  "measured_rq": 0.603623,
+  "counts": {
+    "tp": 4765,
+    "fp": 2824,
+    "fn": 3434
+  },
+  "per_fold_pq": {
+    "0": 0.397686,
+    "1": 0.388234,
+    "2": 0.394977
+  },
+  "new_gate_pq": 0.403711,
+  "new_gate_worst_fold_pq": 0.388234,
+  "marginal_tp_probability": 0.3018,
+  "retired_gate": {
+    "value": 0.5525530052850139,
+    "reason": "公式でないHungarian Dice、かつfold0のみの探索best"
+  },
+  "duplicate_hypothesis": {
+    "statement": "複数アノテータを独立教師にしたことが系統的duplicateの主因",
+    "p_value_multi_greater_than_single": 0.7361111656710475,
+    "verdict": "不支持"
+  }
+}

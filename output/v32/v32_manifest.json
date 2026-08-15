@@ -1,0 +1,56 @@
+{
+  "source": "C:\\Users\\hara\\Downloads\\submission_v30_prize_instance_ensemble.csv",
+  "source_rows": 1565,
+  "v30b_public_score": 0.35,
+  "recommended_first": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v32\\submission_v32a_ultraconservative_union_dice090.csv",
+  "candidates": [
+    {
+      "rows": 1453,
+      "images": 178,
+      "overlap_pixels": 0,
+      "area_min": 20,
+      "area_median": 1378,
+      "area_max": 25013,
+      "name": "v32a_ultraconservative_union_dice090",
+      "file": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v32\\submission_v32a_ultraconservative_union_dice090.csv",
+      "min_dice": 0.9,
+      "min_containment": 0.0,
+      "merged_groups": 28,
+      "removed_cross_cluster_pixels": 558430,
+      "dropped_masks": 83,
+      "sha256": "6c6d7a56bb58d6733c97414f741377ade5871eaa2aad3711e44696202ae3d4f1"
+    },
+    {
+      "rows": 1406,
+      "images": 178,
+      "overlap_pixels": 0,
+      "area_min": 20,
+      "area_median": 1431,
+      "area_max": 25013,
+      "name": "v32b_containment099_dice050",
+      "file": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v32\\submission_v32b_containment099_dice050.csv",
+      "min_dice": 0.5,
+      "min_containment": 0.99,
+      "merged_groups": 109,
+      "removed_cross_cluster_pixels": 434497,
+      "dropped_masks": 46,
+      "sha256": "59ba738fcb5ea86cbad9f11f091cb1416e89cdf94541d7037bfb5ae66f46e7e1"
+    },
+    {
+      "rows": 1398,
+      "images": 178,
+      "overlap_pixels": 0,
+      "area_min": 20,
+      "area_median": 1428,
+      "area_max": 25013,
+      "name": "v32c_conservative_union_dice070",
+      "file": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v32\\submission_v32c_conservative_union_dice070.csv",
+      "min_dice": 0.7,
+      "min_containment": 0.0,
+      "merged_groups": 100,
+      "removed_cross_cluster_pixels": 329352,
+      "dropped_masks": 63,
+      "sha256": "f2cc19734afe41fa53cbe17dc285f209e07992010438adab89e98a01aded6c25"
+    }
+  ]
+}

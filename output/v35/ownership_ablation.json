@@ -1,0 +1,102 @@
+{
+  "conf": 0.26,
+  "observations": 707,
+  "baseline_strategy": "conf_first",
+  "baseline_pq": 0.3937113387221516,
+  "best_submittable": "drop_contained_then_area_asc",
+  "best_submittable_pq": 0.40066046568966684,
+  "raw_pq_not_submittable": 0.4020595586549331,
+  "oracle_pq_upper_bound": 0.4032549500935,
+  "headroom_from_ownership": 0.009543611371348404,
+  "mean_pixels_lost_ratio": 0.028602446101625607,
+  "table": {
+    "raw": {
+      "PQ": 0.40206,
+      "SQ": 0.65262,
+      "RQ": 0.61607,
+      "TP": 4907.0,
+      "FP": 2824.0,
+      "FN": 3292.0,
+      "near_miss": 1239.0,
+      "inst/img": 6.736917,
+      "ΔPQ_vs_conf_first": 0.008348
+    },
+    "conf_first": {
+      "PQ": 0.393711,
+      "SQ": 0.652247,
+      "RQ": 0.603623,
+      "TP": 4765.0,
+      "FP": 2824.0,
+      "FN": 3434.0,
+      "near_miss": 1209.0,
+      "inst/img": 6.602546,
+      "ΔPQ_vs_conf_first": 0.0
+    },
+    "area_asc": {
+      "PQ": 0.396351,
+      "SQ": 0.653069,
+      "RQ": 0.606905,
+      "TP": 4834.0,
+      "FP": 2897.0,
+      "FN": 3365.0,
+      "near_miss": 1268.0,
+      "inst/img": 6.736917,
+      "ΔPQ_vs_conf_first": 0.002639
+    },
+    "area_desc": {
+      "PQ": 0.391843,
+      "SQ": 0.652033,
+      "RQ": 0.600955,
+      "TP": 4719.0,
+      "FP": 2787.0,
+      "FN": 3480.0,
+      "near_miss": 1164.0,
+      "inst/img": 6.531825,
+      "ΔPQ_vs_conf_first": -0.001869
+    },
+    "drop_contained_then_conf": {
+      "PQ": 0.397428,
+      "SQ": 0.652157,
+      "RQ": 0.609406,
+      "TP": 4736.0,
+      "FP": 2608.0,
+      "FN": 3463.0,
+      "near_miss": 1157.0,
+      "inst/img": 6.39604,
+      "ΔPQ_vs_conf_first": 0.003717
+    },
+    "drop_contained_then_area_asc": {
+      "PQ": 0.40066,
+      "SQ": 0.652911,
+      "RQ": 0.613652,
+      "TP": 4769.0,
+      "FP": 2575.0,
+      "FN": 3430.0,
+      "near_miss": 1142.0,
+      "inst/img": 6.39604,
+      "ΔPQ_vs_conf_first": 0.006949
+    },
+    "drop_any_overlap": {
+      "PQ": 0.398383,
+      "SQ": 0.653182,
+      "RQ": 0.609911,
+      "TP": 4714.0,
+      "FP": 2545.0,
+      "FN": 3485.0,
+      "near_miss": 1121.0,
+      "inst/img": 6.329562,
+      "ΔPQ_vs_conf_first": 0.004671
+    },
+    "oracle": {
+      "PQ": 0.403255,
+      "SQ": 0.652791,
+      "RQ": 0.61774,
+      "TP": 4882.0,
+      "FP": 2725.0,
+      "FN": 3317.0,
+      "near_miss": 1172.0,
+      "inst/img": 6.620934,
+      "ΔPQ_vs_conf_first": 0.009544
+    }
+  }
+}
