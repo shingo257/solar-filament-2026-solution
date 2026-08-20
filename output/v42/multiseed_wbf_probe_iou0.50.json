@@ -25,6 +25,18 @@
     "metric_version": "official-v1-2026-08-15",
     "near_miss": 324
   },
+  "wbf_consensus_first_order": {
+    "pq": 0.43674372376656656,
+    "sq": 0.6727025812377653,
+    "rq": 0.6492374727668845,
+    "tp": 1788,
+    "fp": 971,
+    "fn": 961,
+    "denominator": 2754.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 321
+  },
   "consensus_cluster_counts": {
     "1": 378,
     "2": 1478
@@ -32,5 +44,7 @@
   "baseline_fold0_pq": 0.4393,
   "delta_wbf_vs_baseline": -0.002716,
   "delta_wbf_vs_single_local": -0.002704,
+  "delta_consensus_order_vs_baseline": -0.002556,
+  "delta_consensus_order_vs_wbf": 0.00016,
   "continue_fold12": false
 }

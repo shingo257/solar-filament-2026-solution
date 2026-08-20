@@ -37,6 +37,7 @@ from scratch.run_refiner_pq_allfold import (  # noqa: E402
     masks_to_rles, refine_batch, to_rle,
 )
 from scratch.run_pipeline_stack import apply_ownership  # noqa: E402
+from pycocotools import mask as mask_util  # noqa: E402
 
 CONF = 0.26
 REFINER_METHOD = "shrink"
@@ -59,6 +60,60 @@ def refine_and_finalize(refiner, image, proposals, scores):
                              REFINER_METHOD, REFINER_THRESHOLD)
                for i in range(len(proposals))]
     return apply_ownership(refined, scores, "drop_contained_then_area_asc")
+
+
+def greedy_disjoint_local(masks, order, min_area=MIN_AREA, canvas=2048):
+    occupied = np.zeros((canvas, canvas), dtype=bool)
+    kept = []
+    for index in order:
+        exclusive = masks[index] & ~occupied
+        if exclusive.sum() < min_area:
+            continue
+        kept.append(exclusive)
+        occupied |= exclusive
+    return kept
+
+
+def drop_contained_indices_local(masks, threshold=0.90):
+    if len(masks) < 2:
+        return list(range(len(masks)))
+    rles = mask_util.encode(np.asfortranarray(np.stack(masks, axis=-1).astype(np.uint8)))
+    areas = np.asarray(mask_util.area(rles), dtype=np.float64)
+    self_iou = np.asarray(mask_util.iou(rles, rles, [0] * len(rles)), dtype=np.float64)
+    dropped = set()
+    for i in range(len(masks)):
+        for j in range(i + 1, len(masks)):
+            if i in dropped or j in dropped:
+                continue
+            value = self_iou[i, j]
+            if value <= 0:
+                continue
+            intersection = value * (areas[i] + areas[j]) / (1.0 + value)
+            smaller = i if areas[i] <= areas[j] else j
+            if intersection / max(areas[smaller], 1.0) >= threshold:
+                dropped.add(smaller)
+    return [i for i in range(len(masks)) if i not in dropped]
+
+
+def refine_and_finalize_consensus_first(refiner, image, proposals, scores, consensus_counts):
+    """コンセンサス数(降順)→面積(昇順)の順で排他化する。
+
+    通常のdrop_contained_then_area_ascは面積の小さい順に領土を確保させるが、
+    WBFで得られる「何seedが一致したか」という情報を使っていない。
+    2seed一致のクラスタを単独seedのクラスタより先に確保させることで、
+    単独seed(誤検出の疑いが強い)がconsensusクラスタと重なる場合に
+    自然に排除されるようにする。
+    """
+    if not proposals:
+        return []
+    boxes, probabilities = refine_batch(refiner, image, proposals)
+    refined = [build_variant(proposals[i], boxes[i], probabilities[i],
+                             REFINER_METHOD, REFINER_THRESHOLD)
+               for i in range(len(proposals))]
+    areas = np.array([m.sum() for m in refined], dtype=np.float64)
+    subset = drop_contained_indices_local(refined)
+    order = sorted(subset, key=lambda i: (-consensus_counts[i], areas[i]))
+    return greedy_disjoint_local(refined, order)
 
 
 def main() -> int:
@@ -116,8 +171,10 @@ def main() -> int:
 
     meter_single = PanopticQuality()
     meter_wbf = PanopticQuality()
+    meter_consensus_order = PanopticQuality()
     near_miss_single = 0
     near_miss_wbf = 0
+    near_miss_consensus_order = 0
     consensus_counter = {1: 0, 2: 0}
     started = time.perf_counter()
 
@@ -143,6 +200,12 @@ def main() -> int:
             combined_masks, combined_scores, source_ids, iou_threshold=args.iou_threshold)
         for count in fused_counts:
             consensus_counter[count] = consensus_counter.get(count, 0) + 1
+
+        # コンセンサス優先順位付け(全クラスタ保持、排他化の順序だけをconsensus_counts降順にする)
+        consensus_order_final = refine_and_finalize_consensus_first(
+            refiner, image, fused_masks, fused_scores, fused_counts)
+        consensus_order_rles = masks_to_rles(consensus_order_final)
+
         if args.require_consensus:
             keep_idx = [i for i, c in enumerate(fused_counts) if c >= 2]
             fused_masks = [fused_masks[i] for i in keep_idx]
@@ -162,23 +225,34 @@ def main() -> int:
             if matrix_w.size:
                 near_miss_wbf += int(((matrix_w > 0.3) & (matrix_w <= 0.5)).any(axis=0).sum())
 
+            matrix_c = iou_matrix(truth, consensus_order_rles)
+            meter_consensus_order.add_matrix(matrix_c, len(truth), len(consensus_order_rles))
+            if matrix_c.size:
+                near_miss_consensus_order += int(((matrix_c > 0.3) & (matrix_c <= 0.5)).any(axis=0).sum())
+
         if position % 25 == 0 or position == len(targets):
             print(f"  {position}/{len(targets)}  {time.perf_counter() - started:.0f}s  "
                   f"single={meter_single.score:.4f}  wbf={meter_wbf.score:.4f}  "
+                  f"consensus_order={meter_consensus_order.score:.4f}  "
                   f"consensus={consensus_counter}", flush=True)
 
     summary_single = meter_single.summary()
     summary_wbf = meter_wbf.summary()
+    summary_consensus_order = meter_consensus_order.summary()
     report = {
         "scope": f"{len(targets)}観測、fold0のみ。V35確定(seed3407) vs WBF(seed3407+8407)",
         "iou_threshold": args.iou_threshold,
         "single_seed3407": {**summary_single, "near_miss": near_miss_single},
         "wbf_seed3407_8407": {**summary_wbf, "near_miss": near_miss_wbf},
+        "wbf_consensus_first_order": {**summary_consensus_order, "near_miss": near_miss_consensus_order},
         "consensus_cluster_counts": consensus_counter,
         "baseline_fold0_pq": BASELINE_FOLD0_PQ,
         "delta_wbf_vs_baseline": round(summary_wbf["pq"] - BASELINE_FOLD0_PQ, 6),
         "delta_wbf_vs_single_local": round(summary_wbf["pq"] - summary_single["pq"], 6),
-        "continue_fold12": bool(summary_wbf["pq"] > BASELINE_FOLD0_PQ),
+        "delta_consensus_order_vs_baseline": round(summary_consensus_order["pq"] - BASELINE_FOLD0_PQ, 6),
+        "delta_consensus_order_vs_wbf": round(summary_consensus_order["pq"] - summary_wbf["pq"], 6),
+        "continue_fold12": bool(summary_wbf["pq"] > BASELINE_FOLD0_PQ
+                                 or summary_consensus_order["pq"] > BASELINE_FOLD0_PQ),
     }
     suffix = "_consensus2" if args.require_consensus else ""
     (args.out / f"multiseed_wbf_probe_iou{args.iou_threshold:.2f}{suffix}.json").write_text(
