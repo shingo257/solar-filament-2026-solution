@@ -1,0 +1,36 @@
+{
+  "scope": "236観測、fold0のみ。V35確定(seed3407) vs WBF(seed3407+8407)",
+  "iou_threshold": 0.5,
+  "single_seed3407": {
+    "pq": 0.43928754562723143,
+    "sq": 0.673292148887505,
+    "rq": 0.6524471529232527,
+    "tp": 1713,
+    "fp": 789,
+    "fn": 1036,
+    "denominator": 2625.5,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 287
+  },
+  "wbf_seed3407_8407": {
+    "pq": 0.4355485019527127,
+    "sq": 0.6758327519596528,
+    "rq": 0.6444619629483642,
+    "tp": 1635,
+    "fp": 690,
+    "fn": 1114,
+    "denominator": 2537.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 264
+  },
+  "consensus_cluster_counts": {
+    "1": 378,
+    "2": 1478
+  },
+  "baseline_fold0_pq": 0.4393,
+  "delta_wbf_vs_baseline": -0.003751,
+  "delta_wbf_vs_single_local": -0.003739,
+  "continue_fold12": false
+}

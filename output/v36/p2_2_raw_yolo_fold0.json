@@ -1,0 +1,70 @@
+{
+  "scope": "fold0 236観測、refiner なし。同一 conf 0.26 と同一排他化。",
+  "purpose": "P2-2 の PQ 低下が検出器本体か refiner 相性かを切り分ける",
+  "table": [
+    {
+      "cache": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\yolo_fold_0",
+      "rule": "conf_first",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.397686,
+      "sq": 0.656773,
+      "rq": 0.605515,
+      "tp": 1614,
+      "fp": 968,
+      "fn": 1135,
+      "near_miss": 394,
+      "inst/img": 6.7076271186440675,
+      "detector": "imgsz1280_v30",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\yolo_fold_0",
+      "rule": "drop_contained_then_area_asc",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.404939,
+      "sq": 0.656991,
+      "rq": 0.616355,
+      "tp": 1613,
+      "fp": 872,
+      "fn": 1136,
+      "near_miss": 368,
+      "inst/img": 6.453389830508475,
+      "detector": "imgsz1280_v30",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "G:\\マイドライブ\\solar_filament_v35\\prediction_cache\\oof\\yolo_imgsz1536_fold_0",
+      "rule": "conf_first",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.39958,
+      "sq": 0.666723,
+      "rq": 0.599319,
+      "tp": 1673,
+      "fp": 1161,
+      "fn": 1076,
+      "near_miss": 403,
+      "inst/img": 7.313559322033898,
+      "detector": "imgsz1536_trained",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "G:\\マイドライブ\\solar_filament_v35\\prediction_cache\\oof\\yolo_imgsz1536_fold_0",
+      "rule": "drop_contained_then_area_asc",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.407595,
+      "sq": 0.666116,
+      "rq": 0.611898,
+      "tp": 1620,
+      "fp": 926,
+      "fn": 1129,
+      "near_miss": 388,
+      "inst/img": 6.559322033898305,
+      "detector": "imgsz1536_trained",
+      "baseline_fold0_raw_conf_first": 0.397686
+    }
+  ]
+}

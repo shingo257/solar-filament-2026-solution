@@ -46,15 +46,19 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 
 | 項目 | 値 |
 |---|---:|
-| 確認できた自己ベスト Public | 0.35 |
+| 確認できた自己ベスト Public | **0.37**（V35、2026-08-16） |
 | 全fold OOF ベースライン（生 YOLO, conf 0.26） | PQ 0.3937 |
-| + refiner `shrink@0.45`（全fold, リークなし） | **PQ 0.4379** |
+| + refiner `shrink@0.45` + 排他化（全fold, リークなし） | **PQ 0.4426** |
 | アノテータ不一致が課す天井 | 0.7587（争いのある画像のみなら約 0.61） |
 | LB 1位スナップショット | 0.48 |
 
-**主因は境界品質。** best refiner 適用後も near-miss（IoU 0.3〜0.5）が 934 件残り、
-それが全部 TP 化すれば PQ 約 0.503。PQ の分母は near-miss → TP の変換に対して不変
+**主因は境界品質。** 確定構成適用後も near-miss（IoU 0.3〜0.5）が 920 件残り、
+それが全部 TP 化すれば PQ 約 0.50。PQ の分母は near-miss → TP の変換に対して不変
 （TP +1、FP −0.5、FN −0.5 で相殺）なので、変換できた分がそのまま加点になる。
+
+P2-2（YOLO を imgsz 1536 で fold0 再学習）は PQ 0.4295 < 0.4393 で不合格。
+P2-3（V30 重みのまま推論 imgsz 1536）も PQ 0.4320 < 0.4393 で不合格。
+解像度レバーは停止。提出正本は V35。
 
 詳細は以下を参照。
 
@@ -137,6 +141,7 @@ python scratch/run_pq_oof_rescore.py         # 全fold OOFのPQ再採点＋conf�
 python scratch/run_ownership_ablation.py     # 排他化の割当方式8種＋オラクル上限（約60分）
 python scratch/run_refiner_pq_allfold.py     # refiner方式×閾値、全fold（約87分）
 python scratch/run_pipeline_stack.py         # refiner×排他化×confの重畳検証
+python scratch/run_p2_imgsz_raw_pq.py        # P2-2: 1536 vs 1280 の生YOLO PQ（GPU不要）
 ```
 
 ### 5.3 学習（要GPU / Colab）
@@ -144,6 +149,9 @@ python scratch/run_pipeline_stack.py         # refiner×排他化×confの重畳
 ```bash
 python scratch/build_v30_prize_colab.py         # 3-fold YOLO + refiner の本体
 python scratch/build_v35_refiner_folds12.py     # fold1/2 refiner（T4で約3.5時間）
+python scratch/build_v35_final_submission.py    # 確定構成の test 推論
+python scratch/build_v36_yolo_imgsz_probe.py    # P2-2: imgsz 1536 再学習（不合格済み）
+python scratch/build_v36_infer_imgsz_probe.py   # P2-3: 不合格（推論 imgsz 1536）
 ```
 
 生成された `.ipynb` を Colab で開いて実行する。重みは Google Drive に保存される

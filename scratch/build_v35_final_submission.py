@@ -39,12 +39,15 @@ V30本体のtest推論 (`build_v30_prize_colab.py` セル[11/12]) を精査し�
 再測定してから更新すること（単一fold・生YOLOでの値をそのまま使い回さない）。
 """
 
+import ast
 import json
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "solar_filament_v35_final_submission_colab.ipynb"
+MEDISEG = (ROOT / "src" / "mediseg_models.py").read_text(encoding="utf-8")
 
 
 def markdown(source):
@@ -72,10 +75,14 @@ cells = [
 - 排他化: `drop_contained_then_area_asc`（全fold OOFで確定）
 
 GPU必須（YOLO推論・refiner推論）。T4で可。
+`MediSegUNet` は `src/mediseg_models.py` をノートへ埋め込んであるので、
+Colab へ別ファイルをアップロードする必要はない。上から順に実行する。
 """
     ),
     code(
-        """# [1/9] Drive接続と前提artifactの確認
+        """# [1/9] 依存関係・Drive接続と前提artifactの確認
+%pip install -q "ultralytics>=8.3,<9" pycocotools
+
 import json, math, shutil
 from collections import defaultdict
 from pathlib import Path
@@ -87,6 +94,7 @@ import torch
 from google.colab import drive
 from pycocotools import mask as mask_utils
 from tqdm.auto import tqdm
+from ultralytics import YOLO
 
 drive.mount("/content/drive")
 
@@ -140,27 +148,27 @@ print("★ 上記が output/v35/pipeline_stack.json の best_config と一致す
 """
     ),
     code(
-        """# [3/9] MediSegUNet定義とYOLO読み込み
-!pip -q install ultralytics pycocotools
-
-from ultralytics import YOLO
-import sys
-sys.path.insert(0, str(CFG.V30_ROOT))  # ローカルsrc配置に合わせて調整すること
-
-exec(open("/content/mediseg_models.py").read()) if Path("/content/mediseg_models.py").exists() else None
-# 上記が失敗する場合は src/mediseg_models.py の内容をこのセルに直接貼り付けること。
-# (ローカルからColabへ同期する手段はプロジェクトの運用に合わせて選ぶ)
+        "# [3/9] MediSegUNet定義とYOLO読み込み\n"
+        "# src/mediseg_models.py を V30 / fold1-2 学習ノートと同じく埋め込む。\n"
+        "# Colab へ別ファイルをアップロードする必要はない。\n\n"
+        + MEDISEG
+        + "\n\n"
+        + """assert "MediSegUNet" in globals(), "MediSegUNet が定義されていません"
 
 yolo_models = {
     fold: YOLO(str(CFG.RUNS_ROOT / f"yolo_fold_{fold}/weights/best.pt"))
     for fold in (0, 1, 2)
 }
 refiner = MediSegUNet(3, 1, False).cuda().eval()
-refiner_checkpoint = torch.load(CFG.ARTIFACT_ROOT / "mediseg_refiner_all_data_resume.pt",
-                                map_location="cuda")
+refiner_path = CFG.ARTIFACT_ROOT / "mediseg_refiner_all_data_resume.pt"
+try:
+    refiner_checkpoint = torch.load(refiner_path, map_location="cuda", weights_only=False)
+except TypeError:
+    refiner_checkpoint = torch.load(refiner_path, map_location="cuda")
 refiner.load_state_dict(refiner_checkpoint.get("best_model") or refiner_checkpoint["model"],
                         strict=True)
 print("refiner best crop Dice (学習時参考値):", refiner_checkpoint.get("best_dice"))
+print({"yolo_folds": sorted(yolo_models), "refiner_params": sum(p.numel() for p in refiner.parameters())})
 """
     ),
     code(
@@ -174,7 +182,9 @@ def find_dataset_root(base):
 DATA_ROOT = find_dataset_root(CFG.DATA_CACHE)
 TEST_DIR = next(DATA_ROOT.rglob("test_images"))
 test_files = sorted(p.name for p in TEST_DIR.glob("*.jpeg"))
-print({"test画像": len(test_files)})
+if len(test_files) != 180:
+    raise RuntimeError(f"test画像が180枚ではありません: {len(test_files)}")
+print({"test画像": len(test_files), "test_dir": str(TEST_DIR)})
 
 for file_name in tqdm(test_files, desc="前処理画像をローカルへ"):
     cached = CFG.PREPROC_CACHE / file_name
@@ -328,6 +338,8 @@ rows, audit = [], []
 for file_name in tqdm(test_files, desc="test推論"):
     image_path = CFG.PREPROC_DIR / file_name
     image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+    if image is None:
+        raise FileNotFoundError(f"前処理画像を読めない: {image_path}")
     proposals = ensemble_proposals(image_path)          # (confidence, mask) のリスト。fold統合済み
     scores = np.array([c for c, _ in proposals], dtype=np.float32)
     refined = [refine_proposal(image, m) for _, m in proposals]
@@ -417,6 +429,10 @@ print("\\n次: ローカルの tests/test_submission.py 相当の検証を通し
 
 for index, cell in enumerate(cells):
     cell["id"] = f"v35f-{index:02d}"
+    if cell["cell_type"] != "code":
+        continue
+    stripped = re.sub(r"^[%!].*$", "", cell["source"], flags=re.M)
+    ast.parse(stripped)
 
 notebook = {
     "cells": cells,
@@ -431,4 +447,13 @@ notebook = {
 }
 
 OUTPUT.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+generated = json.loads(OUTPUT.read_text(encoding="utf-8"))
+text = "\n".join(
+    "".join(cell["source"]) if isinstance(cell["source"], list) else cell["source"]
+    for cell in generated["cells"]
+)
+assert "class MediSegUNet" in text, "MediSegUNet がノートブックに埋め込まれていない"
+assert "/content/mediseg_models.py" not in text, "外部ファイル依存が残っている"
+assert "SUBMISSION_CONF = 0.26" in text
+assert 'SUBMISSION_OWNERSHIP_RULE = "drop_contained_then_area_asc"' in text
 print(OUTPUT)

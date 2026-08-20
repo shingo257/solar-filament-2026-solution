@@ -1,0 +1,31 @@
+{
+  "scope": "236観測、fold0のみ。V35確定(seed3407) vs seed3407+8407アンサンブル",
+  "single_seed3407": {
+    "pq": 0.43928754562723143,
+    "sq": 0.673292148887505,
+    "rq": 0.6524471529232527,
+    "tp": 1713,
+    "fp": 789,
+    "fn": 1036,
+    "denominator": 2625.5,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 287
+  },
+  "ensemble_seed3407_8407": {
+    "pq": 0.43150319139093796,
+    "sq": 0.6712000377977954,
+    "rq": 0.642883145249363,
+    "tp": 1766,
+    "fp": 979,
+    "fn": 983,
+    "denominator": 2747.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 329
+  },
+  "baseline_fold0_pq": 0.4393,
+  "delta_ensemble_vs_baseline": -0.007797,
+  "delta_ensemble_vs_single_local": -0.007784,
+  "continue_fold12": false
+}

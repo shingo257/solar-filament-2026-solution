@@ -1,0 +1,42 @@
+{
+  "sha256": "10cd5f79000861b0c2fcdc103ad085efeb6f44589590bbc2c353b24c01402162",
+  "validator": {
+    "rows": 1301,
+    "images": 178,
+    "overlap_pixels": 0,
+    "area_min": 186,
+    "area_median": 1452,
+    "area_max": 22242
+  },
+  "inst_per_predicted_image": 7.309,
+  "empty_images": [
+    "20200310113230Ch.jpeg",
+    "20211214174010Mh.jpeg"
+  ],
+  "zero_proposal_images": [
+    "20200310113230Ch.jpeg",
+    "20211214174010Mh.jpeg"
+  ],
+  "v30_empty_images": [
+    "20200310113230Ch.jpeg",
+    "20211214174010Mh.jpeg"
+  ],
+  "previous": {
+    "V30 overlapping": {
+      "rows": 1565,
+      "images": 178
+    },
+    "V30b disjoint": {
+      "rows": 1468,
+      "images": 178
+    },
+    "V32b": {
+      "rows": 1406,
+      "images": 178
+    }
+  },
+  "audit_rows": 180,
+  "audit_submitted_sum": 1301,
+  "kaggle_public_score": "0.37",
+  "submitted_at": "2026-08-16T01:37:49Z"
+}

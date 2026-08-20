@@ -1,0 +1,29 @@
+{
+  "scope": "40観測(リークなしrefiner)。V35確定構成 vs 癒着分離挿入版",
+  "baseline": {
+    "pq": 0.43884694670967717,
+    "sq": 0.6766407573686417,
+    "rq": 0.6485671191553545,
+    "tp": 215,
+    "fp": 102,
+    "fn": 131,
+    "denominator": 331.5,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 33
+  },
+  "split": {
+    "pq": 0.436107543237126,
+    "sq": 0.6765780577323636,
+    "rq": 0.6445783132530121,
+    "tp": 214,
+    "fp": 104,
+    "fn": 132,
+    "denominator": 332.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 35
+  },
+  "delta_pq": -0.002739,
+  "split_events": 2
+}

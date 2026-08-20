@@ -1,0 +1,70 @@
+{
+  "scope": "fold0 236観測、refinerなし。同一conf 0.26と同一排他化。",
+  "purpose": "v38(augmentation強化)・v39(モデルサイズ拡大)の確定後処理つきfold0 PQ低下が検出器本体の悪化かrefiner相性かを切り分ける",
+  "table": [
+    {
+      "cache": "C:\\Users\\hara\\AppData\\Local\\Temp\\kaggle_push\\v38\\output_oof\\v38_aug_probe\\oof_cache\\yolo_aug_fold_0",
+      "rule": "conf_first",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.388854,
+      "sq": 0.656784,
+      "rq": 0.592058,
+      "tp": 1558,
+      "fp": 956,
+      "fn": 1191,
+      "near_miss": 391,
+      "inst/img": 6.5,
+      "detector": "v38_augmentation",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "C:\\Users\\hara\\AppData\\Local\\Temp\\kaggle_push\\v38\\output_oof\\v38_aug_probe\\oof_cache\\yolo_aug_fold_0",
+      "rule": "drop_contained_then_area_asc",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.394951,
+      "sq": 0.657343,
+      "rq": 0.60083,
+      "tp": 1521,
+      "fp": 793,
+      "fn": 1228,
+      "near_miss": 371,
+      "inst/img": 6.012711864406779,
+      "detector": "v38_augmentation",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "C:\\Users\\hara\\AppData\\Local\\Temp\\kaggle_push\\v39\\output_oof\\v39_modelsize_probe\\oof_cache\\yolo_modelsize_fold_0",
+      "rule": "conf_first",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.385899,
+      "sq": 0.656559,
+      "rq": 0.58776,
+      "tp": 1599,
+      "fp": 1093,
+      "fn": 1150,
+      "near_miss": 412,
+      "inst/img": 6.9025423728813555,
+      "detector": "v39_modelsize",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "C:\\Users\\hara\\AppData\\Local\\Temp\\kaggle_push\\v39\\output_oof\\v39_modelsize_probe\\oof_cache\\yolo_modelsize_fold_0",
+      "rule": "drop_contained_then_area_asc",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.394085,
+      "sq": 0.655882,
+      "rq": 0.600847,
+      "tp": 1561,
+      "fp": 886,
+      "fn": 1188,
+      "near_miss": 413,
+      "inst/img": 6.343220338983051,
+      "detector": "v39_modelsize",
+      "baseline_fold0_raw_conf_first": 0.397686
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "scope": "全fold OOF、V35 確定後処理、near-miss(IoU 0.3-0.5) の被覆モード",
+  "observations": 707,
+  "near_miss_pairs": 955,
+  "mode_counts": {
+    "undercoverage": 433,
+    "ambiguous": 46,
+    "overcoverage": 400,
+    "shape_mismatch": 76
+  },
+  "hard_fn_iou_le_0_3": 2138,
+  "hard_fp_iou_le_0_3": 1561,
+  "decision_hint": {
+    "overcoverage_dominant": "削る系 refiner / 形態学を優先",
+    "undercoverage_dominant": "検出器または伸ばし系（ただし guided は既に劣位）",
+    "shape_mismatch_dominant": "検出器の原型形状・位置ずれ"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "probe": "P2-3 infer-only imgsz1536 on V30 fold0 weights",
+  "device": "cpu",
+  "train_imgsz": 1280,
+  "infer_imgsz": 1536,
+  "fold": 0,
+  "observations": 236,
+  "pq": 0.432039,
+  "sq": 0.67416,
+  "rq": 0.640855,
+  "tp": 1738,
+  "fp": 937,
+  "fn": 1011,
+  "near_miss": 306,
+  "inst/img": 6.923728813559322,
+  "baseline_fold0_pq": 0.4393,
+  "delta": -0.007261,
+  "continue_fold12": false,
+  "decision": "推論 1536 もベースラインを超えていない。解像度レバーはここで止める"
+}

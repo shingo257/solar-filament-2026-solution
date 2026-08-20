@@ -1,11 +1,17 @@
 # Solar Filament Segmentation Challenge 2026 実験経緯・技術引継ぎ
 
-- 更新日: 2026-08-16（改訂3: fold1/2 refiner学習、全fold重畳検証の確定を反映）
+- 更新日: 2026-08-18（改訂9: 検出器強化6本・後処理再設計(watershed)・multi-seedアンサンブルの**全経路が不合格**。V35確定パイプラインはこの規模のデータに対してかなり頑健な局所最適であることが複数の角度から裏付けられた）
 - 対象プロジェクト: `C:\work\code\ER-FlowScan\Solar_Filament_Segmentation`
-- 対象範囲: Kaggle提出形式の修正、V19～V34のモデル・後処理実験、Colab/Kaggle運用、既知の結果、未解決事項、次の推奨方針
-- 現在の結論: **確認できたPublic最高スコアは0.35。V34は全OOFゲート不合格のため提出していない。**
+- 対象範囲: Kaggle提出形式の修正、V19～V35のモデル・後処理実験、Colab/Kaggle運用、既知の結果、未解決事項、次の推奨方針
+- 現在の結論: **確認できたPublic最高スコアは0.37（V35、2026-08-16提出）。** V34は全OOFゲート不合格のため提出していない。
 - **改訂2の要点: リーダーボード指標は Panoptic Quality であり、V19〜V34が最適化してきた Hungarian matched Dice ではなかった。§2.1 を先に読むこと。§7・§8.1・§13.2・§26 の結論は §2.1 で差し替えている。**
-- **改訂3の要点: fold1/2のrefinerを学習し、refiner×排他化×confを全fold OOFで同時に確定した（リークなし、707観測）。最良構成は `conf 0.26 + shrink@0.45 + drop_contained_then_area_asc` で **PQ 0.4426**（生YOLOベースライン比 +0.0489）。新ゲートは **PQ > 0.4526**。§2.1.8.1・§2.1.8.2 を参照。V35最終提出ノートブックの骨格 (`build_v35_final_submission.py`) も用意済み。**
+- **改訂3の要点: fold1/2のrefinerを学習し、refiner×排他化×confを全fold OOFで同時に確定した（リークなし、707観測）。最良構成は `conf 0.26 + shrink@0.45 + drop_contained_then_area_asc` で **PQ 0.4426**（生YOLOベースライン比 +0.0489）。新ゲートは **PQ > 0.4526**。§2.1.8.1・§2.1.8.2 を参照。**
+- **改訂4の要点: 確定構成で test 180枚を推論し提出した。Public **0.37**（自己ベスト、V30b/V32の0.35から +0.02）。OOF 0.4426 との差は残る。次は検出器解像度（P2-2、`build_v36_yolo_imgsz_probe.py`）。§2.1.8.3 を参照。**
+- **改訂5の要点: P2-2（YOLO を imgsz 1536 で fold0 再学習）は OOF PQ **0.4295 < 0.4393** で不合格。fold1/2 には進まない。提出正本は V35 のまま。次は学習せず V30 重みで推論 imgsz だけ 1536（P2-3）。§2.1.8.4 を参照。**
+- **改訂6の要点: P2-3（V30 重みのまま推論 imgsz 1536）は fold0 PQ **0.4320 < 0.4393** で不合格。学習解像度も推論解像度も上げても確定後処理の下では勝てない。解像度レバーはここで止める。提出正本は V35。§2.1.8.5 を参照。**
+- **改訂7の要点: 全707観測でcase diagnostics（`output/v35/case_diagnostics.csv`）とnear-miss被覆モード分類（`output/v35/near_miss_modes.json`）を完走した。near-miss 955件中 undercoverage 433件(45%)・overcoverage 400件(42%)とほぼ拮抗し、単一モードが支配的ではない。ただしIoU≤0.3の完全な取りこぼし(hard FN 2138件)がIoU≤0.3の余剰検出(hard FP 1561件)を大きく上回り、loss_unitsは近接ミス数(r=0.853)とGT個体数(r=0.515)・proposal数(r=0.533)に強く相関する。損失最大の画像はGT 10〜21個体の密集シーンに集中する。§27.1 を参照。**
+- **改訂8の要点: Kaggle無料GPU枠でV38(augmentation強化: mosaic0.20→0.75+copy_paste0.3)とV39(モデルサイズ拡大: yolo11m-seg→yolo11l-seg、batch4→2)をfold0のみ・70epochで実行。fold0 OOF PQは V38が0.4290・V39が0.4328で、いずれもV35基準0.4393を下回り不合格。生YOLO(refinerなし)で切り分けたところ、P2-2/P2-3(後処理相性の問題で検出器自体は改善していた)と異なり、V38・V39は生YOLOの時点で既にV30基準(0.3977)を下回っており、検出器そのものが悪化している。ただしV38はV35と同じ70epochのままaugmentationだけ強めており収束不足の疑いが強く、V39はbatch4→2でlr0を据え置いたままなので実効バッチサイズ減少による学習不安定化が疑われる。単純な「強くする」だけでは効かないことが分かったが、学習スケジュール自体を合わせていない単軸変更なので、この2実験だけで「augmentation強化」「モデル大型化」という方向性自体を完全に否定はできない。§27.2 を参照。**
+- **改訂9の要点: 後処理再設計(watershed癒着分離)は実データで閾値に極端に敏感で不採用(§27.3)。V38/V39の交絡を補正した再測定(V40: epoch70→100+warmup3→5、V41: lr0 7e-4→3.5e-4)は、いずれも改善せず**むしろV38よりV40がわずかに悪化(0.4290→0.4272)**。V41はKaggleのGPUバッチセッション上限(他プロジェクトと共有)とユーザーのGPU無料枠残量懸念によりColab(Drive経由、resume機構つき)へ切り替えて完走(fold0 PQ 0.4316)。imgsz・augmentation・モデルサイズの検出器強化系が**6本連続で不合格**(§27.4)。さらにmulti-seedアンサンブル(V42: seed3407+8407を単純連結)も不合格(fold0 PQ 0.4315、Δ-0.0078、FP+190がTP+53を上回る、§27.5)。**後処理再設計・検出器強化・アンサンブルの全経路が不合格**となり、V35確定パイプラインはこのデータ規模に対してかなり頑健な局所最適であることが複数の角度から裏付けられた。**
 
 ## 1. この文書の読み方と証拠の区分
 
@@ -29,11 +35,12 @@
 1. 最初の提出失敗はモデル以前に提出形式が原因だった。`null`、誤った列名、空mask、非公式RLE、個体maskの重複を順番に修正した。
 2. 形式修正後のV24は提出には成功したがPublic `0.00`。添付checkpointが実質的に合わず、1画像1semantic mask中心だったことが主因と判断した。
 3. 実データ学習のMediSeg semanticモデルはunion Dice約`0.63`まで学習できたが、連結成分による個体化ではPublic `0.19`止まりだった。
-4. V30でYOLO11m-seg 3-foldを個体検出に使い、MediSegを個体crop refinerとして組み込んだ。重複を修復したV30bがPublic `0.35`で、現在確認できる最高値。
+4. V30でYOLO11m-seg 3-foldを個体検出に使い、MediSegを個体crop refinerとして組み込んだ。重複を修復したV30bがPublic `0.35`。
 5. V31/V32で後処理を厳密化したがPublicは`0.34～0.35`で頭打ち。後処理だけでは大幅改善しなかった。
 6. 公開ノートブックの申告Public `0.69`を再現するV33を作ったが、実提出は`0.33`。0.69との差の原因は未解明。
 7. V34はsemantic-firstへ処理順を反転したが、全OOF strict instance Dice `0.441074`、個体数誤差`2.846535`でV31より大幅悪化。提出ゲートが正しく停止した。
 8. 根本ボトルネックは、refinerのcrop境界精度よりも、**個体の検出漏れ、同一個体の重複、近接個体の結合／分断、検証と最終推論の不一致**にある。
+9. V35で後処理を全fold OOFのPQに整合させて提出し、Public **0.37** を得た（§2.1.8.3）。P2-2（imgsz 1536 再学習）と P2-3（推論 imgsz 1536）はいずれも fold0 で不合格（§2.1.8.4・§2.1.8.5）。解像度レバーは停止。提出正本は V35。
 
 ## 2.1 【2026-08-15 改訂2】公式指標の確定と、それに伴う結論の差し替え
 
@@ -114,7 +121,8 @@ PQは全アノテータに対して採点するため、**あるアノテータ�
 
 | | PQ | 天井0.7587比 |
 |---|---:|---:|
-| 自己ベスト（V30b/V32系） | 0.35 | 46% |
+| 自己ベスト（V35） | 0.37 | 49% |
+| 自己ベスト（V30b/V32系、更新前） | 0.35 | 46% |
 | LB 1位スナップショット | 0.48 | 63% |
 | 天井（アノテータ0番のGTを提出） | 0.7587 | 100% |
 
@@ -177,7 +185,7 @@ fold別PQ（conf 0.26）: fold0 `0.3978` / fold1 `0.3882` / fold2 `0.3950`。**�
 1. **`shrink` が `guided` を全閾値で上回る。** 閾値の違い（shrinkで0.4348〜0.4363）より方式の違いの方が3倍効く。
 2. **V31が選んだ `guided7@0.45` は精製版12種のうち最下位。** `shrink@0.65` へ変えるだけで **+0.0121**。**V31aのPublicが0.35→0.34と下がった事実と符合する。** V31は「guided7 0.552553 vs YOLO native 0.552290、差はほぼない」とDiceで結論したが、PQでは同じ比較が +0.0322 の差になる。指標の取り違えが実スコアの低下として現れていた。
 3. **機序:** `shrink = refined & proposal`（YOLOマスクの内側しか削れない）に対し `guided = refined & dilate(proposal, k)`（外側へk画素まで足せる）。**足す方が悪い**ということは、YOLOの候補は既に過剰に覆っており、refinerの仕事は「削ること」であって「伸ばすこと」ではない。細構造を拾うために膨らませる直感は、IoUと0.5の崖の下では裏目に出る。
-4. near-missは 394 → 294 へ100件変換された。**まだ294件残っている。** 同じ算術で、残り全部が IoU 0.55 のTPになれば PQ は 0.4363 → 約 `0.497`。これは refiner では届かず、**検出器側（P2-2: 解像度）の課題**である。
+4. near-missは 394 → 294 へ100件変換された。**まだ294件残っている。** 同じ算術で、残り全部が IoU 0.55 のTPになれば PQ は 0.4363 → 約 `0.497`。これは refiner では届かず、検出器側の課題である。**ただし P2-2 の「学習解像度を 1536 に上げる」は fold0 で不合格だった（§2.1.8.4）。**
 
 **留保（改訂3で解消）:** fold0のみ。fold1/2のrefiner checkpointが存在しないため全foldで確認できていなかった。→ §2.1.8.1 で解消。
 
@@ -237,6 +245,88 @@ fold別PQ（conf 0.26）: fold0 `0.3978` / fold1 `0.3882` / fold2 `0.3950`。**�
 
 **新ゲート:** all-fold PQ > `0.4526`（best `0.4426` + 0.010）。旧ゲート（§13.2の`0.4037`）を置き換える。
 
+### 2.1.8.3 V35最終提出【Public 0.37、2026-08-16】
+
+確定構成（`conf 0.26 + shrink@0.45 + drop_contained_then_area_asc`）で test 180枚を推論し、Kaggleへ提出した。
+
+| 項目 | 値 |
+|---|---|
+| 提出ファイル | `submission_v35_final_pq_aligned.csv` |
+| SHA-256 | `10cd5f79000861b0c2fcdc103ad085efeb6f44589590bbc2c353b24c01402162` |
+| 行数 | 1301（178画像。2枚は予測ゼロ） |
+| overlap | 0 |
+| 面積 min / median / max | 186 / 1452 / 22242 |
+| 全fold OOF PQ | 0.4426 |
+| **Public Score** | **0.37** |
+
+予測ゼロの2枚（`20200310113230Ch`、`20211214174010Mh`）は V30 / V32 でも同じで、今回の後処理で新たに落としたものではない。行数が V30b 1468・V32b 1406 より少ないのは `shrink` と包含除去の想定どおり。
+
+**読み方:** OOF 0.4426 と Public 0.37 の差は残る。3-fold 統合は OOF で検証できない層であり、test 分布とのずれもあり得る。ただし方向は一致し、Public も 0.35 → 0.37 と上がった。後処理だけでは頭打ち、という §5.8〜5.9 の教訓は維持される。
+
+### 2.1.8.4 P2-2 YOLO imgsz 1536 再学習【不合格、2026-08-16】
+
+仮説: mask prototype を 320²→384² にすると near-miss が TP になる。
+変えたもの: 学習 `imgsz` のみ（VRAM のため batch 4→2）。後処理は V35 確定構成のまま。
+V30 の `runs/yolo_fold_*` は上書きしていない。
+
+| | V35 fold0（imgsz 1280 学習） | P2-2 fold0（imgsz 1536 学習） |
+|---|---:|---:|
+| 確定後処理つき PQ | **0.4393** | 0.4295 |
+| SQ | 0.673〜0.678 | 0.6747 |
+| RQ | 0.646〜0.653 | **0.6365** |
+| near-miss | 295（shrink のみ） | **329** |
+| inst/img | 6.42〜6.72 | 6.60 |
+
+ゲート（fold0 PQ > 0.4393）を **−0.0098** で外したので fold1/2 には進まない。
+Ultralytics の Mask mAP50-95 は V30 fold0 より良かった（0.238 vs 0.227）が、公式 PQ は悪化した。mAP は採用判定に使わない。
+
+**切り分け（refiner なし、同一 conf 0.26、`output/v36/p2_2_raw_yolo_fold0.json`）:**
+
+| 検出器 | 排他化 | PQ | SQ | RQ | TP | FP | near-miss |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1280 V30 | conf_first | 0.3977 | 0.6568 | 0.6055 | 1614 | 968 | 394 |
+| 1536 再学習 | conf_first | **0.3996** | **0.6667** | 0.5993 | **1673** | 1161 | 403 |
+| 1280 V30 | drop_contained | 0.4049 | 0.6570 | 0.6164 | 1613 | 872 | 368 |
+| 1536 再学習 | drop_contained | **0.4076** | **0.6661** | 0.6119 | 1620 | 926 | 388 |
+
+生YOLOでは 1536 の方がわずかに良い（+0.002）。SQ は上がり、TP も増えるが FP も増える。
+確定後処理を掛けると **refiner の利得が 1280 の +0.034 から 1536 の +0.022 へ縮小**し、総合で負ける。
+失敗の主座は「検出器が壊れた」ではなく **1280 向け shrink@0.45 が 1536 提案と噛み合わない**こと。
+後処理を 1536 の OOF で再チューニングして採用判定には使わない（単一fold の選択バイアス）。
+
+**提出正本は V35 のまま。** 1536 再学習重みは提出に使わない。
+
+成果物: `output/v36/p2_2_imgsz1536_fold0.json`、`output/v36/p2_2_raw_yolo_fold0.json`、Drive `solar_filament_v35/runs/yolo_imgsz1536_fold_0`、OOF npz 236枚。
+
+### 2.1.8.5 P2-3 推論 imgsz 1536（V30 重みのまま）【不合格、2026-08-16】
+
+P2-2 の交絡を外すため、V30 fold0 重み（imgsz 1280 学習）を学習せず、predict の `imgsz` だけ 1536 にした。ローカル CPU、236 観測。後処理は V35 確定構成。
+
+| | 1280 学習・1280 推論（V35） | 1280 学習・1536 推論（P2-3） | 1536 学習・1536 推論（P2-2） |
+|---|---:|---:|---:|
+| 後処理つき PQ | **0.4393** | 0.4320 | 0.4295 |
+| SQ | 0.673〜0.678 | 0.6742 | 0.6747 |
+| RQ | 0.646〜0.653 | 0.6409 | 0.6365 |
+| near-miss | 295 | 306 | 329 |
+| inst/img | 6.42〜6.72 | 6.92 | 6.60 |
+
+ゲート（fold0 PQ > 0.4393）を **−0.0073** で外した。fold1/2 の 1536 推論には進まない。
+
+学習解像度を上げても、推論解像度だけ上げても、確定後処理の下では V35 を超えない。**解像度レバー（P2 の prototype 仮説）はここで止める。**
+
+**切り分け（refiner なし、`output/v36/p2_3_raw_yolo_fold0.json`）:**
+
+| 検出器 | 排他化 | PQ |
+|---|---|---:|
+| V30 1280 推論 | conf_first | 0.3977 |
+| P2-3 1536 推論 | conf_first | **0.4026** |
+| V30 1280 推論 | drop_contained | 0.4049 |
+| P2-3 1536 推論 | drop_contained | **0.4121** |
+
+生YOLOでは推論 1536 が勝つ（+0.005〜0.007）。確定後処理つきでは 0.4320 < 0.4393 で負ける。P2-2 と同じく **検出器破壊ではなく、1280 向け shrink との相性**が主因。
+
+成果物: `output/v36/p2_3_infer_imgsz1536_fold0.json`、`output/v36/p2_3_raw_yolo_fold0.json`、`scratch/run_p2_3_infer_local.py`。
+
 ### 2.1.9 ローカル実装
 
 - `src/metrics_official.py`: `PanopticQuality`累積器（公式実装に準拠）、`summary()`でPQ=SQ×RQ分解、`marginal_prediction_threshold()`で損益分岐、副次指標としてMIoU
@@ -245,7 +335,12 @@ fold別PQ（conf 0.26）: fold0 `0.3978` / fold1 `0.3882` / fold2 `0.3950`。**�
 - `scratch/build_v35_refiner_folds12.py`: fold1/2 refiner学習ノートブックのビルダー（Colab T4、V30と完全同一レシピ）
 - `scratch/run_refiner_pq_allfold.py`: refiner方式×閾値の全fold OOF比較（リークなし、fold別checkpointを適用）
 - `scratch/run_pipeline_stack.py`: refiner×排他化×confの重畳検証。Google Driveのnpz/画像読み込みにリトライ（最大4回）、25観測ごとのアトミックチェックポイント保存・自動再開機構を持つ（`--fresh`で強制やり直し）
-- `scratch/build_v35_final_submission.py`: 最終提出ノートブックのビルダー。V30本体のfold間統合（IoUクラスタリング＋多数決投票、OOF検証不能なため変更なし）はそのまま流用し、refiner適用と排他化のみOOF確定実装に差し替えている。**V30本体のrefiner適用は31px膨張支持領域＋0.8:0.2ブレンドという、shrink/guided3/guided7のどれとも比較検証されていない独自方式だった**（提出前に気づいたので記録しておく）。実行前に `SUBMISSION_CONF=0.26` / `SUBMISSION_OWNERSHIP_RULE="drop_contained_then_area_asc"` になっていることを確認すること（§2.1.8.2の確定値と一致させてある）
+- `scratch/build_v35_final_submission.py`: 最終提出ノートブックのビルダー。V30本体のfold間統合（IoUクラスタリング＋多数決投票、OOF検証不能なため変更なし）はそのまま流用し、refiner適用と排他化のみOOF確定実装に差し替えている。`src/mediseg_models.py` をノートへ埋め込む（Colabへ別ファイルを上げる必要はない）
+- `scratch/validate_v35_submission.py`: 提出CSVの全件検証と過去提出との件数比較
+- `scratch/build_v36_yolo_imgsz_probe.py`: P2-2 探針。YOLO `imgsz 1536` を **fold0のみ** 再学習。**不合格**（fold0 PQ 0.4295 < 0.4393）。V30 の `runs/yolo_fold_*` は上書きしていない
+- `scratch/run_p2_imgsz_raw_pq.py`: P2-2 の 1536 OOF と V30 の 1280 OOF を refiner なしで同じ規則で採点し、検出器本体の差を切り分ける
+- `scratch/build_v36_infer_imgsz_probe.py`: P2-3 探針。V30 fold0 重みを学習せず、推論 imgsz だけ 1536。**不合格**（fold0 PQ 0.4320 < 0.4393）
+- `scratch/run_p2_3_infer_local.py`: P2-3 をローカル CPU で実行。日本語 Drive パスを YOLO に渡さない
 
 ## 3. データと課題の理解
 
@@ -559,12 +654,13 @@ V34は、YOLO maskを最終maskにせず、semantic foregroundを先に推定し
 | V24 | Complete | 0.00 | 形式修正後だがモデル不適合 |
 | V27 | Complete | 0.19 | semantic connected-components系 |
 | V30 original | Error | - | instance mask overlap |
-| V30b disjoint | Complete | **0.35** | 現在確認できる自己最高 |
+| V30b disjoint | Complete | 0.35 | 当時の自己最高 |
 | V31a | Complete | 0.34 | held-out best ensemble |
 | V32a | Complete | 0.35 | ultra-conservative union |
 | V32b | Complete | 0.35 | containment-based union |
 | V33 | Complete | 0.33 | 申告0.69構成の再現実験 |
 | V34 | Not submitted | - | OOFゲート不合格 |
+| V35 PQ-aligned | Complete | **0.37** | shrink@0.45 + drop_contained_then_area_asc。自己ベスト |
 
 共有されたリーダーボード画面では当時の1位が`0.48`、2位`0.40`だった。これは画面取得時点のスナップショットであり、現在値としては未検証。
 
@@ -805,9 +901,9 @@ count errorは指標として捨てるのではなく、PQの分母に入るFN/F
 - 形式問題は解決済み。
 - overlap 0の提出生成・検証も解決済み。
 - 実データ学習、3-fold、MediSeg refiner、YOLO ensemble、semantic-firstまで試行済み。
-- 確認できるPublic最高はV30b/V32系の`0.35`。
+- 確認できるPublic最高はV35の`0.37`（V30b/V32は0.35）。
 - V34はゲートで棄却され、提出していない。
-- 次の改善余地は、小手先の閾値ではなく、instance detectorの再学習、全fold OOFの一貫性、duplicate/split/mergeを直接扱う学習・統合にある。
+- 次の改善余地は検出器側。P2-2（1536 再学習）も P2-3（推論 1536）も不合格。解像度レバーは停止。後処理の単独最適化は V35 で一通り使い切った。
 
 ## 16. 参照したローカル証拠
 
@@ -1010,7 +1106,7 @@ V30/V31では各annotation variantに対するinstance Diceを平均した。公
 
 画面上では最大2提出をfinal leaderboard用に選択できる。未選択の場合はKaggleがbest scoring submissionsから自動選択すると表示されていた。
 
-現時点の手動選択候補は、同じPublic `0.35`でも処理が異なるV30b disjointとV32bまたはV32a。ただしprivate diversityの証拠はないため、締切前に規則と提出一覧を再確認する。
+現時点の手動選択候補は Public `0.37` の V35 を第一候補とし、多様性用に V30b disjoint または V32b（いずれも 0.35）を残す。private diversity の証拠はないため、締切前に規則と提出一覧を再確認する。
 
 ### 19.3 提出説明欄
 
@@ -1152,7 +1248,7 @@ solar_filament_archive/
 >
 > P2の具体的な下位仮説:
 > 1. ~~先着排他化による画素削り~~ **【測定済み・ほぼ否定】** §2.1.7参照。オラクル上限でも +0.0095 しかない
-> 2. YOLOのmask prototype解像度（1280px入力 → 実効320²相当）。細長い個体でIoUが頭打ちになる **【未検証・要GPU】**
+> 2. YOLOのmask prototype解像度（1280px入力 → 実効320²相当）。細長い個体でIoUが頭打ちになる **【測定済み・外れ】** P2-2: 1536 再学習＋V35後処理は fold0 PQ 0.4295。P2-3: 1280 学習重みのまま推論だけ 1536 でも 0.4320 < 0.4393。解像度レバーは停止
 > 3. MediSeg refinerの方式と閾値がDice最大化で選ばれている **【測定済み・当たり】** §2.1.8参照
 
 ### 2.1.7 排他化の画素割当方式【測定済み・ほぼ否定】
@@ -1198,6 +1294,190 @@ V34のfold差が根拠。観測時刻、instrument suffix、contrast、foregroun
 
 worst 30画像について、原画像、GT variants、proposal、refined mask、final disjoint maskを並べたcontact sheetを保存する。
 
+### 27.1 実行結果（改訂7、2026-08-16夜）
+
+`scratch/run_case_diagnostics.py` と `scratch/run_near_miss_modes.py` を全707観測（V35確定パイプライン: conf 0.26 + shrink@0.45 + drop_contained_then_area_asc、リークなしOOF）で完走させた。
+
+**発生した障害と対処（再現性のため記録）:**
+
+1. `mediseg_refiner_fold*_resume.pt` を Google Drive の日本語パスから直接 `torch.load` すると `OSError: [Errno 22] Invalid argument`。→ `%TEMP%\solar_diag_ckpts\` にコピーしてから読む（既知、改訂6以前から）。
+2. OOF npz キャッシュ（`prediction_cache/oof/yolo_fold_*`、1414ファイル・0.59GB）も同じ理由で460枚目付近で無言OSError。→ `%TEMP%\solar_diag_oof\` にrobocopyでコピーしてから読む（新規）。
+3. 前処理画像（887枚・1.55GB）も同じ理由で同期不良のリスクがある。→ `%TEMP%\solar_diag_images\` にrobocopyでコピーしてから読む（新規）。
+4. `run_case_diagnostics.py` は707画像すべての `(image, variants, proposals, final, matched_flags)` を `keep_for_sheet` に保持していたため、490枚目付近で `numpy._core._exceptions._ArrayMemoryError`（2048×2048 boolマスクの累積）。→ 2パス設計に変更: 1パス目はCSV行だけを計算して画像データは捨て、worst30 のcontact sheetは2パス目で該当ファイルだけ再計算する。
+
+上記3点を修正後、707観測とも完走（診断: 所要2975秒、near-miss分類: 所要2444秒）。両スクリプトともTEMPコピーが無ければDriveへフォールバックするので、TEMPを消しても壊れない。
+
+**`case_diagnostics.csv`（707行）の要点:**
+
+- 全体: TP 5106 / FP 2494 / FN 3093、局所PQ平均 0.4325（公式のmicro集計PQ 0.4426とは定義が異なる順位付け用の値）
+- `loss_units`（0.5×(FP+FN)、全体スコアへの押し下げ量）との相関: near_miss数 **0.853**（最強）、proposal_count 0.533、gt_count_mean 0.515、n_annotators 0.505、foreground_fraction 0.450、local_pq -0.316
+- worst15画像はいずれも `gt_count_mean` 10〜21個体の密集シーン（フィラメント数が多い観測ほど損失が集中する）
+
+**`near_miss_modes.json`（IoU 0.3〜0.5、955ペア）の要点:**
+
+| モード | 件数 | 割合 |
+|---|---:|---:|
+| undercoverage | 433 | 45.3% |
+| overcoverage | 400 | 41.9% |
+| shape_mismatch | 76 | 8.0% |
+| ambiguous | 46 | 4.8% |
+
+参考: `hard_fn`（IoU≤0.3の完全な取りこぼし）2138件 vs `hard_fp`（IoU≤0.3の余剰検出）1561件。
+
+**読み方（次の一手への示唆）:**
+
+near-missのundercoverage/overcoverageはほぼ拮抗しており、どちらか一方に倒れる明確な支配モードではない。「削る系」だけ強化するとovercoverageは減らせてもundercoverageが相対的に悪化するリスクがあり、その逆も同様。一方で、IoU≤0.3の完全な取りこぼし（hard FN）が余剰検出（hard FP）を37%上回り、loss_unitsは検出個体数の多い密集シーンに強く紐づく。これらを総合すると、最有力なのは「後処理の閾値調整」ではなく「密集シーンでの検出漏れそのものを減らす検出器側の強化」（imgsz以外：モデルサイズ、augmentation、multi-seedアンサンブルなど）だが、モード拮抗という事実自体もこの文書に残す。次の本実験を設計する前に、この読みをユーザーと確認すること。
+
+### 27.2 Kaggle無料GPU枠でのV38/V39実行結果（改訂8、2026-08-17）
+
+§27.1の示唆（密集シーンの検出漏れを減らす検出器強化）を受けて、imgsz以外の2方向をKaggle無料GPU（T4、週30時間枠）でfold0のみ・V35と同じ70epochで実際に試した。ローカルDrive不要、Kaggle Dataset `shingo257/solar-filament-v35-artifacts`（前処理画像887枚+refiner checkpoint3個+fold分割csv、2.9GB、非公開）とcompetition `filament-segmentation-2026` を直接アタッチして学習した。
+
+| 実験 | 変更点 | fold0 OOF PQ（確定後処理つき） | V35基準0.4393 | 判定 |
+|---|---|---:|---:|---|
+| V38 augmentation強化 | `mosaic 0.20→0.75` + `copy_paste 0.0→0.3`新規、他はV35と同一 | 0.4290 | Δ −0.0103 | 不合格 |
+| V39 モデルサイズ拡大 | `yolo11m-seg→yolo11l-seg`、VRAM都合で`batch 4→2`、他はV35と同一 | 0.4328 | Δ −0.0065 | 不合格 |
+
+**生YOLO（refinerなし、conf 0.26、同一排他化）での切り分け:**
+
+| 検出器 | conf_first | drop_contained |
+|---|---:|---:|
+| V30 1280学習（参照値） | 0.3977 | — |
+| V38 augmentation強化 | 0.3889 | 0.3950 |
+| V39 モデルサイズ拡大 | 0.3859 | 0.3941 |
+
+P2-2/P2-3（imgsz変更）は生YOLOでは検出器が僅かに改善していたのに確定後処理では負けていた（後処理相性の問題）。**V38/V39はこれと異なり、生YOLOの時点で既にV30基準を下回っている**。つまり検出器そのものが悪化しており、後処理の相性問題では説明できない。
+
+**ただし単純な「効かなかった」で終わらせられない交絡がある:**
+
+- V38はV35と同じ70epochのまま`mosaic`と`copy_paste`だけ大幅に強めた。YOLOの標準運用では`close_mosaic`で終盤にmosaicを切って収束させる設計になっており、augmentationを強めるほど収束に必要なepoch数も増えるのが一般的。70epoch据え置きでは収束不足だった疑いが強い。
+- V39はモデルを大きくした一方、VRAM制約で`batch`を4→2に落としたが、`lr0=7e-4`（batch4向けにチューニングされた値）はそのまま使った。実効バッチサイズが半減すると勾配が不安定になりやすく、学習率かgradient accumulationで補正しないと大型モデルの効果を正しく測れない。
+
+このためこの2つの実験結果は「augmentation強化」「モデル大型化」という方向性そのものを完全に否定するものではなく、「V35のスケジュールをそのまま流用した単軸変更ではダメだった」という結果として記録する。imgsz(P2-2/P2-3)・augmentation(V38)・モデルサイズ(V39)の4本連続不合格により、**検出器側を1箇所だけいじって確定後処理はそのまま、というアプローチの限界**が見えてきた。次にこの方向を続けるなら、変更した軸に応じてepoch数・学習率・close_mosaic時期なども一緒に調整する必要がある。
+
+成果物: `output/v38_v39/v38_v39_raw_yolo_fold0.json`、Kaggleカーネル `shingo257/v37-kaggle-timing-probe`（パイプライン疎通確認、fold0のみ3epochタイミング計測: yolo11m-seg/imgsz1280/batch4で1epoch約224.5秒、70epoch換算で約4.37時間）、`shingo257/v38-kaggle-augmentation-probe`、`shingo257/v39-kaggle-modelsize-probe`（いずれも非公開）。
+
+**つまずいた点（再現性のため記録）:**
+
+- Kaggleのinput マウントレイアウトは `/kaggle/input/datasets/<owner>/<slug>/` 形式（`/kaggle/input/<slug>/` 決め打ちだと`FileNotFoundError`になる）。バージョンで変わりうるので `Path("/kaggle/input").rglob("grouped_folds.csv")` のようなglob探索で解決すること
+- `kaggle kernels output` はWindowsのコンソールコードページ(cp932)によっては絵文字入りログで`UnicodeEncodeError`になる。標準出力をファイルへリダイレクト（`> log.txt 2>&1`）すれば回避できる
+- YOLOの`cache="disk"`は`/kaggle/working`配下（=kernel出力）に画像ごとの`.npy`キャッシュを作るため、kernel outputが数GB〜10GB超に膨れる。ローカルのダウンロード先ディスクを圧迫するので、必要なファイルだけ`kaggle kernels output --file-pattern`で絞って取得すること
+- Kaggleの同一アカウントはプロジェクトを跨いでGPUバッチセッション上限が2本に共有される。他プロジェクトのカーネルが動いていると`Kernel push error: Maximum batch GPU session count of 2 reached`になる。他プロジェクトを止めずに空き待ちでリトライするのが安全
+
+### 27.3 後処理再設計: 癒着分離(watershed split)は不採用（改訂8、2026-08-17）
+
+§27.1の示唆のもう一方（検出器強化ではなく後処理側）として、「近接する2個体をYOLOが1つの塊として検出し、一方がovercoverage・もう一方がundercoverage(検出漏れ)になる」という癒着仮説を検証した。GTを使わず、refiner shrink後のmask形状だけから、距離変換の大域閾値でcore領域を作り、core領域が2つ以上の連結成分に分かれる場合だけwatershedで分割する(`src/blob_split.py`)。挿入位置はrefiner shrink後・排他化(`drop_contained_then_area_asc`)前。
+
+合成図形（ダンベル・単一楕円・湾曲したフィラメント）では正しく動作したが、実データでは閾値に非常に敏感だった。
+
+| core_fraction | 40観測でのsplit発生回数 | PQ(baseline 0.4388 比) |
+|---|---:|---:|
+| 0.55 | 131回 | 0.2369（Δ **-0.2020**、壊滅的） |
+| 0.80 | 2回 | 0.4361（Δ -0.0027、ほぼ横ばい） |
+
+0.55では細長い実際のフィラメント形状に対して過分割が暴発し、PQが半減した。0.80まで厳しくすると過分割は止まるが、40観測中2回しか発動せず、near-miss被覆モード診断で見つかったunder/overcoverage(707観測で計833件、1画像あたり約1.2件)の規模に対してあまりに希少で、効果はノイズレベルに埋もれた。**「物理的に癒着した2個体」という現象自体が、under/overcoverageの主因ではない**と判断し、この実装での採用は見送る。全707観測での確認は行わずローカル40観測の段階で判断した（明確な負の結果のため）。
+
+成果物: `src/blob_split.py`、`scratch/run_blob_split_probe.py`、`output/v35/blob_split_probe.json`。
+
+### 27.4 交絡を補正したV40/V41の再測定（改訂9、2026-08-18）
+
+§27.2で「V38/V39はV35のスケジュールを流用した単軸変更なので交絡がある」と書いた。
+交絡を補正して再測定した結果、**epoch/warmup補正（V40）もlr補正（V41）も改善しなかった**。
+
+| 実験 | 変更点 | fold0 OOF PQ | 基準0.4393との差 | 判定 |
+|---|---|---:|---:|---|
+| V38（元） | mosaic0.75+copy_paste0.3、epoch70 | 0.4290 | -0.0103 | 不合格 |
+| **V40（epoch/warmup補正）** | 同上 + epoch70→**100**、warmup3→**5** | **0.4272** | **-0.0121** | 不合格（V38よりさらに悪化） |
+| V39（元） | yolo11l-seg、batch4→2、lr0=7e-4据え置き | 0.4328 | -0.0065 | 不合格 |
+| **V41（lr補正）** | 同上 + lr0 7e-4→**3.5e-4**（線形則） | **0.4316** | **-0.0077** | 不合格（V39よりわずかに悪化） |
+
+V40はColab/Kaggle双方でなくKaggle実行（実測27372秒≈7.6時間）。V41はKaggleで
+`Maximum batch GPU session count of 2 reached`（他プロジェクトとGPU枠を共有）に
+遭遇後、ユーザーがGPU無料枠残量（週30時間中残り約12時間）を懸念して手動停止し、
+Colab版（`scratch/build_v41_colab_modelsize_v2.py` → Drive経由、resume機構つき）
+へ切り替えて完走させた（fold0 PQ 0.4316）。
+
+**読み方:** 交絡の補正は効果を反転させなかった。むしろV40はV38よりわずかに悪化しており、
+「epoch不足」「lr不整合」という交絡仮説そのものが的外れだった可能性が高い。
+これでimgsz（P2-2/P2-3）・augmentation（V38/V40）・モデルサイズ（V39/V41）の
+**検出器強化系6本すべてが不合格**になった。V35確定パイプライン（yolo11m-seg、
+imgsz1280、batch4、epoch70、mosaic0.20、shrink@0.45+drop_contained_then_area_asc）
+は、この課題・このデータ規模（707観測、fold0は約470枚学習）に対してかなり
+局所最適に近い設定であり、検出器側の単純な強化では動かしにくいことが示唆される。
+次に検出器を強化するなら、単一ハイパーパラメータの変更ではなく、データ拡張
+（アノテーション不足を補う合成データ生成など）や複数軸の同時最適化が必要になる
+可能性が高いが、コストが跳ね上がるため慎重な判断を要する。
+
+成果物: `scratch/build_v40_kaggle_augmentation_v2.py`、
+`scratch/build_v41_kaggle_modelsize_v2.py`（Kaggle、途中停止）、
+`scratch/build_v41_colab_modelsize_v2.py`（Colab、完走）。
+
+### 27.5 multi-seedアンサンブルも不合格（改訂9、2026-08-18）
+
+検出器のハイパーパラメータには一切触れず、V35確定と完全同一設定（yolo11m-seg,
+imgsz1280, batch4, epoch70, mosaic0.20）で`seed`だけ`3407→8407`に変えて
+fold0モデルをもう1本学習した（`scratch/build_v42_kaggle_multiseed_probe.py`、
+Kaggle T4、GPU予算節約のためseed3407本体は既存OOFキャッシュを再利用）。
+画像ごとに両seedのproposalを単純に連結し、V35確定後処理（refiner shrink@0.45
++ drop_contained_then_area_asc）へそのまま通してアンサンブルPQを測った
+（`scratch/run_multiseed_ensemble_probe.py`、ローカルCPU、236観測=fold0全件）。
+
+| | PQ | TP | FP | FN |
+|---|---:|---:|---:|---:|
+| single seed3407（ローカル再計算、サニティチェック） | 0.4393 | 1713 | 789 | 1036 |
+| ensemble seed3407+8407 | **0.4315** | 1766 | **979** | 983 |
+
+single seed3407の再計算値がV35確定fold0実測(0.4393)と完全一致しており、
+採点手法の整合性は確認できた。アンサンブルはTPを+53増やしたが、FPを+190
+増やしてしまい正味でΔ**-0.0078**の悪化。単純な足し合わせでは、2モデル
+それぞれ固有の誤検出が両方とも残ってしまい、`drop_contained`（IoU≥0.90の
+重複除去）では吸収しきれなかった。より洗練された統合（WBF等の重み付き融合、
+2モデルの一致度でconfを再スコアリングする等）なら結果が変わる可能性は
+残るが、単純連結という最も安価なアンサンブル手法は不採用。
+
+**これで、後処理再設計（watershed癒着分離、§27.3）・検出器強化6本
+（imgsz/augmentation/モデルサイズ、§27.2・§27.4）・multi-seedアンサンブル
+（本節）の**すべてが不合格**となった。V35確定パイプラインはこのデータ規模
+（707観測）に対してかなり頑健な局所最適であることが、複数の独立な角度から
+裏付けられた。
+
+成果物: `scratch/build_v42_kaggle_multiseed_probe.py`、
+`scratch/run_multiseed_ensemble_probe.py`、`output/v42/multiseed_ensemble_probe.json`。
+
+### 27.6 WBF(Weighted Mask Fusion)で単純連結より改善、ただし基準未満（2026-08-18〜19）
+
+単純連結アンサンブルの敗因（FP+190がTP+53を上回る）を受け、IoUクラスタ化+
+confidence加重平均でmaskを統合するWBF（`src/mask_wbf.py`、box用WBFのmask版、
+合成テストで往復性・クラスタリング挙動を確認済み）を実装し、
+refinerの**前**（生YOLO proposal同士）に挿入して比較した
+（`scratch/run_multiseed_wbf_probe.py`、fold0全236観測、ローカルCPU）。
+
+| 統合方式 | fold0 PQ | 基準0.4393との差 | TP | FP |
+|---|---:|---:|---:|---:|
+| 単純連結（§27.5） | 0.4315 | -0.0078 | 1766 | 979 |
+| **WBF(iou≥0.5、全クラスタ保持)** | **0.4366** | **-0.0027(最良)** | 1787 | 972 |
+| WBF(iou≥0.5、コンセンサス限定=2seed一致のみ) | 0.4355 | -0.0038 | 1635 | 690 |
+
+WBF全保持が最良。単純連結よりFP抑制とTP確保のバランスが改善したが、まだ
+基準を下回る。コンセンサス限定（単独seedのクラスタ378件を全除外）は
+FPを大きく削れた（789→690）が、その378件の中に真陽性も相当数含まれていた
+ため、TPも大きく失って（1713→1635）正味では中間の結果に留まった。
+**「片方のseedだけの検出＝誤検出」という単純な仮定は成り立たない。**
+
+次の一手として、追加学習なしで試せる**TTA(test-time augmentation)+WBF**を
+Colabで実行中（`scratch/build_v43_colab_tta_wbf_probe.py`、V30 fold0確定
+モデルに対し元画像/左右反転/上下反転/180度回転の4視点で推論しWBF統合、
+GPU予算をほぼ使わない）。結果は追記予定。
+
+**IoU閾値スイープ(60観測サンプル、ローカルCPU、2026-08-19):** `iou_threshold`を
+0.3/0.4/0.6/0.7で振ったところ、いずれも0.5(Δ-0.0027、全236観測)より劣った
+(0.3: Δ-0.0053、0.4: Δ-0.0039、0.6: Δ-0.0106、0.7: Δ-0.0094)。0.5付近が
+局所最適で、閾値だけのチューニングによるさらなる改善余地は乏しい。
+
+成果物: `src/mask_wbf.py`、`scratch/run_multiseed_wbf_probe.py`、
+`output/v42/multiseed_wbf_probe_iou0.50.json`、
+`output/v42/multiseed_wbf_probe_iou0.50_consensus2.json`、
+`output/v42/multiseed_wbf_probe_iou{0.30,0.40,0.60,0.70}.json`(60観測サンプル)。
+
 ## 28. 時間とコストの概算
 
 実測例であり保証値ではない。
@@ -1233,6 +1513,14 @@ T4はA100より遅いがCU消費が大幅に低かった。前処理、後処理
 |---|---|---|
 | 初版 | 2026-08-15 | V19〜V34の経緯、Public最高0.35、V34のゲート不合格までを記録 |
 | 改訂2 | 2026-08-15 | **リーダーボード指標がPanoptic Qualityであることを確認し、§2.1として追加。** §7・§8.1・§9.1・§13.2・§19・§25・§26・§31・§21を改訂。アノテータ不一致によるPQ天井を実測（§2.1.5）。Kaggle外の最終提出要件を追記（§19.0）。GPU不要の診断をローカルPCで回す方針を追加（§12.2.1） |
+| 改訂3 | 2026-08-16 | fold1/2 refiner学習、全fold重畳検証。確定構成 PQ 0.4426、ゲート 0.4526 |
+| 改訂4 | 2026-08-16 | V35最終提出 Public **0.37**。P2-2（imgsz 1536 fold0 探針）を次の実験として追加 |
+| 改訂5 | 2026-08-16 | P2-2 不合格（fold0 PQ 0.4295）。提出正本は V35。次は P2-3（推論 imgsz のみ） |
+| 改訂6 | 2026-08-16 | P2-3 不合格（fold0 PQ 0.4320）。解像度レバー停止。提出正本は V35 |
+| 改訂7 | 2026-08-16 | 全707観測でcase diagnostics・near-miss被覆モード分類が完走。undercoverage 45% / overcoverage 42%でほぼ拮抗、hard FNがhard FPを37%上回る。§27.1 |
+| 改訂8 | 2026-08-17 | Kaggle無料GPUでV38(augmentation強化)・V39(モデルサイズ拡大)をfold0実行、共に不合格(PQ 0.4290/0.4328 < 0.4393)。生YOLOも悪化しており後処理相性では説明不可。ただしV35と同じ70epochスケジュール流用が交絡。§27.2 |
+| 改訂9 | 2026-08-18 | watershed癒着分離(§27.3)・交絡補正版V40/V41(§27.4、検出器強化系6本連続不合格)・multi-seedアンサンブルV42(§27.5、FP+190>TP+53で不合格)、全経路不合格。V35は頑健な局所最適と判断 |
+
 ## 31. 用語と指標の最小定義
 
 | 用語 | この文書での意味 |

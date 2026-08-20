@@ -1,0 +1,37 @@
+{
+  "scope": "fold0 236観測、V30 重み・推論 imgsz 1536、refiner なし",
+  "table": [
+    {
+      "cache": "C:\\Users\\hara\\AppData\\Local\\Temp\\solar_p2_3\\oof_npz",
+      "rule": "conf_first",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.40263,
+      "sq": 0.665281,
+      "rq": 0.605203,
+      "tp": 1710,
+      "fp": 1192,
+      "fn": 1039,
+      "near_miss": 372,
+      "inst/img": 7.504237288135593,
+      "detector": "v30w_infer1536",
+      "baseline_fold0_raw_conf_first": 0.397686
+    },
+    {
+      "cache": "C:\\Users\\hara\\AppData\\Local\\Temp\\solar_p2_3\\oof_npz",
+      "rule": "drop_contained_then_area_asc",
+      "conf": 0.26,
+      "observations": 236,
+      "pq": 0.412052,
+      "sq": 0.665489,
+      "rq": 0.619171,
+      "tp": 1673,
+      "fp": 982,
+      "fn": 1076,
+      "near_miss": 351,
+      "inst/img": 6.877118644067797,
+      "detector": "v30w_infer1536",
+      "baseline_fold0_raw_conf_first": 0.397686
+    }
+  ]
+}

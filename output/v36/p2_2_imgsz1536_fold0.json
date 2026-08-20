@@ -1,0 +1,19 @@
+{
+  "imgsz": 1536,
+  "train_imgsz": 1536,
+  "fold": 0,
+  "observations": 236,
+  "pq": 0.429459,
+  "sq": 0.674682,
+  "rq": 0.636535,
+  "near_miss": 329,
+  "inst/img": 6.601694915254237,
+  "baseline_fold0_pq": 0.4393,
+  "delta": -0.009841,
+  "continue_fold12": false,
+  "decision": "fold0 がベースラインを超えていない。全foldへ進まない",
+  "postprocess": "conf 0.26 + shrink@0.45 + drop_contained_then_area_asc",
+  "source": "Colab A100, solar_filament_v36_yolo_imgsz1536_fold0_colab.ipynb, 2026-08-16",
+  "weights": "solar_filament_v35/runs/yolo_imgsz1536_fold_0/weights/best.pt",
+  "note": "YOLO val Mask mAP50-95 は V30 fold0 より良い (0.238 vs 0.227) が、公式 PQ は悪化。Ultralytics mAP は採用判定に使わない。"
+}

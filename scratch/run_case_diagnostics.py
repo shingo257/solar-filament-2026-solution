@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from collections import defaultdict
@@ -52,6 +53,91 @@ REFINER_METHOD = "shrink"
 REFINER_THRESHOLD = 0.45
 DISPLAY = 640            # 表示用の縮小サイズ。2048 のまま描くと図が重い
 EVAL_SIZE = 2048
+
+
+def refiner_checkpoint_path(fold: int) -> Path:
+    """Drive 直読みが OSError になることがあるので TEMP コピーを優先する。"""
+    local = Path(os.environ.get("TEMP", "C:/Temp")) / "solar_diag_ckpts" / f"mediseg_refiner_fold{fold}_resume.pt"
+    if local.exists():
+        return local
+    return ARTIFACTS / f"mediseg_refiner_fold{fold}_resume.pt"
+
+
+def image_dir() -> Path:
+    """707枚を毎回 Drive から読むと同期不良で無言クラッシュすることがある。TEMP コピーを優先する。"""
+    local = Path(os.environ.get("TEMP", "C:/Temp")) / "solar_diag_images"
+    if local.exists() and any(local.iterdir()):
+        return local
+    return PREPROC
+
+
+def oof_cache_dir() -> Path:
+    """OOF npz キャッシュも同じ理由で Drive 直読みが途中で OSError になる。TEMP コピーを優先する。"""
+    local = Path(os.environ.get("TEMP", "C:/Temp")) / "solar_diag_oof"
+    if local.exists() and any(local.iterdir()):
+        return local
+    return OOF_CACHE
+
+
+def compute_case(name, fold, refiners, oof_root, image_root, gt_rles, file_to_ids):
+    """1画像分の推論と局所PQを計算する。呼び出し側で row と可視化データを使い分ける。"""
+    masks, confidences = load_yolo_cache(
+        oof_root / f"yolo_fold_{fold}" / f"{Path(name).stem}.npz")
+    keep = [i for i, (m, s) in enumerate(zip(masks, confidences))
+            if s >= CONF and m.sum() >= MIN_AREA]
+    proposals = [masks[i] for i in keep]
+    scores = confidences[keep] if len(keep) else np.zeros(0, np.float32)
+    order = list(np.argsort(-scores))
+    variants = [gt_rles[i] for i in file_to_ids[name]]
+
+    image = imread_unicode(image_root / name)
+    if image is None:
+        return None, None
+
+    if proposals:
+        boxes, probabilities = refine_batch(refiners[fold], image, proposals)
+        refined = [build_variant(proposals[i], boxes[i], probabilities[i],
+                                 REFINER_METHOD, REFINER_THRESHOLD)
+                   for i in range(len(proposals))]
+    else:
+        refined = []
+    final = greedy_disjoint(refined, order)
+    final_rles = masks_to_rles(final)
+
+    local = PanopticQuality()
+    matched_flags = np.zeros(len(final), dtype=bool)
+    gt_hit_total = gt_total = 0
+    near = 0
+    for truth in variants:
+        matrix = iou_matrix(truth, final_rles)
+        local.add_matrix(matrix, len(truth), len(final_rles))
+        if matrix.size:
+            hits = matrix > 0.5
+            matched_flags |= hits.any(axis=0)
+            gt_hit_total += int(hits.any(axis=1).sum())
+            near += int(((matrix > 0.3) & (matrix <= 0.5)).any(axis=0).sum())
+        gt_total += len(truth)
+
+    summary = local.summary()
+    row = {
+        "file_name": name,
+        "fold": fold,
+        "n_annotators": len(variants),
+        "gt_count_mean": float(np.mean([len(v) for v in variants])),
+        "gt_count_min": int(min(len(v) for v in variants)),
+        "gt_count_max": int(max(len(v) for v in variants)),
+        "proposal_count": len(proposals),
+        "final_count": len(final),
+        "tp": summary["tp"], "fp": summary["fp"], "fn": summary["fn"],
+        "local_pq": summary["pq"], "local_sq": summary["sq"], "local_rq": summary["rq"],
+        "loss_units": 0.5 * (summary["fp"] + summary["fn"]),
+        "near_miss": near,
+        "gt_hit_rate": gt_hit_total / max(gt_total, 1),
+        "foreground_fraction": float(np.mean([
+            mask_util.area(v).sum() for v in variants]) / (EVAL_SIZE ** 2)) if variants else 0.0,
+    }
+    visuals = (image, variants, proposals, final, matched_flags)
+    return row, visuals
 
 
 def shrink_for_display(mask: np.ndarray) -> np.ndarray:
@@ -108,89 +194,45 @@ def main() -> int:
         for image_id, anns in annotations.items()
     }
 
+    oof_root = oof_cache_dir()
+    print(f"reading OOF cache from {oof_root}", flush=True)
+
     fold_frame = pd.read_csv(FOLDS_CSV)
     fold_of_file = dict(zip(fold_frame["file_name"], fold_frame["fold"].astype(int)))
     targets = [n for n in sorted(file_to_ids)
-               if (OOF_CACHE / f"yolo_fold_{fold_of_file[n]}" / f"{Path(n).stem}.npz").exists()]
+               if (oof_root / f"yolo_fold_{fold_of_file[n]}" / f"{Path(n).stem}.npz").exists()]
     if args.limit:
         targets = targets[:args.limit]
 
+    image_root = image_dir()
+    print(f"reading images from {image_root}", flush=True)
+
     refiners = {}
     for fold in FOLDS:
-        checkpoint = torch.load(ARTIFACTS / f"mediseg_refiner_fold{fold}_resume.pt",
-                                map_location="cpu")
+        path = refiner_checkpoint_path(fold)
+        print(f"loading refiner fold{fold} from {path}", flush=True)
+        checkpoint = torch.load(path, map_location="cpu", weights_only=False)
         model = MediSegUNet(3, 1, False).eval()
         model.load_state_dict(checkpoint.get("best_model") or checkpoint["model"], strict=True)
         refiners[fold] = model
 
+    # 1パス目: 全707観測の診断行だけを作る。画像/マスクは各回で捨てる
+    # (全件分を保持すると 2048x2048 のマスクが積み上がってメモリ枯渇するため — worst30 は2パス目で再計算する)
     rows = []
-    keep_for_sheet = {}
     started = time.perf_counter()
     for position, name in enumerate(targets, 1):
         fold = fold_of_file[name]
         image_started = time.perf_counter()
-        masks, confidences = load_yolo_cache(
-            OOF_CACHE / f"yolo_fold_{fold}" / f"{Path(name).stem}.npz")
-        keep = [i for i, (m, s) in enumerate(zip(masks, confidences))
-                if s >= CONF and m.sum() >= MIN_AREA]
-        proposals = [masks[i] for i in keep]
-        scores = confidences[keep] if len(keep) else np.zeros(0, np.float32)
-        order = list(np.argsort(-scores))
-        variants = [gt_rles[i] for i in file_to_ids[name]]
-
-        image = imread_unicode(PREPROC / name)
-        if image is None:
+        row, _visuals = compute_case(name, fold, refiners, oof_root, image_root, gt_rles, file_to_ids)
+        if row is None:
             continue
+        row["seconds"] = round(time.perf_counter() - image_started, 3)
+        rows.append(row)
 
-        if proposals:
-            boxes, probabilities = refine_batch(refiners[fold], image, proposals)
-            refined = [build_variant(proposals[i], boxes[i], probabilities[i],
-                                     REFINER_METHOD, REFINER_THRESHOLD)
-                       for i in range(len(proposals))]
-        else:
-            boxes, probabilities, refined = [], [], []
-        final = greedy_disjoint(refined, order)
-        final_rles = masks_to_rles(final)
-
-        # 局所PQ（順位付け用。公式値ではない）
-        local = PanopticQuality()
-        matched_flags = np.zeros(len(final), dtype=bool)
-        gt_hit_total = gt_total = 0
-        near = 0
-        for truth in variants:
-            matrix = iou_matrix(truth, final_rles)
-            local.add_matrix(matrix, len(truth), len(final_rles))
-            if matrix.size:
-                hits = matrix > 0.5
-                matched_flags |= hits.any(axis=0)
-                gt_hit_total += int(hits.any(axis=1).sum())
-                near += int(((matrix > 0.3) & (matrix <= 0.5)).any(axis=0).sum())
-            gt_total += len(truth)
-
-        summary = local.summary()
-        elapsed = time.perf_counter() - image_started
-        rows.append({
-            "file_name": name,
-            "fold": fold,
-            "n_annotators": len(variants),
-            "gt_count_mean": float(np.mean([len(v) for v in variants])),
-            "gt_count_min": int(min(len(v) for v in variants)),
-            "gt_count_max": int(max(len(v) for v in variants)),
-            "proposal_count": len(proposals),
-            "final_count": len(final),
-            "tp": summary["tp"], "fp": summary["fp"], "fn": summary["fn"],
-            "local_pq": summary["pq"], "local_sq": summary["sq"], "local_rq": summary["rq"],
-            "loss_units": 0.5 * (summary["fp"] + summary["fn"]),
-            "near_miss": near,
-            "gt_hit_rate": gt_hit_total / max(gt_total, 1),
-            "foreground_fraction": float(np.mean([
-                mask_util.area(v).sum() for v in variants]) / (EVAL_SIZE ** 2)) if variants else 0.0,
-            "seconds": round(elapsed, 3),
-        })
-        keep_for_sheet[name] = (image, variants, proposals, final, matched_flags)
-
-        if position % 50 == 0 or position == len(targets):
+        if position % 10 == 0 or position == len(targets):
             print(f"  {position}/{len(targets)}  {time.perf_counter() - started:.0f}s", flush=True)
+        if position % 50 == 0:
+            pd.DataFrame(rows).to_csv(args.out / "case_diagnostics.csv", index=False)
 
     frame = pd.DataFrame(rows)
     frame.to_csv(args.out / "case_diagnostics.csv", index=False)
@@ -206,13 +248,16 @@ def main() -> int:
                      "near_miss", "foreground_fraction", "n_annotators"]]
     print(numeric.corr()["loss_units"].round(3).to_string())
 
-    # contact sheet: 損失の大きい順
+    # contact sheet: 損失の大きい順。1パス目では画像を保持していないので worst30 だけ再計算する
     selected = frame.sort_values("loss_units", ascending=False).head(args.sheets)
+    print(f"\ncontact sheet 用に worst{len(selected)} を再計算します", flush=True)
     for rank, row in enumerate(selected.itertuples(index=False), 1):
         name = row.file_name
-        if name not in keep_for_sheet:
+        fold = fold_of_file[name]
+        _row, visuals = compute_case(name, fold, refiners, oof_root, image_root, gt_rles, file_to_ids)
+        if visuals is None:
             continue
-        image, variants, proposals, final, matched_flags = keep_for_sheet[name]
+        image, variants, proposals, final, matched_flags = visuals
         base = cv2.resize(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), (DISPLAY, DISPLAY),
                           interpolation=cv2.INTER_AREA)
 

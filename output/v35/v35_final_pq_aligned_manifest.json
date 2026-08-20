@@ -1,0 +1,15 @@
+{
+  "experiment_id": "v35_final_pq_aligned",
+  "metric_definition_version": "official-v1-2026-08-15",
+  "submission_conf": 0.26,
+  "ownership_rule": "drop_contained_then_area_asc",
+  "refiner_method": "shrink",
+  "refiner_threshold": 0.45,
+  "min_area": 20,
+  "source_pipeline_stack_json": "output/v35/pipeline_stack.json",
+  "fold_ensemble": "V30本体のensemble_proposalsを変更せず流用 (OOF検証対象外)",
+  "rows": 1301,
+  "submission_sha256": "10cd5f79000861b0c2fcdc103ad085efeb6f44589590bbc2c353b24c01402162",
+  "kaggle_public_score": "0.37",
+  "decision": "submitted 2026-08-16; public 0.37 (previous best V30b/V32 0.35)"
+}
