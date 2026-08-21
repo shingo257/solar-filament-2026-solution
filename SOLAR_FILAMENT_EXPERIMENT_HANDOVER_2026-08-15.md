@@ -1,6 +1,6 @@
 # Solar Filament Segmentation Challenge 2026 実験経緯・技術引継ぎ
 
-- 更新日: 2026-08-18（改訂9: 検出器強化6本・後処理再設計(watershed)・multi-seedアンサンブルの**全経路が不合格**。V35確定パイプラインはこの規模のデータに対してかなり頑健な局所最適であることが複数の角度から裏付けられた）
+- 更新日: 2026-08-20（改訂10: V35を競技用基準モデルと明示し、科学・実運用評価を`SCIENTIFIC_UTILITY_ROADMAP.md`へ分離）
 - 対象プロジェクト: `C:\work\code\ER-FlowScan\Solar_Filament_Segmentation`
 - 対象範囲: Kaggle提出形式の修正、V19～V35のモデル・後処理実験、Colab/Kaggle運用、既知の結果、未解決事項、次の推奨方針
 - 現在の結論: **確認できたPublic最高スコアは0.37（V35、2026-08-16提出）。** V34は全OOFゲート不合格のため提出していない。
@@ -12,6 +12,8 @@
 - **改訂7の要点: 全707観測でcase diagnostics（`output/v35/case_diagnostics.csv`）とnear-miss被覆モード分類（`output/v35/near_miss_modes.json`）を完走した。near-miss 955件中 undercoverage 433件(45%)・overcoverage 400件(42%)とほぼ拮抗し、単一モードが支配的ではない。ただしIoU≤0.3の完全な取りこぼし(hard FN 2138件)がIoU≤0.3の余剰検出(hard FP 1561件)を大きく上回り、loss_unitsは近接ミス数(r=0.853)とGT個体数(r=0.515)・proposal数(r=0.533)に強く相関する。損失最大の画像はGT 10〜21個体の密集シーンに集中する。§27.1 を参照。**
 - **改訂8の要点: Kaggle無料GPU枠でV38(augmentation強化: mosaic0.20→0.75+copy_paste0.3)とV39(モデルサイズ拡大: yolo11m-seg→yolo11l-seg、batch4→2)をfold0のみ・70epochで実行。fold0 OOF PQは V38が0.4290・V39が0.4328で、いずれもV35基準0.4393を下回り不合格。生YOLO(refinerなし)で切り分けたところ、P2-2/P2-3(後処理相性の問題で検出器自体は改善していた)と異なり、V38・V39は生YOLOの時点で既にV30基準(0.3977)を下回っており、検出器そのものが悪化している。ただしV38はV35と同じ70epochのままaugmentationだけ強めており収束不足の疑いが強く、V39はbatch4→2でlr0を据え置いたままなので実効バッチサイズ減少による学習不安定化が疑われる。単純な「強くする」だけでは効かないことが分かったが、学習スケジュール自体を合わせていない単軸変更なので、この2実験だけで「augmentation強化」「モデル大型化」という方向性自体を完全に否定はできない。§27.2 を参照。**
 - **改訂9の要点: 後処理再設計(watershed癒着分離)は実データで閾値に極端に敏感で不採用(§27.3)。V38/V39の交絡を補正した再測定(V40: epoch70→100+warmup3→5、V41: lr0 7e-4→3.5e-4)は、いずれも改善せず**むしろV38よりV40がわずかに悪化(0.4290→0.4272)**。V41はKaggleのGPUバッチセッション上限(他プロジェクトと共有)とユーザーのGPU無料枠残量懸念によりColab(Drive経由、resume機構つき)へ切り替えて完走(fold0 PQ 0.4316)。imgsz・augmentation・モデルサイズの検出器強化系が**6本連続で不合格**(§27.4)。さらにmulti-seedアンサンブル(V42: seed3407+8407を単純連結)も不合格(fold0 PQ 0.4315、Δ-0.0078、FP+190がTP+53を上回る、§27.5)。**後処理再設計・検出器強化・アンサンブルの全経路が不合格**となり、V35確定パイプラインはこのデータ規模に対してかなり頑健な局所最適であることが複数の角度から裏付けられた。**
+
+- **改訂10の要点: V35の局所最適はCompetitionトラックのPQについての結論であり、spine・barb・chirality・時系列・観測所間頑健性を証明しない。今後の科学・実運用計画、二段階S0/S1ゲート、文書更新契約は[`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md)を正本とする。**
 
 ## 1. この文書の読み方と証拠の区分
 
@@ -41,6 +43,7 @@
 7. V34はsemantic-firstへ処理順を反転したが、全OOF strict instance Dice `0.441074`、個体数誤差`2.846535`でV31より大幅悪化。提出ゲートが正しく停止した。
 8. 根本ボトルネックは、refinerのcrop境界精度よりも、**個体の検出漏れ、同一個体の重複、近接個体の結合／分断、検証と最終推論の不一致**にある。
 9. V35で後処理を全fold OOFのPQに整合させて提出し、Public **0.37** を得た（§2.1.8.3）。P2-2（imgsz 1536 再学習）と P2-3（推論 imgsz 1536）はいずれも fold0 で不合格（§2.1.8.4・§2.1.8.5）。解像度レバーは停止。提出正本は V35。
+10. **V35は競技用基準モデルであり、科学・実運用モデルとしては未受入。** PQ単独からchirality、CME解析、space-weather運用への有用性を主張しない。
 
 ## 2.1 【2026-08-15 改訂2】公式指標の確定と、それに伴う結論の差し替え
 
@@ -885,6 +888,13 @@ count errorは指標として捨てるのではなく、PQの分母に入るFN/F
 - pathological image向けにmax instances、max components、処理時間警告を入れる。
 - 公開0.69再現を続けるなら、元ノートブックのcommit／出力CSV／データfingerprintまで揃えて差分検証する。
 
+### 13.4 科学・実運用トラックへの移行
+
+§13.1〜13.3はCompetitionトラックの計画である。科学・実運用トラックではV35を固定baselineにし、
+最初にspine、接続性、barb、chirality、time/site holdoutの評価基盤を構築する。V34は競技ゲートで
+不合格だったが、topology probeとして科学指標で再評価する。実行順序、データ分割、二段階の昇格条件は
+[`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md)を正本とする。
+
 ## 14. やらない方がよいこと
 
 - semantic union Diceだけを根拠に提出する。
@@ -1478,6 +1488,13 @@ GPU予算をほぼ使わない）。結果は追記予定。
 `output/v42/multiseed_wbf_probe_iou0.50_consensus2.json`、
 `output/v42/multiseed_wbf_probe_iou{0.30,0.40,0.60,0.70}.json`(60観測サンプル)。
 
+**コンセンサス優先順位付け(2026-08-19〜20、全236観測):** drop_contained後の
+排他化順序を「面積昇順のみ」から「コンセンサス数(2seed一致を優先)降順→
+面積昇順」に変えて再測定。fold0 PQ 0.43674(Δ-0.0026)で、通常WBF(0.43658、
+Δ-0.0027)よりわずかに改善したが、TP+1/FP-1程度でほぼノイズレベル。
+排他化の順序を変えるだけでは大きな改善は見込めないと判断し、この軸の
+チューニングはここで打ち止め。
+
 ## 28. 時間とコストの概算
 
 実測例であり保証値ではない。
@@ -1655,6 +1672,13 @@ OOF metricだけでなく、そのmetricを計算したコードのversion/hash�
 - 13.2のacceptance gateを満たす。
 - 完全なmanifest、validator report、CSV hashがある。
 - 同一日の提出候補間に明確な仮説差があり、同値後処理の連投ではない。
+
+### 科学・実運用モデルへ昇格
+
+- `SCIENTIFIC_UTILITY_ROADMAP.md`のS0を完了し、主要endpointと最小改善幅を事前登録している。
+- spine・接続性・chiralityなど主要科学endpointを改善し、重要な副次endpointを破壊しない。
+- time-block holdoutで改善方向が再現し、可能ならsite holdoutも評価している。
+- worst-case、latency、入力異常、provenanceを監査し、PQ単独を昇格理由にしていない。
 
 ## 37. 引継ぎ時に確認する質問
 

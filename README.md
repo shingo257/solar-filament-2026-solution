@@ -64,6 +64,19 @@ P2-3（V30 重みのまま推論 imgsz 1536）も PQ 0.4320 < 0.4393 で不合�
 
 - [`V35_PQ_REALIGNMENT_REPORT_2026-08-15.md`](V35_PQ_REALIGNMENT_REPORT_2026-08-15.md) — 指標再整合と実測（最新の作業報告）
 - [`SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md`](SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md) — V19〜V35 の全経緯、既知の落とし穴、提出仕様
+- [`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md) — 科学・実運用価値を検証する今後の正本計画
+
+### 2.1 科学・実運用上の位置づけ
+
+V35は、公式PQに整合した**競技用基準モデル**である。全fold OOFの改善は確認済みだが、
+PQ改善だけではspine、barb、chirality、時間発展、観測条件変化への有用性を証明しない。
+現時点の用途主張は「フィラメント候補抽出とinstanceカタログ作成の候補」までに限定し、
+space-weather運用やchirality推定への適合は`not evaluated`と扱う。
+
+今後はCompetitionとScientific / Operationalを別トラックで管理する。次期モデルを科学・実運用候補へ
+昇格するには、PQに加えてspine・接続性・barb・chirality・時系列・time/site holdoutを評価する。
+数値ゲートはV35、raw YOLO、V34を同一条件で再評価してから事前登録する。詳細と実行順序は
+[`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md)を正本とする。
 
 ---
 
@@ -88,6 +101,7 @@ H-Alpha 2048x2048
 **refiner は「削る」のであって「伸ばす」のではない。** `guided`（外側へ k 画素足せる）が
 `shrink`（内側しか削れない）に全閾値で劣るという実測は、YOLO の候補が既に過剰に覆っている
 ことを意味する。細構造を拾うために膨らませる直感は、IoU と 0.5 の崖の下では裏目に出る。
+これはPQ上の結論であり、`shrink`がspineやbarbを最もよく保存することは未確認である。
 
 ---
 
@@ -194,6 +208,7 @@ python scratch/build_v36_infer_imgsz_probe.py   # P2-3: 不合格（推論 imgsz
 HANDOVER §14 の要約。いずれも実測で裏付けられた失敗経路。
 
 - semantic union Dice や crop Dice だけを根拠に提出する
+- PQだけを根拠に、chirality・CME解析・実運用への有用性を主張する
 - 単一 fold の後処理 best をそのまま test へ適用する（V31/V34 で一般化しなかった）
 - overlap のある CSV をそのまま提出する
 - 公開ノートブックの申告スコアを、同一条件の再現なしに性能根拠として扱う

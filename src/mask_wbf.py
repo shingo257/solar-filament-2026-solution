@@ -33,6 +33,7 @@ def weighted_mask_fusion(
     scores: np.ndarray,
     source_ids: list[int] | None = None,
     iou_threshold: float = 0.5,
+    vote_threshold: float = 0.5,
 ) -> tuple[list[np.ndarray], np.ndarray, list[int]]:
     """複数seed分のmask提案をIoUクラスタ化し、加重平均で統合する。
 
@@ -44,6 +45,9 @@ def weighted_mask_fusion(
         iou_threshold: この値以上のIoUを同一個体とみなしてクラスタ化する。
             drop_containedの0.90より緩い値を想定(異なるseedの検出は
             境界が微妙にずれるため、厳しすぎると同一個体でも別クラスタになる)。
+        vote_threshold: confidence加重平均マスクをこの閾値で二値化する。
+            0.5より低いと統合maskが大きくなる(overcoverage方向)、
+            高いと小さくなる(undercoverage方向)。
 
     Returns:
         (統合後のmaskリスト, 統合後のscore配列, 各クラスタの由来seed数リスト)
@@ -81,7 +85,7 @@ def weighted_mask_fusion(
         accum = np.zeros(masks[members[0]].shape, dtype=np.float64)
         for member_index, weight in zip(members, weights):
             accum += masks[member_index].astype(np.float64) * weight
-        fused_mask = accum >= 0.5
+        fused_mask = accum >= vote_threshold
         if fused_mask.sum() == 0:
             continue
         fused_masks.append(fused_mask)

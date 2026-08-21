@@ -121,6 +121,8 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--threads", type=int, default=14)
     parser.add_argument("--iou-threshold", type=float, default=0.5)
+    parser.add_argument("--vote-threshold", type=float, default=0.5,
+                        help="WBF融合maskの二値化閾値(pixel-wise加重平均に対して)")
     parser.add_argument("--require-consensus", action="store_true",
                         help="2seedとも検出した(コンセンサス)クラスタだけを残す")
     parser.add_argument(
@@ -197,7 +199,8 @@ def main() -> int:
         combined_scores = np.concatenate([scores1, scores2]) if (proposals1 or proposals2) else np.zeros(0, np.float32)
         source_ids = [0] * len(proposals1) + [1] * len(proposals2)
         fused_masks, fused_scores, fused_counts = weighted_mask_fusion(
-            combined_masks, combined_scores, source_ids, iou_threshold=args.iou_threshold)
+            combined_masks, combined_scores, source_ids, iou_threshold=args.iou_threshold,
+            vote_threshold=args.vote_threshold)
         for count in fused_counts:
             consensus_counter[count] = consensus_counter.get(count, 0) + 1
 
@@ -255,6 +258,10 @@ def main() -> int:
                                  or summary_consensus_order["pq"] > BASELINE_FOLD0_PQ),
     }
     suffix = "_consensus2" if args.require_consensus else ""
+    if args.vote_threshold != 0.5:
+        suffix += f"_vote{args.vote_threshold:.2f}"
+    if args.limit:
+        suffix += f"_limit{args.limit}"
     (args.out / f"multiseed_wbf_probe_iou{args.iou_threshold:.2f}{suffix}.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))

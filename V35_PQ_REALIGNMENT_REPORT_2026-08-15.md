@@ -3,6 +3,7 @@
 - 作成日: 2026-08-15
 - 対象: `C:\work\code\ER-FlowScan\Solar_Filament_Segmentation`
 - 位置づけ: 本日の作業報告。長期の経緯は `SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md`（§2.1 が本日の改訂）
+- 科学・実運用上の位置づけ: V35は競技用基準モデル。今後の評価は`SCIENTIFIC_UTILITY_ROADMAP.md`を正本とする
 - 実行環境: すべてローカルPC（GPU不使用）。Colab は refiner 学習の 1 回のみ
 
 ---
@@ -232,6 +233,16 @@ Drive 側は `solar_filament_v30/artifacts/` に
 ---
 
 ## 8. 次にやること
+
+### 8.0 2026-08-20以降の判断境界
+
+本報告の「次にやること」はCompetitionトラックのPQ改善計画として読む。V35のPQ改善は、
+spine、barb、chirality、時間発展、観測所間頑健性の改善を意味しない。特に`shrink`は
+proposal外の細構造を復元できないため、科学・実運用候補への昇格には別評価が必要である。
+
+今後は[`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md)に従い、最初に
+V35、raw YOLO、V34をspine・接続性・境界・split/merge・層別条件で再評価する。S0完了前に
+科学トラックの数値ゲートを推定で置かず、PQ単独を実運用への昇格理由にしない。
 
 ### 8.1 実行中
 
