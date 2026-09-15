@@ -1,0 +1,13 @@
+{
+  "schema_version": "s0-science-rescore-v1",
+  "eval_size": 512,
+  "matching": "Hungarian IoU >= 0.5 at eval_size; pq_512 is diagnostic, not Kaggle PQ",
+  "models": [
+    "raw",
+    "v34"
+  ],
+  "observations": 3,
+  "elapsed_seconds": 0.014243600002373569,
+  "case_csv": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_case_metrics_limit3.csv",
+  "summary_csv": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_model_summary_limit3.csv"
+}

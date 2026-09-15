@@ -1,0 +1,45 @@
+{
+  "scope": "236観測、fold0のみ。free variant(候補との交差なし)閾値スイープ",
+  "baseline_shrink045_fold0_pq": 0.4393,
+  "results": {
+    "0.85": {
+      "pq": 0.4343966722733536,
+      "sq": 0.6731480624389505,
+      "rq": 0.6453211358871737,
+      "tp": 1693,
+      "fp": 805,
+      "fn": 1056,
+      "denominator": 2623.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.004903,
+      "beats_baseline": false
+    },
+    "0.9": {
+      "pq": 0.43357518507969534,
+      "sq": 0.673054323379184,
+      "rq": 0.6441904761904762,
+      "tp": 1691,
+      "fp": 810,
+      "fn": 1058,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.005725,
+      "beats_baseline": false
+    },
+    "0.95": {
+      "pq": 0.4239455092892997,
+      "sq": 0.6690589231086994,
+      "rq": 0.6336445037149934,
+      "tp": 1663,
+      "fp": 837,
+      "fn": 1086,
+      "denominator": 2624.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.015354,
+      "beats_baseline": false
+    }
+  }
+}

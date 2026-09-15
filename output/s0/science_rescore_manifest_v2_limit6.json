@@ -1,0 +1,96 @@
+{
+  "schema_version": "s0-science-rescore-v2",
+  "eval_size": 512,
+  "matching": "Hungarian IoU > 0.5 at eval_size; pq_512 is diagnostic, not Kaggle PQ",
+  "models": [
+    "raw",
+    "v35",
+    "v34",
+    "v42"
+  ],
+  "observations": 6,
+  "annotator_variants": 11,
+  "elapsed_seconds": 9.16798130000825,
+  "bootstrap_repeats": 50,
+  "cluster_unit": "file_name observation",
+  "prediction_cache": {
+    "version": "s0-science-prediction-v2",
+    "root": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\prediction_cache_512",
+    "statistics": {
+      "raw": {
+        "hits": 6,
+        "built": 0
+      },
+      "v35": {
+        "hits": 6,
+        "built": 0
+      },
+      "v34": {
+        "hits": 6,
+        "built": 0
+      },
+      "v42": {
+        "hits": 6,
+        "built": 0
+      }
+    }
+  },
+  "data_roots": {
+    "yolo_oof": "C:\\Users\\hara\\AppData\\Local\\Temp\\solar_diag_oof",
+    "preprocessed_images": "G:\\マイドライブ\\solar_filament_v30\\preprocessed_v30_q96",
+    "v34_semantic": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof"
+  },
+  "v34_instance_builder": {
+    "threshold": 0.52,
+    "seed_confidence": 0.22,
+    "minimum_area_at_2048": 60,
+    "recover_unseeded_components": true,
+    "watershed_line": true
+  },
+  "strata_definitions": {
+    "area": {
+      "source": "median annotation area per annotator variant at native 2048 scale",
+      "bins": [
+        "<=1000",
+        "1000<area<=5000",
+        ">5000"
+      ]
+    },
+    "density": {
+      "source": "ground-truth instance count per annotator variant",
+      "bins": [
+        "<=5",
+        "6-10",
+        ">10"
+      ]
+    },
+    "radial_proxy": {
+      "source": "maximum normalized bbox-center image radius per annotator variant",
+      "bins": [
+        "<=0.33",
+        "0.33<radius<=0.66",
+        ">0.66"
+      ],
+      "warning": "image-center proxy; not calibrated heliographic distance"
+    }
+  },
+  "provenance_manifest": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\provenance_manifest.json",
+  "outputs": {
+    "case_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_case_metrics_v2_limit6.csv",
+      "sha256": "a0a93b2e5c3829df8d069d6b63523630ebfd40d76551f25e7ee1271ad5f9f308"
+    },
+    "summary_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_model_summary_v2_limit6.csv",
+      "sha256": "e221da0124fb86854878bf3273b05921c9657c276860a7afe2d1eb95f2f720e9"
+    },
+    "stratum_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_stratum_summary_v2_limit6.csv",
+      "sha256": "f85bbad9afdc42fef9ae025bcd8df60314ccd6ca654d0fe61e94ca2e911cb301"
+    },
+    "paired_delta_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_paired_deltas_v2_limit6.csv",
+      "sha256": "c273191320d0188ed48d98815449d90a4e235d7955e2394005ac000acd297666"
+    }
+  }
+}

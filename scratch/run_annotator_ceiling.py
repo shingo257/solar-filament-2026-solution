@@ -7,6 +7,14 @@
 競技のCOCO annotation だけを読む。学習も推論もしない。マスクは decode せず
 pycocotools の RLE 同士の IoU を使うので、2048x2048 を配列展開しない。
 
+【2026-08-30、バグ修正】旧版は`for image_id in ids`が参照アノテータ自身
+(prediction元のimage_id)も含んでおり、自分自身との比較(必ず満点)が
+accumulatorへ混入していた。単一アノテータ観測(707件中411件)では
+これが唯一の比較となり、それらの画像は常にPQ=1.0相当としてカウントされ、
+複数アノテータ観測でも「自己一致」が「他者との一致」に混ざって天井を
+不当に押し上げていた。**他の査読(2026-08-30)で指摘され発覚。**
+`image_id != ids[reference_index]`で自己比較を除外するよう修正。
+
 使い方:
     python scratch/run_annotator_ceiling.py [--json PATH] [--out PATH]
 """
@@ -100,15 +108,20 @@ def main() -> int:
         used = 0
         for position, name in enumerate(observations, 1):
             ids = file_to_ids[name]
-            if reference_index >= len(ids):
-                continue  # この観測には参照にできるアノテータがいない
+            # 単一アノテータ観測は「独立した第二の意見」が存在しないため除外する。
+            # (旧版は自分自身との比較を紛れ込ませ、これらの観測を常にPQ=1.0
+            # 相当として数えてしまっていた)
+            if reference_index >= len(ids) or len(ids) < 2:
+                continue
             used += 1
             prediction = rles_by_id[ids[reference_index]]
             for image_id in ids:
+                if image_id == ids[reference_index]:
+                    continue  # 自己比較(必ず満点になる)を除外
                 truth = rles_by_id[image_id]
                 matrix = iou_matrix(truth, prediction)
                 accumulator.add_matrix(matrix, len(truth), len(prediction))
-                if reference_index == 0 and image_id != ids[0] and matrix.size:
+                if reference_index == 0 and matrix.size:
                     best = matrix.max(axis=1)
                     cross_ious.extend(best.tolist())
                     agreement_hits += int((best > 0.5).sum())

@@ -1,0 +1,57 @@
+{
+  "schema_version": "v42-verifier-official-eval-v1",
+  "status": "diagnostic subset",
+  "scope": "3 observations, folds [0], outer-OOF verifier + fold-specific refiner",
+  "settings": {
+    "wbf_iou_threshold": 0.5,
+    "wbf_vote_threshold": 0.6,
+    "refiner": "shrink@0.45",
+    "ownership_drop_contained_threshold": 0.8,
+    "verifier_application": "before refiner"
+  },
+  "pq": 0.3265642333501775,
+  "sq": 0.6712709241086983,
+  "rq": 0.4864864864864865,
+  "tp": 9,
+  "fp": 3,
+  "fn": 16,
+  "denominator": 18.5,
+  "iou_threshold": 0.5,
+  "metric_version": "official-v1-2026-08-15",
+  "pq_observation_cluster_bootstrap": {
+    "estimate": 0.3265642333501775,
+    "ci_low": 0.19303510517111572,
+    "ci_high": 0.5977861447573096
+  },
+  "bootstrap_repeats": 100,
+  "by_fold": {
+    "0": {
+      "pq": 0.3265642333501775,
+      "sq": 0.6712709241086983,
+      "rq": 0.4864864864864865,
+      "tp": 9,
+      "fp": 3,
+      "fn": 16,
+      "denominator": 18.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    }
+  },
+  "proposal_counts": {
+    "fused": 13,
+    "accepted": 6,
+    "rejected": 7,
+    "final_instances": 6,
+    "accepted_fraction": 0.46153846153846156
+  },
+  "archived_v42_accept_all_pq": 0.4399323740073615,
+  "delta_vs_v42_accept_all": null,
+  "archived_v35_pq": 0.4426332944385452,
+  "delta_vs_v35": null,
+  "formal_gate_pq": 0.452633,
+  "passes_v35": null,
+  "passes_formal_gate": null,
+  "case_metrics": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_verifier_official_case_metrics_0_limit3.csv",
+  "prediction_manifest": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_verifier_official_prediction_manifest_0_limit3.csv",
+  "nested_predictions": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv"
+}

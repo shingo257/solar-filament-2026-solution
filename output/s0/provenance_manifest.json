@@ -1,0 +1,235 @@
+{
+  "schema_version": "s0-provenance-v1",
+  "created_at": "2026-08-22T20:19:46.761117+09:00",
+  "completion_status": "complete-inventory-hash",
+  "missing_required": [],
+  "metric_version": "official-v1-2026-08-15",
+  "hash_policy": "critical files always content-hashed; cache directories follow hash_mode",
+  "critical_inputs": {
+    "train_annotations": {
+      "path": "G:\\マイドライブ\\solar_filament_v30\\competition_data\\MAGFiLO_1.0_Kaggle_2026\\train\\MAGFiLO_1.0_Annotations_kaggle2026_train.json",
+      "exists": true,
+      "bytes": 48616700,
+      "sha256": "5da9e92b5a1a1947fd5d57adb6688269625c48ec1ef884daf2a01618c9ed54a1"
+    },
+    "grouped_folds": {
+      "path": "G:\\マイドライブ\\solar_filament_v30\\artifacts\\grouped_folds.csv",
+      "exists": true,
+      "bytes": 20089,
+      "sha256": "febb3f67237a058fa8a71f188fac262035048b55d860c0e4509514877f6af67e"
+    },
+    "v35_pipeline_stack": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v35\\pipeline_stack.json",
+      "exists": true,
+      "bytes": 5620,
+      "sha256": "2f96c67b23fe76fe1d91e854210b53ae0d5173a6ce054c98ad754b1f3703691d"
+    },
+    "v35_case_diagnostics": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v35\\case_diagnostics.csv",
+      "exists": true,
+      "bytes": 103466,
+      "sha256": "0d001430065277c8fb72232f092ad17a5fdf750fa853d27368a8342819bda244"
+    },
+    "v42_fold0": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v42\\wbf_dropcontained_threshold0.80.json",
+      "exists": true,
+      "bytes": 469,
+      "sha256": "dacee8cd00dc04c8b51360873d0a338dcfe357bbf34e610f731711ae788c58fa"
+    },
+    "v42_fold1": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v42\\wbf_dropcontained_threshold0.80_fold1.json",
+      "exists": true,
+      "bytes": 494,
+      "sha256": "59324a64278f3b98145d642214c505b2986c3ea0fec5fd50149eddd2bb342f71"
+    },
+    "v42_fold2": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v42\\wbf_dropcontained_threshold0.80_fold2.json",
+      "exists": true,
+      "bytes": 492,
+      "sha256": "1aa79c1edbf9854d6c986083c5141bab3b627a4be8ca6f5d74ba6fdb5e654328"
+    },
+    "v42_allfold": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\v42\\wbf_dropcontained_threshold0.80_allfold.json",
+      "exists": true,
+      "bytes": 2438,
+      "sha256": "68f3e511a019a50264107779a5f451e540580aa6a94cc1c1e58b19f898408594"
+    }
+  },
+  "source_files": {
+    "s0_audit": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\run_s0_audit.py",
+      "exists": true,
+      "bytes": 25778,
+      "sha256": "8e3fae912868decabe89042996eb1710589360765ed39a73c1cac39231437ba4"
+    },
+    "official_metrics": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\src\\metrics_official.py",
+      "exists": true,
+      "bytes": 20186,
+      "sha256": "8afb15db8d8873a150d607623d5d55d0dc5a08554833e5addf34177f81baf97c"
+    },
+    "science_metrics": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\src\\science_metrics.py",
+      "exists": true,
+      "bytes": 14812,
+      "sha256": "d8be0219a2ad9030b8f84a762ab638d9c4b38c08ef11d5acbf6752090b76ec43"
+    },
+    "v35_rescore": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\run_pq_oof_rescore.py",
+      "exists": true,
+      "bytes": 11900,
+      "sha256": "f79e4c85e2539524286c47b02cc02894632dfb88b81bab6f3ec4c3bc65a658b7"
+    },
+    "v35_refiner_allfold": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\run_refiner_pq_allfold.py",
+      "exists": true,
+      "bytes": 13199,
+      "sha256": "117b45bc0b702a89ef98954b89d41c177611058b2d8cc3aa723447fb20f7f126"
+    },
+    "v42_wbf_dropcontained": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\run_wbf_dropcontained_threshold_probe.py",
+      "exists": true,
+      "bytes": 8357,
+      "sha256": "9c2b94e6149943b0ea6f8b46f3fbcc5d1b2a56d5cf6b806d8803a6545765c2ef"
+    }
+  },
+  "checkpoints": {
+    "refiner_fold_0": {
+      "path": "G:\\マイドライブ\\solar_filament_v30\\artifacts\\mediseg_refiner_fold0_resume.pt",
+      "exists": true,
+      "bytes": 496840065,
+      "sha256": "0e44e436197c4e781bae53505f39c9d63c1e03a6dfb95dfb04d0f1a54ed4cbd0"
+    },
+    "refiner_fold_1": {
+      "path": "G:\\マイドライブ\\solar_filament_v30\\artifacts\\mediseg_refiner_fold1_resume.pt",
+      "exists": true,
+      "bytes": 496840065,
+      "sha256": "0b87bc029a9fb41cdeea6d501e9a98ca470a269a63e3363bb116668947825bcb"
+    },
+    "refiner_fold_2": {
+      "path": "G:\\マイドライブ\\solar_filament_v30\\artifacts\\mediseg_refiner_fold2_resume.pt",
+      "exists": true,
+      "bytes": 496840065,
+      "sha256": "8a2548bfb7d24b41ab0f7ac12e85cc8be27e80cdedd574836246cc2f6b7b12b5"
+    }
+  },
+  "oof_caches": {
+    "yolo_fold_0": {
+      "path": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\yolo_fold_0",
+      "exists": true,
+      "file_count": 236,
+      "total_bytes": 2292809,
+      "suffix_counts": {
+        ".npz": 236
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "5463f087990238a5c1b042998bc1050ebb8c38ce3f251ec89cf97b2376f79351",
+      "expected_file_count": 236,
+      "complete": true
+    },
+    "yolo_fold_1": {
+      "path": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\yolo_fold_1",
+      "exists": true,
+      "file_count": 236,
+      "total_bytes": 2246871,
+      "suffix_counts": {
+        ".npz": 236
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "29465aa265bae1f9dff917107a70eb3ae0a5c12d139d39ec80f50f4adb70c320",
+      "expected_file_count": 236,
+      "complete": true
+    },
+    "yolo_fold_2": {
+      "path": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\yolo_fold_2",
+      "exists": true,
+      "file_count": 235,
+      "total_bytes": 2317838,
+      "suffix_counts": {
+        ".npz": 235
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "c07ce2385888c90f7848c4f35328ce57fa71d802ad6ec62b348fd92d1687de1b",
+      "expected_file_count": 235,
+      "complete": true
+    },
+    "semantic_fold_0": {
+      "path": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\semantic_fold_0",
+      "exists": true,
+      "file_count": 236,
+      "total_bytes": 126098637,
+      "suffix_counts": {
+        ".png": 236
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "5ebae4a7e23ab5990f26d37be34fc23f608a60acddba08197ce7e3c0b0a44224",
+      "expected_file_count": 236,
+      "complete": true
+    },
+    "semantic_fold_1": {
+      "path": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\semantic_fold_1",
+      "exists": true,
+      "file_count": 236,
+      "total_bytes": 101289587,
+      "suffix_counts": {
+        ".png": 236
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "5aace02cb6d16ac2c40e4b1d4e03f266d6153bdbdca83355418364c39fe66acb",
+      "expected_file_count": 236,
+      "complete": true
+    },
+    "semantic_fold_2": {
+      "path": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof\\semantic_fold_2",
+      "exists": true,
+      "file_count": 235,
+      "total_bytes": 360111307,
+      "suffix_counts": {
+        ".png": 235
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "f6f94e81f390217238985626ecb11fab3667bfb65897e2dc29c5281f36bd88c5",
+      "expected_file_count": 235,
+      "complete": true
+    },
+    "yolo_seed8407_fold_0": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\kaggle_downloads\\v42\\fold0_kernel_output\\v42_multiseed\\oof_cache\\yolo_seed8407_fold_0",
+      "exists": true,
+      "file_count": 236,
+      "total_bytes": 2888300,
+      "suffix_counts": {
+        ".npz": 236
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "e496d838212df0f39d99fcba2afa9e4e4558e12b55e4b0d6d0a228c082dfeaaa",
+      "expected_file_count": 236,
+      "complete": true
+    },
+    "yolo_seed8407_fold_1": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\kaggle_downloads\\v42\\fold1_kernel_output\\v42_multiseed\\oof_cache\\yolo_seed8407_fold_1",
+      "exists": true,
+      "file_count": 236,
+      "total_bytes": 2658295,
+      "suffix_counts": {
+        ".npz": 236
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "87388203ffa9b7a9d639da0e0c122c6c99ec199ab2dee78b842014e275f278eb",
+      "expected_file_count": 236,
+      "complete": true
+    },
+    "yolo_seed8407_fold_2": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\kaggle_downloads\\v42\\fold2_kernel_output\\v42_multiseed\\oof_cache\\yolo_seed8407_fold_2",
+      "exists": true,
+      "file_count": 235,
+      "total_bytes": 3086756,
+      "suffix_counts": {
+        ".npz": 235
+      },
+      "hash_mode": "path-size-inventory",
+      "sha256": "c454b0e1d4d1ae2019ac03dc8a20f095714b4106c30a6b8f43b46deff4a6abd7",
+      "expected_file_count": 235,
+      "complete": true
+    }
+  }
+}

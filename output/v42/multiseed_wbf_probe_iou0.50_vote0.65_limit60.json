@@ -1,0 +1,50 @@
+{
+  "scope": "60観測、fold0のみ。V35確定(seed3407) vs WBF(seed3407+8407)",
+  "iou_threshold": 0.5,
+  "single_seed3407": {
+    "pq": 0.4365839121024193,
+    "sq": 0.6701159636479639,
+    "rq": 0.651505016722408,
+    "tp": 487,
+    "fp": 214,
+    "fn": 307,
+    "denominator": 747.5,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 78
+  },
+  "wbf_seed3407_8407": {
+    "pq": 0.43534762592261744,
+    "sq": 0.6714399922883446,
+    "rq": 0.6483790523690773,
+    "tp": 520,
+    "fp": 290,
+    "fn": 274,
+    "denominator": 802.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 92
+  },
+  "wbf_consensus_first_order": {
+    "pq": 0.43517425387867603,
+    "sq": 0.6711725992513428,
+    "rq": 0.6483790523690773,
+    "tp": 520,
+    "fp": 290,
+    "fn": 274,
+    "denominator": 802.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 92
+  },
+  "consensus_cluster_counts": {
+    "1": 122,
+    "2": 396
+  },
+  "baseline_fold0_pq": 0.4393,
+  "delta_wbf_vs_baseline": -0.003952,
+  "delta_wbf_vs_single_local": -0.001236,
+  "delta_consensus_order_vs_baseline": -0.004126,
+  "delta_consensus_order_vs_wbf": -0.000173,
+  "continue_fold12": false
+}

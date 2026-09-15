@@ -1,0 +1,519 @@
+{
+  "schema_version": 1,
+  "status": "fixed_pilot_harm_label_feasibility_not_model_not_threshold_not_registered",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\analyze_s1_harm_target_feasibility.py",
+  "script_sha256": "f04a1c8d849e8f263f597c0d750fd85f78feae219bd0df48cd70916df5cd2328",
+  "scope": {
+    "candidate_rows": 137,
+    "observations": 12,
+    "folds": [
+      0,
+      1,
+      2
+    ],
+    "years": [
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016
+    ],
+    "sites": [
+      "Bh",
+      "Ch",
+      "Lh",
+      "Mh",
+      "Th",
+      "Uh"
+    ],
+    "time_block_role": "development only",
+    "locked_rows_read": 0,
+    "s1_predictions_read": false,
+    "blinded_review_responses_read": false,
+    "private_key_read": false,
+    "model_fitting_performed": false,
+    "threshold_selection_performed": false
+  },
+  "target_contract": {
+    "final_pq_benefit": "archived final_pq_positive_target == 1",
+    "spine_benefit": "delta_spine_coverage > 0",
+    "count_harm": "delta_count_abs_error > 0",
+    "precision_harm": "delta_filament_precision < 0",
+    "merge_harm": "delta_merge_count > 0",
+    "any_catalog_harm": "count_harm or precision_harm or merge_harm",
+    "catalog_safe": "spine_benefit and not any_catalog_harm"
+  },
+  "inputs": {
+    "candidate_rows": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_utility_pilot.csv",
+    "candidate_rows_sha256": "1853fb337d7f0a1ac3b608689085e85162616736c59a4b36ba49cae921846b3f"
+  },
+  "artifacts": {
+    "observation_table": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_harm_target_feasibility_observations.csv",
+    "observation_table_sha256": "dbd3b6169712ac05f8d835189359ebff991e0a25f1e50710ebe2b3678593e10f"
+  },
+  "analysis": {
+    "target_summaries": {
+      "final_pq_benefit": {
+        "candidate_events": 88,
+        "candidate_total": 137,
+        "candidate_rate": 0.6423357664233577,
+        "candidate_rate_wilson95_descriptive": [
+          0.5591991646090195,
+          0.7177079359461591
+        ],
+        "observation_events": 12,
+        "observation_total": 12,
+        "observation_event_rate": 1.0,
+        "observation_event_rate_wilson95": [
+          0.7575059933447592,
+          1.0
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Lh",
+          "Mh",
+          "Th",
+          "Uh"
+        ],
+        "years_with_events": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016
+        ],
+        "events_per_positive_observation": {
+          "min": 2,
+          "median": 7.0,
+          "max": 14
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.1590909090909091,
+          "top3_observations_share": 0.38636363636363635
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": true,
+          "at_least_10_event_observations": true,
+          "events_present_in_all_folds": true
+        }
+      },
+      "spine_benefit": {
+        "candidate_events": 92,
+        "candidate_total": 137,
+        "candidate_rate": 0.6715328467153284,
+        "candidate_rate_wilson95_descriptive": [
+          0.5891489046040097,
+          0.744559652475308
+        ],
+        "observation_events": 12,
+        "observation_total": 12,
+        "observation_event_rate": 1.0,
+        "observation_event_rate_wilson95": [
+          0.7575059933447592,
+          1.0
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Lh",
+          "Mh",
+          "Th",
+          "Uh"
+        ],
+        "years_with_events": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016
+        ],
+        "events_per_positive_observation": {
+          "min": 2,
+          "median": 7.5,
+          "max": 13
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.14130434782608695,
+          "top3_observations_share": 0.3695652173913043
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": true,
+          "at_least_10_event_observations": true,
+          "events_present_in_all_folds": true
+        }
+      },
+      "count_harm": {
+        "candidate_events": 39,
+        "candidate_total": 137,
+        "candidate_rate": 0.2846715328467153,
+        "candidate_rate_wilson95_descriptive": [
+          0.2157876045903629,
+          0.3653016535441104
+        ],
+        "observation_events": 6,
+        "observation_total": 12,
+        "observation_event_rate": 0.5,
+        "observation_event_rate_wilson95": [
+          0.2537815976337061,
+          0.7462184023662939
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Mh",
+          "Th"
+        ],
+        "years_with_events": [
+          2013,
+          2014,
+          2015
+        ],
+        "events_per_positive_observation": {
+          "min": 1,
+          "median": 7.0,
+          "max": 13
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.3333333333333333,
+          "top3_observations_share": 0.7692307692307693
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": true,
+          "at_least_10_event_observations": false,
+          "events_present_in_all_folds": true
+        }
+      },
+      "precision_harm": {
+        "candidate_events": 44,
+        "candidate_total": 137,
+        "candidate_rate": 0.32116788321167883,
+        "candidate_rate_wilson95_descriptive": [
+          0.24877798989522748,
+          0.40331308889441986
+        ],
+        "observation_events": 12,
+        "observation_total": 12,
+        "observation_event_rate": 1.0,
+        "observation_event_rate_wilson95": [
+          0.7575059933447592,
+          1.0
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Lh",
+          "Mh",
+          "Th",
+          "Uh"
+        ],
+        "years_with_events": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016
+        ],
+        "events_per_positive_observation": {
+          "min": 2,
+          "median": 3.0,
+          "max": 8
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.18181818181818182,
+          "top3_observations_share": 0.38636363636363635
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": true,
+          "at_least_10_event_observations": true,
+          "events_present_in_all_folds": true
+        }
+      },
+      "merge_harm": {
+        "candidate_events": 7,
+        "candidate_total": 137,
+        "candidate_rate": 0.051094890510948905,
+        "candidate_rate_wilson95_descriptive": [
+          0.02496794443140947,
+          0.10170966150995021
+        ],
+        "observation_events": 5,
+        "observation_total": 12,
+        "observation_event_rate": 0.4166666666666667,
+        "observation_event_rate_wilson95": [
+          0.19326031365875665,
+          0.6804886874504503
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Lh",
+          "Th"
+        ],
+        "years_with_events": [
+          2013,
+          2015,
+          2016
+        ],
+        "events_per_positive_observation": {
+          "min": 1,
+          "median": 1.0,
+          "max": 2
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.2857142857142857,
+          "top3_observations_share": 0.7142857142857143
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": false,
+          "at_least_10_event_observations": false,
+          "events_present_in_all_folds": true
+        }
+      },
+      "any_catalog_harm": {
+        "candidate_events": 68,
+        "candidate_total": 137,
+        "candidate_rate": 0.49635036496350365,
+        "candidate_rate_wilson95_descriptive": [
+          0.41387623964248627,
+          0.5790235782919961
+        ],
+        "observation_events": 12,
+        "observation_total": 12,
+        "observation_event_rate": 1.0,
+        "observation_event_rate_wilson95": [
+          0.7575059933447592,
+          1.0
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Lh",
+          "Mh",
+          "Th",
+          "Uh"
+        ],
+        "years_with_events": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016
+        ],
+        "events_per_positive_observation": {
+          "min": 2,
+          "median": 4.5,
+          "max": 13
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.19117647058823528,
+          "top3_observations_share": 0.45588235294117646
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": true,
+          "at_least_10_event_observations": true,
+          "events_present_in_all_folds": true
+        }
+      },
+      "catalog_safe": {
+        "candidate_events": 56,
+        "candidate_total": 137,
+        "candidate_rate": 0.40875912408759124,
+        "candidate_rate_wilson95_descriptive": [
+          0.3300202944904852,
+          0.4924751538715798
+        ],
+        "observation_events": 9,
+        "observation_total": 12,
+        "observation_event_rate": 0.75,
+        "observation_event_rate_wilson95": [
+          0.46769466506643426,
+          0.9110583316059453
+        ],
+        "folds_with_events": [
+          0,
+          1,
+          2
+        ],
+        "sites_with_events": [
+          "Bh",
+          "Ch",
+          "Lh",
+          "Th",
+          "Uh"
+        ],
+        "years_with_events": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016
+        ],
+        "events_per_positive_observation": {
+          "min": 1,
+          "median": 6.0,
+          "max": 12
+        },
+        "event_concentration": {
+          "largest_observation_share": 0.21428571428571427,
+          "top3_observations_share": 0.5714285714285714
+        },
+        "screening_flags": {
+          "at_least_10_candidate_events": true,
+          "at_least_10_event_observations": false,
+          "events_present_in_all_folds": true
+        }
+      }
+    },
+    "harm_cooccurrence": {
+      "candidate_cooccurrence_counts": {
+        "count_harm": {
+          "count_harm": 39,
+          "precision_harm": 17,
+          "merge_harm": 2
+        },
+        "precision_harm": {
+          "count_harm": 17,
+          "precision_harm": 44,
+          "merge_harm": 5
+        },
+        "merge_harm": {
+          "count_harm": 2,
+          "precision_harm": 5,
+          "merge_harm": 7
+        }
+      },
+      "candidate_jaccard": {
+        "count_harm": {
+          "count_harm": 1.0,
+          "precision_harm": 0.25757575757575757,
+          "merge_harm": 0.045454545454545456
+        },
+        "precision_harm": {
+          "count_harm": 0.25757575757575757,
+          "precision_harm": 1.0,
+          "merge_harm": 0.10869565217391304
+        },
+        "merge_harm": {
+          "count_harm": 0.045454545454545456,
+          "precision_harm": 0.10869565217391304,
+          "merge_harm": 1.0
+        }
+      }
+    },
+    "full_development_planning_projection": {
+      "candidate_events_cluster_bootstrap": {
+        "count_harm": {
+          "development_candidates": 4899,
+          "point_from_pilot_rate": 1394.6058394160584,
+          "cluster_bootstrap_median": 1371.72,
+          "cluster_bootstrap95": [
+            358.4634146341463,
+            2689.7119634340215
+          ],
+          "iterations": 10000,
+          "seed": 20260824,
+          "interpretation": "planning range only; 12-observation pilot is not performance evidence"
+        },
+        "precision_harm": {
+          "development_candidates": 4899,
+          "point_from_pilot_rate": 1573.4014598540145,
+          "cluster_bootstrap_median": 1573.4014598540145,
+          "cluster_bootstrap95": [
+            1216.530201342282,
+            1991.4634146341464
+          ],
+          "iterations": 10000,
+          "seed": 20260824,
+          "interpretation": "planning range only; 12-observation pilot is not performance evidence"
+        },
+        "merge_harm": {
+          "development_candidates": 4899,
+          "point_from_pilot_rate": 250.31386861313868,
+          "cluster_bootstrap_median": 243.42857142857142,
+          "cluster_bootstrap95": [
+            77.14960629921259,
+            459.28125
+          ],
+          "iterations": 10000,
+          "seed": 20260824,
+          "interpretation": "planning range only; 12-observation pilot is not performance evidence"
+        }
+      },
+      "observations_with_events_wilson": {
+        "count_harm": {
+          "point": 273.5,
+          "wilson95_planning_range": [
+            138.81853390563725,
+            408.18146609436275
+          ]
+        },
+        "precision_harm": {
+          "point": 547.0,
+          "wilson95_planning_range": [
+            414.35577835958327,
+            547.0
+          ]
+        },
+        "merge_harm": {
+          "point": 227.91666666666669,
+          "wilson95_planning_range": [
+            105.71339157133988,
+            372.2273120353963
+          ]
+        }
+      }
+    },
+    "zero_observed_harm_validation_lower_bounds": {
+      "confidence": 0.95,
+      "independent_accepted_candidates_required": {
+        "harm_rate_below_0.05": 59,
+        "harm_rate_below_0.02": 149,
+        "harm_rate_below_0.01": 299
+      },
+      "caveat": "candidate counts are optimistic lower bounds; clustered observations and time/site coverage require more validation"
+    }
+  },
+  "limitations": [
+    "Fixed 12-observation pilot estimates label structure, not model performance.",
+    "Candidate rows within an observation are dependent through ownership and count state.",
+    "Bootstrap and Wilson ranges are planning aids, not registered confidence intervals.",
+    "No full-development labels, model, threshold, locked rows, or review responses were used."
+  ]
+}

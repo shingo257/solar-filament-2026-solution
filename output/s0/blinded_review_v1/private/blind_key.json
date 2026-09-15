@@ -1,0 +1,223 @@
+{
+  "package_id": "s0-blinded-review-2026-08-24-v1",
+  "warning": "Open only after exporting completed blinded responses.",
+  "seed": 20260824,
+  "cases": [
+    {
+      "case_id": "case_001",
+      "file_name": "20160201025254Uh.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "dense",
+      "selection_score": 0.4395604395604396,
+      "output_a": "v35",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_002",
+      "file_name": "20121219063154Uh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.2973001571521767,
+      "output_a": "v35",
+      "output_b": "raw"
+    },
+    {
+      "case_id": "case_003",
+      "file_name": "20120116063254Uh.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "dense",
+      "selection_score": 0.486111111111111,
+      "output_a": "v42",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_004",
+      "file_name": "20220718185352Mh.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 4.75,
+      "output_a": "v42_nested_verifier",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_005",
+      "file_name": "20171007133730Ch.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 5.25,
+      "output_a": "v42_nested_verifier",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_006",
+      "file_name": "20120913165314Mh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.3316818843817085,
+      "output_a": "v35",
+      "output_b": "raw"
+    },
+    {
+      "case_id": "case_007",
+      "file_name": "20110724164614Mh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.4463521924363765,
+      "output_a": "raw",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_008",
+      "file_name": "20171008144250Bh.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "small",
+      "selection_score": 0.8846153846153846,
+      "output_a": "v35",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_009",
+      "file_name": "20170310133730Ch.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.2913556841500955,
+      "output_a": "raw",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_010",
+      "file_name": "20140128174554Bh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.3051326935029257,
+      "output_a": "raw",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_011",
+      "file_name": "20151106171514Mh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.32622533441863744,
+      "output_a": "v35",
+      "output_b": "raw"
+    },
+    {
+      "case_id": "case_012",
+      "file_name": "20170310173450Bh.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "limb",
+      "selection_score": 1.2857142857142858,
+      "output_a": "v42",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_013",
+      "file_name": "20220721185332Bh.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 15.028011204481793,
+      "output_a": "v42_nested_verifier",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_014",
+      "file_name": "20220618185332Bh.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 6.5,
+      "output_a": "v42",
+      "output_b": "v42_nested_verifier"
+    },
+    {
+      "case_id": "case_015",
+      "file_name": "20170726235030Lh.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 4.75,
+      "output_a": "v42_nested_verifier",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_016",
+      "file_name": "20181024232430Lh.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "limb",
+      "selection_score": 1.8,
+      "output_a": "v35",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_017",
+      "file_name": "20171123222130Lh.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 5.011904761904762,
+      "output_a": "v42",
+      "output_b": "v42_nested_verifier"
+    },
+    {
+      "case_id": "case_018",
+      "file_name": "20180926014350Uh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.4935777531955806,
+      "output_a": "v35",
+      "output_b": "raw"
+    },
+    {
+      "case_id": "case_019",
+      "file_name": "20210620163530Mh.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 4.666666666666667,
+      "output_a": "v42",
+      "output_b": "v42_nested_verifier"
+    },
+    {
+      "case_id": "case_020",
+      "file_name": "20220710085152Th.jpeg",
+      "comparison": "late_time_rejection",
+      "selection_stratum": "2017_2022",
+      "selection_score": 6.340909090909091,
+      "output_a": "v42",
+      "output_b": "v42_nested_verifier"
+    },
+    {
+      "case_id": "case_021",
+      "file_name": "20110923112234Ch.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "dense",
+      "selection_score": 0.43589743589743596,
+      "output_a": "v42",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_022",
+      "file_name": "20160430133714Th.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "small",
+      "selection_score": 0.8333333333333335,
+      "output_a": "v35",
+      "output_b": "v42"
+    },
+    {
+      "case_id": "case_023",
+      "file_name": "20220104043050Uh.jpeg",
+      "comparison": "stratified_rescue",
+      "selection_stratum": "small",
+      "selection_score": 2.0,
+      "output_a": "v42",
+      "output_b": "v35"
+    },
+    {
+      "case_id": "case_024",
+      "file_name": "20140712195854Bh.jpeg",
+      "comparison": "matched_spine_tradeoff",
+      "selection_stratum": "tradeoff",
+      "selection_score": 0.30934543575226464,
+      "output_a": "raw",
+      "output_b": "v35"
+    }
+  ]
+}

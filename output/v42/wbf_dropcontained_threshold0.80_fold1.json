@@ -1,0 +1,18 @@
+{
+  "scope": "236 observations, fold1 only. WBF(iou=0.5,vote=0.6) -> drop_contained threshold 0.80",
+  "drop_threshold": 0.8,
+  "pq": 0.43883876113126835,
+  "sq": 0.6781574368713233,
+  "rq": 0.6471045472211426,
+  "tp": 1665,
+  "fp": 816,
+  "fn": 1000,
+  "denominator": 2573.0,
+  "iou_threshold": 0.5,
+  "metric_version": "official-v1-2026-08-15",
+  "near_miss": 327,
+  "delta_vs_baseline": -0.002661,
+  "fold": 1,
+  "baseline_fold_pq": 0.4415,
+  "passes_fold_baseline": false
+}

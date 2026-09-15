@@ -1,0 +1,17 @@
+{
+  "scope": "236観測、fold0のみ。YOLO(conf0.26)+RFDETR(conf0.4)をWBF(iou=0.5,vote=0.6,重み1.0固定)で統合→refiner shrink@0.45→drop_contained_then_area_asc@0.9",
+  "pq": 0.39247348551376676,
+  "sq": 0.6507779733043374,
+  "rq": 0.6030835424883471,
+  "tp": 1682,
+  "fp": 1147,
+  "fn": 1067,
+  "denominator": 2789.0,
+  "iou_threshold": 0.5,
+  "metric_version": "official-v1-2026-08-15",
+  "baseline_yolo_only_fold0_pq": 0.4393,
+  "delta_vs_yolo_only": -0.046827,
+  "beats_yolo_only": false,
+  "raw_yolo_fold0_pq": 0.3977,
+  "raw_rfdetr_fold0_pq": 0.341
+}

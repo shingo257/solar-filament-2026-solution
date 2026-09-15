@@ -1,0 +1,79 @@
+{
+  "schema_version": "v42-nested-candidate-screen-v1",
+  "status": "screening only; no promotion without refiner+ownership official all-fold PQ",
+  "candidate_label": "mean annotator-variant marginal value > 0 at IoU > 0.5",
+  "features": [
+    "detector_score",
+    "source_count",
+    "log_area",
+    "bbox_extent",
+    "log_aspect",
+    "perimeter_over_sqrt_area",
+    "solidity",
+    "center_radius",
+    "semantic_mean",
+    "semantic_q10",
+    "local_contrast"
+  ],
+  "rows": 5444,
+  "observations": 695,
+  "baseline_accept_all_utility": 1099.2207632806708,
+  "verifier_utility": 1299.1986437051978,
+  "utility_improvement": 199.97788042452703,
+  "relative_utility_improvement": 0.1819269496217344,
+  "mean_utility_improvement_per_observation": {
+    "mean": 0.28285414487203286,
+    "ci_low": 0.22386630704385568,
+    "ci_high": 0.34285292433186154
+  },
+  "consensus_only_accepted": 4311,
+  "consensus_only_utility": 1256.7877694531767,
+  "verifier_improvement_vs_consensus_only": 42.41087425202113,
+  "mean_utility_improvement_vs_consensus_only_per_observation": {
+    "mean": 0.05998709229423086,
+    "ci_low": 0.02286461186472172,
+    "ci_high": 0.09632784427607018
+  },
+  "bootstrap_observations": 707,
+  "bootstrap_repeats": 2000,
+  "by_outer_fold": [
+    {
+      "fold": 0,
+      "candidates": 1856,
+      "accepted": 1319,
+      "accepted_precision": 0.7467778620166793,
+      "positive_recall": 0.8411614005123825,
+      "accept_all_utility": 362.44457417882205,
+      "screening_utility": 436.30520798767805,
+      "utility_improvement": 73.860633808856,
+      "selected_threshold": 0.5,
+      "selected_l2": 1.0
+    },
+    {
+      "fold": 1,
+      "candidates": 1708,
+      "accepted": 1219,
+      "accepted_precision": 0.77850697292863,
+      "positive_recall": 0.842058562555457,
+      "accept_all_utility": 367.60999418890674,
+      "screening_utility": 425.3063949475595,
+      "utility_improvement": 57.69640075865277,
+      "selected_threshold": 0.5,
+      "selected_l2": 0.1
+    },
+    {
+      "fold": 2,
+      "candidates": 1880,
+      "accepted": 1322,
+      "accepted_precision": 0.7511346444780636,
+      "positive_recall": 0.8323554065381391,
+      "accept_all_utility": 369.1661949129418,
+      "screening_utility": 437.58704076996037,
+      "utility_improvement": 68.42084585701855,
+      "selected_threshold": 0.5,
+      "selected_l2": 10.0
+    }
+  ],
+  "candidate_table": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_candidate_table.csv",
+  "nested_predictions": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv"
+}

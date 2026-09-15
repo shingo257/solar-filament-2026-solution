@@ -1,0 +1,97 @@
+{
+  "scope": "236観測、fold0のみ。free variant(候補との交差なし)閾値スイープ",
+  "baseline_shrink045_fold0_pq": 0.4393,
+  "results": {
+    "0.81": {
+      "pq": 0.4319252088013862,
+      "sq": 0.6732951784256902,
+      "rq": 0.6415094339622641,
+      "tp": 1683,
+      "fp": 815,
+      "fn": 1066,
+      "denominator": 2623.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.007375,
+      "beats_baseline": false
+    },
+    "0.82": {
+      "pq": 0.4328218016048791,
+      "sq": 0.6730789272587723,
+      "rq": 0.6430476190476191,
+      "tp": 1688,
+      "fp": 813,
+      "fn": 1061,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.006478,
+      "beats_baseline": false
+    },
+    "0.83": {
+      "pq": 0.4323203795441563,
+      "sq": 0.673254272775861,
+      "rq": 0.6421353670162059,
+      "tp": 1684,
+      "fp": 812,
+      "fn": 1065,
+      "denominator": 2622.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.00698,
+      "beats_baseline": false
+    },
+    "0.84": {
+      "pq": 0.4331576333812436,
+      "sq": 0.6729596525724594,
+      "rq": 0.6436606291706387,
+      "tp": 1688,
+      "fp": 808,
+      "fn": 1061,
+      "denominator": 2622.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.006142,
+      "beats_baseline": false
+    },
+    "0.86": {
+      "pq": 0.4361445358784912,
+      "sq": 0.6722721119677272,
+      "rq": 0.6487619047619048,
+      "tp": 1703,
+      "fp": 798,
+      "fn": 1046,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.003155,
+      "beats_baseline": false
+    },
+    "0.87": {
+      "pq": 0.43575814752831954,
+      "sq": 0.6724662770498758,
+      "rq": 0.648,
+      "tp": 1701,
+      "fp": 800,
+      "fn": 1048,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.003542,
+      "beats_baseline": false
+    },
+    "0.88": {
+      "pq": 0.43554531509129846,
+      "sq": 0.6725332071262696,
+      "rq": 0.6476190476190476,
+      "tp": 1700,
+      "fp": 801,
+      "fn": 1049,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.003755,
+      "beats_baseline": false
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "experiment_id": "matched_param_ablation_fold1",
+  "purpose": "report/main.tex Future Work item 1. Check whether the fold-0 reversal (edge-attention not beating baseline) generalizes to fold 1.",
+  "fold": 1,
+  "recipe": "Identical to build_v51_edgeattnet_refiner.py and the fold-0 ablation (crop 320, context 1.65, 14 epochs, LR 2e-4 cosine annealing, AMP, crop-Dice-selected best checkpoint, fold-1 held out). Only the model class and seed vary.",
+  "provenance": "Executed by the user in their own Colab session; output pasted back into chat and VERIFIED 2026-08-31 against the raw JSON read directly from mounted Google Drive (G:\\\\マイドライブ\\\\solar_filament_v30\\\\artifacts\\\\matched_param_ablation_fold1_manifest.json, saved alongside as matched_param_ablation_fold1_manifest_raw.json) and the executed Colab notebook (Google Drive > Colab Notebooks > 'solar_filament_matched_param_ablation_fold1_colab.ipynb', execution_count 1-8, cell 7 has 181 outputs) -- all values match exactly.",
+  "reference_baseline_pq_fold1_original_single_seed": 0.4415,
+  "reference_edgeatt_pq_fold1_original_single_seed_v51": 0.4424,
+  "builder_script": "scratch/build_matched_param_ablation.py --fold 1",
+  "runs": [
+    {"variant": "base", "seed": 3407, "n_params": 31037633, "pq": 0.4399610079375766, "sq": 0.6772132617614919, "rq": 0.649663898774219, "tp": 1643, "fp": 750, "fn": 1022, "denominator": 2529.0},
+    {"variant": "base", "seed": 8407, "n_params": 31037633, "pq": 0.4409700523009771, "sq": 0.6800307399952797, "rq": 0.6484560570071259, "tp": 1638, "fp": 749, "fn": 1027, "denominator": 2526.0},
+    {"variant": "plain_mhsa", "seed": 3407, "n_params": 35238081, "pq": 0.44207944386482323, "sq": 0.679925713997692, "rq": 0.6501878584140794, "tp": 1644, "fp": 748, "fn": 1021, "denominator": 2528.5},
+    {"variant": "plain_mhsa", "seed": 8407, "n_params": 35238081, "pq": 0.4432184482264954, "sq": 0.6808589779138929, "rq": 0.6509695290858726, "tp": 1645, "fp": 744, "fn": 1020, "denominator": 2527.0},
+    {"variant": "edge_att", "seed": 3407, "n_params": 35240157, "pq": 0.44056956937035324, "sq": 0.6780263713756898, "rq": 0.6497823506133755, "tp": 1642, "fp": 747, "fn": 1023, "denominator": 2527.0},
+    {"variant": "edge_att", "seed": 8407, "n_params": 35240157, "pq": 0.4428436813676547, "sq": 0.6780792407616179, "rq": 0.6530854430379747, "tp": 1651, "fp": 740, "fn": 1014, "denominator": 2528.0}
+  ],
+  "summary_by_variant": {
+    "base": {"n_params": 31037633, "seeds": [3407, 8407], "pq_per_seed": [0.4399610079375766, 0.4409700523009771], "pq_mean": 0.4404655301192768, "pq_std": 0.0005045221817002454},
+    "plain_mhsa": {"n_params": 35238081, "seeds": [3407, 8407], "pq_per_seed": [0.44207944386482323, 0.4432184482264954], "pq_mean": 0.4426489460456593, "pq_std": 0.0005695021808360956},
+    "edge_att": {"n_params": 35240157, "seeds": [3407, 8407], "pq_per_seed": [0.44056956937035324, 0.4428436813676547], "pq_mean": 0.44170662536900396, "pq_std": 0.0011370559986507156}
+  },
+  "paired_diffs": {
+    "plain_mhsa_minus_base": {"seed3407": 0.0021184359272466, "seed8407": 0.0022483959255183, "note": "consistent sign, both positive -- attention capacity alone helps in fold1, unlike fold0"},
+    "edge_att_minus_base": {"seed3407": 0.0006085614327766, "seed8407": 0.0018736290666776, "note": "consistent sign, both positive -- edge-attention also beats base in fold1"},
+    "edge_att_minus_plain_mhsa": {"seed3407": -0.0015098744944700, "seed8407": -0.0003747668588407, "note": "consistent sign, both negative -- edge prior specifically looks slightly worse than plain attention in fold1 (opposite direction from fold0's sign-flip)"}
+  },
+  "finding": "Fold 1 shows a different pattern from fold 0. Both plain_mhsa and edge_att beat base consistently across both seeds (paired diffs same sign), unlike fold 0 where plain_mhsa ~= base. But edge_att is consistently slightly below plain_mhsa in both seeds, suggesting attention capacity (not the edge prior specifically) may be what helps in fold1, if anything.",
+  "caveats": "n=2 seeds per variant. Fold-to-fold comparison (fold0 vs fold1) is descriptive only, not a formal pooled test; folds use disjoint held-out data so their point estimates are not directly poolable without the observation-cluster bootstrap machinery used elsewhere in this project. Fold 2 still in progress as of this writing."
+}

@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "status": "full_development_gt_free_set_context_features_not_model_not_threshold_not_registered",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\build_s1_full_development_set_context_features.py",
+  "script_sha256": "9a540c1249807320cb58f6e5e4c64d2f919dda98e7b5c1cc006b4e89fa5b469d",
+  "scope": {
+    "time_block_role": "development only",
+    "observations": 547,
+    "candidates": 4899,
+    "locked_rows_read": 0,
+    "ground_truth_read": false,
+    "target_columns_loaded": false,
+    "s1_predictions_read": false,
+    "blinded_review_responses_read": false,
+    "private_key_read": false,
+    "model_fitting_performed": false,
+    "threshold_selection_performed": false,
+    "frozen_ownership_replayed": true
+  },
+  "feature_contract": {
+    "image_shape": [
+      2048,
+      2048
+    ],
+    "minimum_exclusive_area": 20,
+    "frozen_containment_threshold": 0.8,
+    "identifiers": [
+      "file_name",
+      "fold",
+      "candidate_index"
+    ],
+    "base_inference_features": [
+      "detector_score",
+      "source_count",
+      "log_area",
+      "bbox_extent",
+      "log_aspect",
+      "perimeter_over_sqrt_area",
+      "solidity",
+      "center_radius",
+      "semantic_mean",
+      "semantic_q10",
+      "local_contrast"
+    ],
+    "gt_free_set_context_features": [
+      "proposal_count",
+      "full_output_count",
+      "without_output_count",
+      "output_count_delta",
+      "full_output_per_proposal_ratio",
+      "detector_score_observation_mean",
+      "detector_score_observation_std",
+      "detector_score_observation_z",
+      "detector_score_observation_percentile",
+      "semantic_mean_observation_mean",
+      "semantic_mean_observation_std",
+      "semantic_mean_observation_z",
+      "semantic_mean_observation_percentile",
+      "source_count_observation_percentile",
+      "refined_area_fraction",
+      "refined_area_observation_percentile",
+      "overlap_neighbor_count",
+      "pairwise_iou_max",
+      "pairwise_iou_mean_positive",
+      "pairwise_iou_sum",
+      "self_covered_by_other_max",
+      "other_covered_by_self_max",
+      "containment_conflict_count",
+      "dropped_by_containment",
+      "dropped_by_min_area_after_ownership",
+      "ownership_output_kept",
+      "ownership_exclusive_area_fraction",
+      "ownership_retained_fraction",
+      "ownership_order_percentile"
+    ],
+    "forbidden_output_tokens": [
+      "target",
+      "hit_iou",
+      "variant",
+      "marginal",
+      "verifier",
+      "selected_l2",
+      "threshold",
+      "delta_pq",
+      "delta_spine",
+      "delta_filament",
+      "delta_merge",
+      "delta_count"
+    ]
+  },
+  "summary": {
+    "candidate_rows": 4899,
+    "observations": 547,
+    "base_feature_count": 11,
+    "context_feature_count": 29,
+    "missing_feature_values": 0,
+    "non_finite_feature_values": 0,
+    "ownership": {
+      "output_kept_candidates": 4435,
+      "dropped_by_containment": 464,
+      "dropped_by_min_area_after_ownership": 0,
+      "output_count_delta_distribution": {
+        "-2": 5,
+        "-1": 79,
+        "0": 737,
+        "1": 4078
+      }
+    },
+    "competition_geometry": {
+      "candidates_with_overlap_neighbor": 916,
+      "candidates_with_containment_conflict": 824,
+      "ownership_retained_fraction_median": 1.0,
+      "ownership_retained_fraction_min": 0.0
+    }
+  },
+  "cache_build": {
+    "cache_schema": "s1-proposal-marginal-refined-v1",
+    "observations": 547,
+    "cache_hits": 323,
+    "cache_builds": 224,
+    "elapsed_seconds": 3077.3383651999975,
+    "cache_root": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache"
+  },
+  "feature_build_seconds": 940.4189018000034,
+  "inputs": {
+    "strata": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\observation_strata.csv",
+    "strata_sha256": "73edf7db655906588670bb5918f0e869278e4891bd1fefbc895372e3a41046b7",
+    "selection": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s1\\full_development_selection.csv",
+    "selection_sha256": "f40b7942c6d3a537a58d22ad5a0b73843c6dc1aa9cabdb580562e68b39cac760",
+    "candidate_table": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv",
+    "candidate_table_sha256": "ffdba295972f70459f7273a6be4ace0b3948440a39a941240df2bc21221b28b3",
+    "refined_cache_root": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache",
+    "refined_cache_manifest_sha256": "bfed38854162134a5bff091d8e60c50dfd59bc2acd08109626f9fff707bcfbe8",
+    "refined_cache_entries": 547
+  },
+  "artifacts": {
+    "features": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s1\\full_development_set_context_features.csv",
+    "features_sha256": "66535c33582004f554af1592104fe09626c902246e3cdbaf71fad8ab9b6de6b0"
+  },
+  "limitations": [
+    "GT-free features only; labels and nested OOF fitting remain blocked.",
+    "No feature-target association, model fit, threshold, or margin evaluated.",
+    "S0-4 response, endpoint margins, and decision policy remain separate gates."
+  ]
+}

@@ -34,8 +34,11 @@ ultralytics>=8.3.0
 pycocotools>=2.0.7
 # scipy: Hungarian matching (linear_sum_assignment)、統計検定
 scipy>=1.10.0
-# scikit-image: watershed など（V34 の semantic-first 実験で使用）
+# scikit-image: watershed など（V34 の semantic-first 実験で使用）、
+#               match_histograms（pseudo-labeling用のFITS階調変換、§2.1）
 scikit-image>=0.21.0
+# astropy: GONGアーカイブのFpack圧縮FITS(.fits.fz)デコード（pseudo-labeling、§2.1）
+astropy>=6.0.0
 
 # --- Kaggle API & Monitoring ---
 kaggle>=1.5.13

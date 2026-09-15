@@ -1,0 +1,91 @@
+{
+  "schema_version": 2,
+  "status": "structure_ready_execution_blocked",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\solar_filament\\s1\\harm_first_model_spec.py",
+  "script_sha256": "461bdc8709c7c8af020dbf449ba70e6dc73077124cd13cb5adca7f31f2b09c1c",
+  "scope": {
+    "private_key_read": false,
+    "locked_rows_read": 0,
+    "model_fitting_performed": false,
+    "threshold_selection_performed": false,
+    "target_values_analyzed": false
+  },
+  "spec": {
+    "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\S1_HARM_FIRST_MODEL_SPEC_2026-08-24.json",
+    "sha256": "d65e0520dfef3a99d2448b0fee6a39bb003e3241a63379b8bae76a7d03c3177f"
+  },
+  "structure_errors": [],
+  "gates": {
+    "structure_valid": true,
+    "feature_contract_hash_matches": true,
+    "registry_hash_matches": true,
+    "complete_s0_4_response": false,
+    "all_endpoint_margins_registered": false,
+    "decision_policy_registered_before_model_results": false,
+    "full_development_features_complete": true,
+    "full_development_labels_complete": false
+  },
+  "ready_to_fit": false,
+  "review_response": {
+    "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\blinded_review_v1\\review_response.json",
+    "exists": false,
+    "complete_24": false,
+    "response_count": 0
+  },
+  "decision_policy": {
+    "status": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "registered_before_model_results": false
+  },
+  "endpoint_margins": {
+    "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\S1_ENDPOINT_REGISTRATION_DRAFT_2026-08-24.md",
+    "exists": true,
+    "sha256": "d821bb07ebf6fe5a035cfc65aaae873862be9eacacef5cd68d88ee6f2e335e81",
+    "tbd_occurrences": 13,
+    "registered": false
+  },
+  "full_development_features": {
+    "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s1\\full_development_set_context_features.csv",
+    "exists": true,
+    "rows": 4899,
+    "complete_4899": true,
+    "required_columns": [
+      "center_radius",
+      "containment_conflict_count",
+      "detector_score",
+      "full_output_count",
+      "local_contrast",
+      "log_aspect",
+      "other_covered_by_self_max",
+      "output_count_delta",
+      "ownership_retained_fraction",
+      "pairwise_iou_max",
+      "perimeter_over_sqrt_area",
+      "proposal_count",
+      "refined_area_fraction",
+      "self_covered_by_other_max",
+      "semantic_mean",
+      "source_count"
+    ],
+    "binary_columns_valid": true,
+    "sha256": "66535c33582004f554af1592104fe09626c902246e3cdbaf71fad8ab9b6de6b0"
+  },
+  "full_development_labels": {
+    "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s1\\full_development_proposal_marginal_labels.csv",
+    "exists": false,
+    "rows": 0,
+    "complete_4899": false
+  },
+  "blockers": [
+    "complete_s0_4_response",
+    "all_endpoint_margins_registered",
+    "decision_policy_registered_before_model_results",
+    "full_development_labels_complete"
+  ],
+  "limitations": [
+    "A valid model structure is not evidence of model performance.",
+    "TBD probability thresholds are intentionally rejected for execution.",
+    "A label table without all five binary head columns is incomplete.",
+    "Private unblinding material is never read by this validator.",
+    "A new independent time/site block remains required for confirmatory claims."
+  ]
+}

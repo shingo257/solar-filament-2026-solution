@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "status": "reconciled_semantically_equivalent_common_contract_with_added_strata_columns",
+  "historical_source": {
+    "file": "science_case_metrics_v3.csv",
+    "sha256_recorded_by_downstream_artifacts": "70f8b589846242920371451aadd12fe46be82f8874b0003dd9ebbc67aa9442f0",
+    "exact_bytes_still_available": false,
+    "downstream_records_must_not_be_rewritten": true
+  },
+  "current_regenerated_source": {
+    "file": "science_case_metrics_v3.csv",
+    "sha256": "5524d693fca869fd89cb693bd3c8563c74a3d99b35647cefa9755077a451108a",
+    "rows": 4616,
+    "columns": 53
+  },
+  "completed_checkpoint": {
+    "file": "science_case_metrics_checkpoint_v2_raw-v35-v34-v42_512_v3.csv",
+    "sha256": "013606d5422ba160cb9e053933a4872b3976691bf080c6cf4b822b5d154794a2",
+    "rows": 4616,
+    "columns": 47
+  },
+  "comparison": {
+    "keys": ["file_name", "image_id", "model"],
+    "same_row_count": true,
+    "common_columns": 47,
+    "maximum_common_numeric_absolute_difference": 8.881784197001252e-16,
+    "common_numeric_columns_with_difference_above_1e-12": [],
+    "common_text_mismatch_counts": {
+      "file_name": 0,
+      "site_code": 0,
+      "time_block_role": 0,
+      "image_id": 0,
+      "model": 0
+    },
+    "current_only_columns": [
+      "annotation_area_median_2048",
+      "bbox_center_radius_median",
+      "bbox_center_radius_max",
+      "area_group",
+      "density_group",
+      "radial_group"
+    ]
+  },
+  "interpretation": "The current file preserves the completed common metric contract and adds six deterministic stratum columns. Historical S0-4 and S1 artifacts correctly retain the source hash observed when they were generated; their provenance fields are not rewritten."
+}

@@ -1,0 +1,13 @@
+file_name,fold,site_code,date_captured,year,labeler_count,instance_count_min,instance_count_max,chirality_classes,time_block_role,candidate_count,selection_hash,sample_rank_within_fold
+20121118092514Th.jpeg,0,Th,2012-11-18 09:25:14,2012,1,17,17,Left|Right|Unidentifiable,development,16,02101d9b1f947a9093cc4eea059693636a61beb76c11962dd6fbabbe7892f3d0,1
+20131016185334Ch.jpeg,0,Ch,2013-10-16 18:53:34,2013,3,8,10,Left|Right|Unidentifiable,development,10,02c3de9a99d0a000a0de408db2fe622c6daaacebbb85d1ff42711dac21602949,2
+20150113155654Bh.jpeg,0,Bh,2015-01-13 15:56:54,2015,1,14,14,Left|Right|Unidentifiable,development,13,056da55e859d68ca68f988de37f9fde1e31ddfe7fab730fb1b56742ce34a3a32,3
+20150423120034Ch.jpeg,0,Ch,2015-04-23 12:00:34,2015,3,9,16,Left|Right|Unidentifiable,development,16,057687286fd412e434f85cfc8b3a92e1dde115d4db56ff1808bc6835a70446af,4
+20140414020354Uh.jpeg,1,Uh,2014-04-14 02:03:54,2014,2,4,13,Left|Right|Unidentifiable,development,12,0104a30856e2e111e0a120a438bc3e50f669b306f28ad47f4d8b45064d5e459c,1
+20160810234034Lh.jpeg,1,Lh,2016-08-10 23:40:34,2016,3,5,8,Left|Right|Unidentifiable,development,6,016d5fb77fee10de8519707cb05db30c9307346a6b5d0016eb9c91f38cc5c40e,2
+20150720082014Th.jpeg,1,Th,2015-07-20 08:20:14,2015,2,4,4,Left|Right|Unidentifiable,development,7,026bc0d13006cf42be4cf3f51d05c05571f7b2a331519eb5315327d0dc39b0e1,3
+20110109104734Ch.jpeg,1,Ch,2011-01-09 10:47:34,2011,1,6,6,Left|Right|Unidentifiable,development,6,03f9b1582e4957b4cbc87345d3fc2597c77aed6c0dd95a7139de8c5c8a2c20cb,4
+20130201084914Th.jpeg,2,Th,2013-02-01 08:49:14,2013,1,16,16,Left|Right|Unidentifiable,development,12,00bab9427e6664aaf0bd3d7f9bbe833d862f698f44e7a477c92fb4d1a2417bc1,1
+20140615195814Mh.jpeg,2,Mh,2014-06-15 19:58:14,2014,1,10,10,Left|Right|Unidentifiable,development,13,01c4654ccd1b646930595909322412b9636e1644e6adf3a0885afac1f4efc03e,2
+20130319144654Bh.jpeg,2,Bh,2013-03-19 14:46:54,2013,3,4,8,Left|Right|Unidentifiable,development,9,026a6d1988f39ab8a9dd74efd557e41f8bb07889b670fdc9230889aece44aafe,3
+20150706083014Th.jpeg,2,Th,2015-07-06 08:30:14,2015,2,16,19,Left|Right|Unidentifiable,development,17,04933b25a3fac7d789f0e9da58a648dd45ac5b43bc55f3a4251d465490f611f8,4

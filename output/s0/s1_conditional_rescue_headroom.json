@@ -1,0 +1,3811 @@
+{
+  "status": "retrospective_feasibility_only_not_registered",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\evaluate_s1_conditional_rescue_headroom.py",
+  "script_sha256": "bbadfc8c63d9fe7ae7f9cae11c0968f07c18a089decca29c239f88a22d712132",
+  "source": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_case_metrics_v3.csv",
+  "source_sha256": "5524d693fca869fd89cb693bd3c8563c74a3d99b35647cefa9755077a451108a",
+  "calibration": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_endpoint_margin_calibration.json",
+  "calibration_sha256": "5c49368843704973fb507ceac94db9499619ab1b960cc7e072431055fcc3f51a",
+  "seed": 20260824,
+  "bootstrap_repeats": 5000,
+  "aggregation_contract": "Average annotator variants within observation/model first; give each observation equal weight; all differences are selected-policy minus V35.",
+  "scope": {
+    "observations": 707,
+    "development_observations": 547,
+    "locked_observations": 160,
+    "development_years": [
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016
+    ],
+    "locked_years": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "unit_of_gating": "whole observation, not individual proposal",
+    "s1_predictions_read": false,
+    "blinded_review_responses_read": false,
+    "locked_role": "retrospective transfer diagnostic only; prior S0 analyses already inspected this block, so it is not an independent holdout"
+  },
+  "development_threshold_contract": {
+    "minimum_selected_fraction": 0.1,
+    "constraints": [
+      "filament_precision difference >= 0",
+      "merge_count difference <= 0",
+      "count_abs_error difference <= 0"
+    ],
+    "objective": "maximize spine_coverage mean difference vs V35",
+    "data_used": "development OOF outcomes only"
+  },
+  "fixed_policy_ceilings": {
+    "v35_baseline": {
+      "development": {
+        "observations": 547,
+        "selected_v42": 0,
+        "selected_fraction": 0.0,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 545,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          }
+        }
+      },
+      "locked_evaluation": {
+        "observations": 160,
+        "selected_v42": 0,
+        "selected_fraction": 0.0,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 138,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.0,
+            "bootstrap_95ci": {
+              "low": 0.0,
+              "high": 0.0
+            }
+          }
+        }
+      }
+    },
+    "v42_all": {
+      "development": {
+        "observations": 547,
+        "selected_v42": 547,
+        "selected_fraction": 1.0,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.017181183722248757,
+            "bootstrap_95ci": {
+              "low": 0.011170032528115175,
+              "high": 0.023094558982094802
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.02337394289161851,
+            "bootstrap_95ci": {
+              "low": 0.017208945362864818,
+              "high": 0.02950519932462375
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.030847183604306615,
+            "bootstrap_95ci": {
+              "low": -0.037959801013223396,
+              "high": -0.023856641316154333
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.054844606946983544,
+            "bootstrap_95ci": {
+              "low": 0.0332114564290067,
+              "high": 0.07647775746496038
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 545,
+            "mean_difference_vs_v35": -0.006150237080853281,
+            "bootstrap_95ci": {
+              "low": -0.008158835338367447,
+              "high": -0.003973126075649873
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.09689213893967093,
+            "bootstrap_95ci": {
+              "low": -0.18281535648994515,
+              "high": -0.01218769043266302
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.000897306268450037,
+            "bootstrap_95ci": {
+              "low": -0.0047146458185885354,
+              "high": 0.0030047524629470013
+            }
+          }
+        }
+      },
+      "locked_evaluation": {
+        "observations": 160,
+        "selected_v42": 160,
+        "selected_fraction": 1.0,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.013263115524525668,
+            "bootstrap_95ci": {
+              "low": -0.012483139539940482,
+              "high": 0.039215222822038834
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.021417855020796205,
+            "bootstrap_95ci": {
+              "low": -0.006208737188057036,
+              "high": 0.04984447150072149
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": -0.018007946914196913,
+            "bootstrap_95ci": {
+              "low": -0.048894941863691865,
+              "high": 0.013332127941502937
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.025,
+            "bootstrap_95ci": {
+              "low": -0.0020833333333333337,
+              "high": 0.05625
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 136,
+            "mean_difference_vs_v35": -0.007687644658734068,
+            "bootstrap_95ci": {
+              "low": -0.01443783566924618,
+              "high": -0.0013186094484190305
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.016666666666666666,
+            "bootstrap_95ci": {
+              "low": -0.058333333333333334,
+              "high": 0.08958333333333333
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": -0.002740220675641062,
+            "bootstrap_95ci": {
+              "low": -0.02209981809898906,
+              "high": 0.01606266733310422
+            }
+          }
+        }
+      }
+    },
+    "oracle_primary": {
+      "development": {
+        "observations": 547,
+        "selected_v42": 190,
+        "selected_fraction": 0.3473491773308958,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.029557249974002355,
+            "bootstrap_95ci": {
+              "low": 0.024771012352011505,
+              "high": 0.034428952604115465
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.03257630114548061,
+            "bootstrap_95ci": {
+              "low": 0.02743875198595946,
+              "high": 0.03771863243183238
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.0003689622144280541,
+            "bootstrap_95ci": {
+              "low": -0.00463501951748601,
+              "high": 0.003809619099936637
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.02102376599634369,
+            "bootstrap_95ci": {
+              "low": 0.008531383302864107,
+              "high": 0.03412553321145643
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 545,
+            "mean_difference_vs_v35": -0.0004660336852070945,
+            "bootstrap_95ci": {
+              "low": -0.001924677127341018,
+              "high": 0.001080711319696439
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.1651432053625838,
+            "bootstrap_95ci": {
+              "low": -0.23583180987202926,
+              "high": -0.09748628884826346
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.012099536456310386,
+            "bootstrap_95ci": {
+              "low": 0.009531796709753753,
+              "high": 0.014714874013310843
+            }
+          }
+        }
+      },
+      "locked_evaluation": {
+        "observations": 160,
+        "selected_v42": 20,
+        "selected_fraction": 0.125,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.03408534940742355,
+            "bootstrap_95ci": {
+              "low": 0.016081748763035142,
+              "high": 0.05619927204063807
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.03901210105254223,
+            "bootstrap_95ci": {
+              "low": 0.01863023950110347,
+              "high": 0.06388879273300231
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.02630752927627928,
+            "bootstrap_95ci": {
+              "low": 0.006811780233655235,
+              "high": 0.05014134086399711
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": -0.00625,
+            "bootstrap_95ci": {
+              "low": -0.01875,
+              "high": 0.0
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 138,
+            "mean_difference_vs_v35": -0.0015674411055243938,
+            "bootstrap_95ci": {
+              "low": -0.007035016052116361,
+              "high": 0.0033446046857030383
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": -0.03125,
+            "bootstrap_95ci": {
+              "low": -0.07916666666666666,
+              "high": 0.0125
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.019139692495649074,
+            "bootstrap_95ci": {
+              "low": 0.007527314983957877,
+              "high": 0.03331948257730711
+            }
+          }
+        }
+      }
+    },
+    "oracle_catalog_safe": {
+      "development": {
+        "observations": 547,
+        "selected_v42": 80,
+        "selected_fraction": 0.14625228519195613,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.013110568846599991,
+            "bootstrap_95ci": {
+              "low": 0.009690984330525789,
+              "high": 0.01694522505611122
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.014210745192549662,
+            "bootstrap_95ci": {
+              "low": 0.010590047962620443,
+              "high": 0.018267994606896692
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.007277962041809032,
+            "bootstrap_95ci": {
+              "low": 0.005066103248715024,
+              "high": 0.009801594885990455
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.003656307129798903,
+            "bootstrap_95ci": {
+              "low": -0.009140767824497258,
+              "high": 0.0
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 545,
+            "mean_difference_vs_v35": -4.0613512757178255e-05,
+            "bootstrap_95ci": {
+              "low": -0.0009743048173081994,
+              "high": 0.0009415770786885469
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": -0.10176721511273615,
+            "bootstrap_95ci": {
+              "low": -0.13467397928092628,
+              "high": -0.07312614259597806
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 547,
+            "mean_difference_vs_v35": 0.007668964456757018,
+            "bootstrap_95ci": {
+              "low": 0.005695194841846216,
+              "high": 0.009860625860264708
+            }
+          }
+        }
+      },
+      "locked_evaluation": {
+        "observations": 160,
+        "selected_v42": 14,
+        "selected_fraction": 0.0875,
+        "endpoints": {
+          "spine_coverage": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.02831492196075529,
+            "bootstrap_95ci": {
+              "low": 0.011259180393294977,
+              "high": 0.049443037913089974
+            }
+          },
+          "filament_recall": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.03246527777777778,
+            "bootstrap_95ci": {
+              "low": 0.013541666666666665,
+              "high": 0.056076388888888884
+            }
+          },
+          "filament_precision": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.02915922619047619,
+            "bootstrap_95ci": {
+              "low": 0.010831845238095238,
+              "high": 0.05274572172619047
+            }
+          },
+          "merge_count": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": -0.00625,
+            "bootstrap_95ci": {
+              "low": -0.01875,
+              "high": 0.0
+            }
+          },
+          "spine_coverage_matched": {
+            "direction": "higher_is_better",
+            "n_valid": 138,
+            "mean_difference_vs_v35": -0.003131947413437183,
+            "bootstrap_95ci": {
+              "low": -0.007856537477882888,
+              "high": 0.0003440799396681754
+            }
+          },
+          "count_abs_error": {
+            "direction": "lower_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": -0.05,
+            "bootstrap_95ci": {
+              "low": -0.0875,
+              "high": -0.01875
+            }
+          },
+          "pq_512": {
+            "direction": "higher_is_better",
+            "n_valid": 160,
+            "mean_difference_vs_v35": 0.01818325755106994,
+            "bootstrap_95ci": {
+              "low": 0.006998468545880846,
+              "high": 0.03224164090842199
+            }
+          }
+        }
+      }
+    }
+  },
+  "observable_gates": {
+    "mask_only": {
+      "feature_audit": {
+        "numeric": [
+          "v35_prediction_count",
+          "v42_prediction_count",
+          "delta_prediction_count",
+          "v35_prediction_components",
+          "v42_prediction_components",
+          "delta_prediction_components"
+        ],
+        "categorical": [],
+        "forbidden_feature_intersection": [],
+        "ground_truth_features_used_at_inference": false,
+        "ground_truth_used_as_development_training_target": true
+      },
+      "model": "class-weighted logistic regression; three-fold development OOF probabilities; full-development refit for locked prediction",
+      "development_classifier_diagnostics": {
+        "n": 547,
+        "positive": 190,
+        "positive_fraction": 0.3473491773308958,
+        "probability_mean": 0.46800699155065817,
+        "probability_sd": 0.2352222109266832,
+        "brier_score": 0.1970553774919858,
+        "roc_auc": 0.7645805690697333,
+        "average_precision": 0.6310091767312325
+      },
+      "locked_retrospective_classifier_diagnostics": {
+        "n": 160,
+        "positive": 20,
+        "positive_fraction": 0.125,
+        "probability_mean": 0.29836149928510275,
+        "probability_sd": 0.17276160623322068,
+        "brier_score": 0.11718332481484442,
+        "roc_auc": 0.8332142857142858,
+        "average_precision": 0.46193040785681094
+      },
+      "selected_threshold": {
+        "threshold": 1.01,
+        "selected": 0,
+        "selected_fraction": 0.0,
+        "endpoint_mean_differences_vs_v35": {
+          "spine_coverage": 0.0,
+          "filament_recall": 0.0,
+          "filament_precision": 0.0,
+          "merge_count": 0.0,
+          "spine_coverage_matched": 0.0,
+          "count_abs_error": 0.0,
+          "pq_512": 0.0
+        },
+        "meets_development_catalog_zero_harm_constraints": false,
+        "selection_status": "no_feasible_development_threshold_select_none",
+        "selection_basis": "development_oof_only"
+      },
+      "development_threshold_scan": [
+        {
+          "threshold": 0.05,
+          "selected": 547,
+          "selected_fraction": 1.0,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017181183722248757,
+            "filament_recall": 0.02337394289161851,
+            "filament_precision": -0.030847183604306615,
+            "merge_count": 0.054844606946983544,
+            "spine_coverage_matched": -0.006150237080853281,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.000897306268450037
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.06,
+          "selected": 547,
+          "selected_fraction": 1.0,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017181183722248757,
+            "filament_recall": 0.02337394289161851,
+            "filament_precision": -0.030847183604306615,
+            "merge_count": 0.054844606946983544,
+            "spine_coverage_matched": -0.006150237080853281,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.000897306268450037
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.07,
+          "selected": 547,
+          "selected_fraction": 1.0,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017181183722248757,
+            "filament_recall": 0.02337394289161851,
+            "filament_precision": -0.030847183604306615,
+            "merge_count": 0.054844606946983544,
+            "spine_coverage_matched": -0.006150237080853281,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.000897306268450037
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.08,
+          "selected": 546,
+          "selected_fraction": 0.9981718464351006,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017191805167970753,
+            "filament_recall": 0.023434881343781827,
+            "filament_precision": -0.030897965647776044,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006329237913523839,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0008756902506067991
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.09,
+          "selected": 546,
+          "selected_fraction": 0.9981718464351006,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017191805167970753,
+            "filament_recall": 0.023434881343781827,
+            "filament_precision": -0.030897965647776044,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006329237913523839,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0008756902506067991
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.1,
+          "selected": 546,
+          "selected_fraction": 0.9981718464351006,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017191805167970753,
+            "filament_recall": 0.023434881343781827,
+            "filament_precision": -0.030897965647776044,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006329237913523839,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0008756902506067991
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.11,
+          "selected": 544,
+          "selected_fraction": 0.9945155393053017,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.016917852370274253,
+            "filament_recall": 0.02311633943474631,
+            "filament_precision": -0.031485586436493726,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006258586595389862,
+            "count_abs_error": -0.10054844606946983,
+            "pq_512": -0.001162052007150715
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.12,
+          "selected": 543,
+          "selected_fraction": 0.9926873857404022,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017256681449200836,
+            "filament_recall": 0.02347181373903232,
+            "filament_precision": -0.031211363401758806,
+            "merge_count": 0.05240706886045095,
+            "spine_coverage_matched": -0.006223683510028061,
+            "count_abs_error": -0.10115783059110298,
+            "pq_512": -0.0009313054022518775
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.13,
+          "selected": 539,
+          "selected_fraction": 0.9853747714808044,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017643872871816044,
+            "filament_recall": 0.02376283391122251,
+            "filament_precision": -0.03209240395373172,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.0060740129850924895,
+            "count_abs_error": -0.10115783059110299,
+            "pq_512": -0.0009662318560440663
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.14,
+          "selected": 537,
+          "selected_fraction": 0.9817184643510055,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017313789589264755,
+            "filament_recall": 0.023407359606936507,
+            "filament_precision": -0.03271075001244771,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.0060802885647625645,
+            "count_abs_error": -0.10115783059110299,
+            "pq_512": -0.001250679121745167
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.15,
+          "selected": 536,
+          "selected_fraction": 0.979890310786106,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017097260231967573,
+            "filament_recall": 0.02314619481195087,
+            "filament_precision": -0.03307891982760107,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006070709633570034,
+            "count_abs_error": -0.09932967702620354,
+            "pq_512": -0.0014799039023941118
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.16,
+          "selected": 534,
+          "selected_fraction": 0.9762340036563071,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01704491503615937,
+            "filament_recall": 0.023085256359787556,
+            "filament_precision": -0.03338595587503931,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006043756199011814,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.0016029678132705586
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.17,
+          "selected": 528,
+          "selected_fraction": 0.9652650822669104,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017486990861004845,
+            "filament_recall": 0.023237602490195842,
+            "filament_precision": -0.03320314051854937,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.00572747907654203,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.0015539256255959102
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.18,
+          "selected": 524,
+          "selected_fraction": 0.9579524680073126,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017486990861004845,
+            "filament_recall": 0.023237602490195842,
+            "filament_precision": -0.03320314051854937,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.005716989188123456,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.001514510569529199
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.19,
+          "selected": 515,
+          "selected_fraction": 0.9414990859232175,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017481976667637067,
+            "filament_recall": 0.023237602490195842,
+            "filament_precision": -0.03320314051854937,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.005677092603543649,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.0015040191964019601
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.2,
+          "selected": 511,
+          "selected_fraction": 0.9341864716636198,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01770542065666191,
+            "filament_recall": 0.02342041784668579,
+            "filament_precision": -0.03283750980556948,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.0055995345735176125,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.0013661176147422847
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.21,
+          "selected": 502,
+          "selected_fraction": 0.9177330895795247,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01773713935782298,
+            "filament_recall": 0.023293462738012215,
+            "filament_precision": -0.033113183755832096,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.005381443022273489,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.0014799300765198857
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.22,
+          "selected": 487,
+          "selected_fraction": 0.8903107861060329,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01793771307106748,
+            "filament_recall": 0.023367096701042884,
+            "filament_precision": -0.03312214529291493,
+            "merge_count": 0.05057891529555149,
+            "spine_coverage_matched": -0.005172038555283789,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.001433900365883657
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.23,
+          "selected": 482,
+          "selected_fraction": 0.8811700182815356,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017849333522788082,
+            "filament_recall": 0.023200900922415665,
+            "filament_precision": -0.03335066448852736,
+            "merge_count": 0.05057891529555149,
+            "spine_coverage_matched": -0.005064296812480104,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.0016041817666379325
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.24,
+          "selected": 454,
+          "selected_fraction": 0.829981718464351,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01833793613117828,
+            "filament_recall": 0.02335324705282395,
+            "filament_precision": -0.033147536314649645,
+            "merge_count": 0.05057891529555149,
+            "spine_coverage_matched": -0.0045832303807738185,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.0014126006441550726
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.25,
+          "selected": 425,
+          "selected_fraction": 0.7769652650822669,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01933155681189864,
+            "filament_recall": 0.024158505170696325,
+            "filament_precision": -0.03244274310528605,
+            "merge_count": 0.048750761730652035,
+            "spine_coverage_matched": -0.004323119476138553,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.001113815513669379
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.26,
+          "selected": 414,
+          "selected_fraction": 0.7568555758683729,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019265669279928167,
+            "filament_recall": 0.02389074530513025,
+            "filament_precision": -0.03280960489810763,
+            "merge_count": 0.048750761730652035,
+            "spine_coverage_matched": -0.004114163247236773,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.0013081568858553407
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.27,
+          "selected": 404,
+          "selected_fraction": 0.7385740402193784,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01954828696324388,
+            "filament_recall": 0.024151910100115886,
+            "filament_precision": -0.03250491263729105,
+            "merge_count": 0.048750761730652035,
+            "spine_coverage_matched": -0.004017557300539418,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.0011711761490275677
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.28,
+          "selected": 389,
+          "selected_fraction": 0.7111517367458866,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019849447849355224,
+            "filament_recall": 0.024299277598811484,
+            "filament_precision": -0.032484897443601266,
+            "merge_count": 0.04631322364411944,
+            "spine_coverage_matched": -0.003685445260132131,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0010771320795670708
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.29,
+          "selected": 366,
+          "selected_fraction": 0.6691042047531993,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01975337539817654,
+            "filament_recall": 0.02407075840319905,
+            "filament_precision": -0.03274606223858691,
+            "merge_count": 0.044485070079219986,
+            "spine_coverage_matched": -0.0034956691493081646,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.001304487037571952
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.3,
+          "selected": 355,
+          "selected_fraction": 0.6489945155393053,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019977359566782888,
+            "filament_recall": 0.024223104533607338,
+            "filament_precision": -0.032613247663359164,
+            "merge_count": 0.042656916514320534,
+            "spine_coverage_matched": -0.0033956733888862015,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0013192741405403624
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.31,
+          "selected": 349,
+          "selected_fraction": 0.6380255941499086,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.0205925371726394,
+            "filament_recall": 0.024803108015804605,
+            "filament_precision": -0.03212850997569643,
+            "merge_count": 0.03900060938452163,
+            "spine_coverage_matched": -0.003247319302416407,
+            "count_abs_error": -0.09993906154783669,
+            "pq_512": -0.0009383274947682664
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.32,
+          "selected": 336,
+          "selected_fraction": 0.6142595978062158,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02061521605014234,
+            "filament_recall": 0.024647134596577074,
+            "filament_precision": -0.03231132533218638,
+            "merge_count": 0.042656916514320534,
+            "spine_coverage_matched": -0.0029176111754339435,
+            "count_abs_error": -0.10176721511273615,
+            "pq_512": -0.0010132412339296567
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.33,
+          "selected": 326,
+          "selected_fraction": 0.5959780621572212,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02061755203914896,
+            "filament_recall": 0.02446431924008713,
+            "filament_precision": -0.032451952529486336,
+            "merge_count": 0.042656916514320534,
+            "spine_coverage_matched": -0.0026967589333791327,
+            "count_abs_error": -0.10176721511273615,
+            "pq_512": -0.0011605313167881636
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.34,
+          "selected": 313,
+          "selected_fraction": 0.5722120658135283,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020689132546629834,
+            "filament_recall": 0.02446431924008713,
+            "filament_precision": -0.032472265346874106,
+            "merge_count": 0.042656916514320534,
+            "spine_coverage_matched": -0.002559734354311054,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.001215052999912573
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.35,
+          "selected": 308,
+          "selected_fraction": 0.5630712979890311,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02046860979758292,
+            "filament_recall": 0.024072572047608674,
+            "filament_precision": -0.032614718871411735,
+            "merge_count": 0.042656916514320534,
+            "spine_coverage_matched": -0.0024373415862745575,
+            "count_abs_error": -0.09993906154783669,
+            "pq_512": -0.0014036398600140853
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.36,
+          "selected": 301,
+          "selected_fraction": 0.5502742230347349,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020940700224760175,
+            "filament_recall": 0.024607333345624084,
+            "filament_precision": -0.0322203116671325,
+            "merge_count": 0.04204753199268738,
+            "spine_coverage_matched": -0.002435142967619637,
+            "count_abs_error": -0.10176721511273615,
+            "pq_512": -0.0011209553419010813
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.37,
+          "selected": 297,
+          "selected_fraction": 0.5429616087751371,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02097455492040646,
+            "filament_recall": 0.024607333345624084,
+            "filament_precision": -0.031610927145499346,
+            "merge_count": 0.04204753199268738,
+            "spine_coverage_matched": -0.002333578880680779,
+            "count_abs_error": -0.1035953686776356,
+            "pq_512": -0.0008277494266630762
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.38,
+          "selected": 292,
+          "selected_fraction": 0.5338208409506399,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02081454641065811,
+            "filament_recall": 0.02434616855063845,
+            "filament_precision": -0.03187209194048499,
+            "merge_count": 0.04204753199268738,
+            "spine_coverage_matched": -0.002228254969369665,
+            "count_abs_error": -0.1035953686776356,
+            "pq_512": -0.0009606904873453405
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.39,
+          "selected": 284,
+          "selected_fraction": 0.5191956124314442,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02037992122866155,
+            "filament_recall": 0.02380865000580729,
+            "filament_precision": -0.03171829489454899,
+            "merge_count": 0.03960999390615478,
+            "spine_coverage_matched": -0.0022842125240249067,
+            "count_abs_error": -0.10237659963436929,
+            "pq_512": -0.0011238684348032417
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.4,
+          "selected": 280,
+          "selected_fraction": 0.5118829981718465,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020389881188444526,
+            "filament_recall": 0.02380865000580729,
+            "filament_precision": -0.03171829489454899,
+            "merge_count": 0.03960999390615478,
+            "spine_coverage_matched": -0.0022623805017261225,
+            "count_abs_error": -0.10237659963436929,
+            "pq_512": -0.0011358706566613225
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.41,
+          "selected": 275,
+          "selected_fraction": 0.5027422303473492,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02054272025810261,
+            "filament_recall": 0.023895704937469172,
+            "filament_precision": -0.031631239962887116,
+            "merge_count": 0.03960999390615478,
+            "spine_coverage_matched": -0.002174684681066183,
+            "count_abs_error": -0.10237659963436929,
+            "pq_512": -0.0010314207121998851
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.42,
+          "selected": 274,
+          "selected_fraction": 0.5009140767824497,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02054272025810261,
+            "filament_recall": 0.023895704937469172,
+            "filament_precision": -0.031631239962887116,
+            "merge_count": 0.03960999390615478,
+            "spine_coverage_matched": -0.002174684681066183,
+            "count_abs_error": -0.10237659963436929,
+            "pq_512": -0.0010340824004761175
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.43,
+          "selected": 270,
+          "selected_fraction": 0.4936014625228519,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020466381293368998,
+            "filament_recall": 0.023849539443406054,
+            "filament_precision": -0.031597186121972314,
+            "merge_count": 0.03960999390615478,
+            "spine_coverage_matched": -0.0022080279354547115,
+            "count_abs_error": -0.10054844606946983,
+            "pq_512": -0.0010321961752102306
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.44,
+          "selected": 263,
+          "selected_fraction": 0.48080438756855576,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019758034954805017,
+            "filament_recall": 0.02325243189931496,
+            "filament_precision": -0.030617818140776184,
+            "merge_count": 0.038695917123705056,
+            "spine_coverage_matched": -0.0024198863827510184,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.0008795002258434617
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.45,
+          "selected": 262,
+          "selected_fraction": 0.4789762340036563,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019804963003903997,
+            "filament_recall": 0.02325243189931496,
+            "filament_precision": -0.030617818140776184,
+            "merge_count": 0.038695917123705056,
+            "spine_coverage_matched": -0.002366254326637897,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.0008705610116564752
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.46,
+          "selected": 252,
+          "selected_fraction": 0.4606946983546618,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01890416981967589,
+            "filament_recall": 0.022145982422306705,
+            "filament_precision": -0.030982904760433194,
+            "merge_count": 0.036867763558805604,
+            "spine_coverage_matched": -0.0021665411231362405,
+            "count_abs_error": -0.09079829372333943,
+            "pq_512": -0.0013505107201866005
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.47,
+          "selected": 246,
+          "selected_fraction": 0.44972577696526506,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019160216418929153,
+            "filament_recall": 0.022374501617919134,
+            "filament_precision": -0.02963645515072947,
+            "merge_count": 0.035953686776355874,
+            "spine_coverage_matched": -0.0020859304173553605,
+            "count_abs_error": -0.08957952468007313,
+            "pq_512": -0.0008543742586937912
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.48,
+          "selected": 243,
+          "selected_fraction": 0.44424131627056673,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018950502364429307,
+            "filament_recall": 0.022117145476193707,
+            "filament_precision": -0.02959582951595392,
+            "merge_count": 0.035953686776355874,
+            "spine_coverage_matched": -0.0020555452997858283,
+            "count_abs_error": -0.08957952468007313,
+            "pq_512": -0.000873439293873002
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.49,
+          "selected": 235,
+          "selected_fraction": 0.4296160877513711,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017847040212602833,
+            "filament_recall": 0.020817125163376318,
+            "filament_precision": -0.028935662950851343,
+            "merge_count": 0.035953686776355874,
+            "spine_coverage_matched": -0.002011764111402152,
+            "count_abs_error": -0.08531383302864108,
+            "pq_512": -0.0012597879445322467
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.5,
+          "selected": 223,
+          "selected_fraction": 0.4076782449725777,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.016181642397170983,
+            "filament_recall": 0.01891144654380373,
+            "filament_precision": -0.027856181798244048,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.001876247883787341,
+            "count_abs_error": -0.08592321755027423,
+            "pq_512": -0.0015168292374111868
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.51,
+          "selected": 210,
+          "selected_fraction": 0.38391224862888484,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.015647285562787546,
+            "filament_recall": 0.01831360339568636,
+            "filament_precision": -0.026167415050062308,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.0018976817937815843,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.0012189067011785983
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.52,
+          "selected": 209,
+          "selected_fraction": 0.3820840950639854,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.015782880026027755,
+            "filament_recall": 0.01844753405978156,
+            "filament_precision": -0.026031996267477164,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.0018869897536939954,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.001131584908737672
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.53,
+          "selected": 194,
+          "selected_fraction": 0.3546617915904936,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.014990602106236128,
+            "filament_recall": 0.01738401297797894,
+            "filament_precision": -0.024667344262971406,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.0014540897525177037,
+            "count_abs_error": -0.08836075563680681,
+            "pq_512": -0.0010901908093855842
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.54,
+          "selected": 193,
+          "selected_fraction": 0.35283363802559414,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.015044681684995781,
+            "filament_recall": 0.01743941157085468,
+            "filament_precision": -0.02462046853053809,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.0014503252403583948,
+            "count_abs_error": -0.08836075563680681,
+            "pq_512": -0.0010694183888316998
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.55,
+          "selected": 186,
+          "selected_fraction": 0.340036563071298,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01517543143252819,
+            "filament_recall": 0.017540975657793542,
+            "filament_precision": -0.02312831182814373,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.001441216962506389,
+            "count_abs_error": -0.08531383302864108,
+            "pq_512": -0.0006203217397971195
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.56,
+          "selected": 177,
+          "selected_fraction": 0.3235831809872029,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01432636374839982,
+            "filament_recall": 0.01662360134005359,
+            "filament_precision": -0.022850098775707643,
+            "merge_count": 0.03778184034125533,
+            "spine_coverage_matched": -0.0014945961821518272,
+            "count_abs_error": -0.08043875685557587,
+            "pq_512": -0.0008722751705658764
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.57,
+          "selected": 165,
+          "selected_fraction": 0.3016453382084095,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.013740712947842708,
+            "filament_recall": 0.01593206939516107,
+            "filament_precision": -0.022060866679345748,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0014507507716672655,
+            "count_abs_error": -0.068860450944546,
+            "pq_512": -0.0009174341147979895
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.58,
+          "selected": 160,
+          "selected_fraction": 0.29250457038391225,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01401404308605443,
+            "filament_recall": 0.01622152704293682,
+            "filament_precision": -0.02155149640306505,
+            "merge_count": 0.0332114564290067,
+            "spine_coverage_matched": -0.0014760904984085766,
+            "count_abs_error": -0.07434491163924437,
+            "pq_512": -0.0005517610003996333
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.59,
+          "selected": 156,
+          "selected_fraction": 0.2851919561243144,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.013837096844343158,
+            "filament_recall": 0.0159473040082019,
+            "filament_precision": -0.02085578240753387,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.001300736818141733,
+            "count_abs_error": -0.068860450944546,
+            "pq_512": -0.0005512364307303565
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.6,
+          "selected": 149,
+          "selected_fraction": 0.27239488117001825,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.013683547635788034,
+            "filament_recall": 0.015700563020521023,
+            "filament_precision": -0.019666757132585377,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.001180569239009321,
+            "count_abs_error": -0.0664229128580134,
+            "pq_512": -0.00024064350688137646
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.61,
+          "selected": 146,
+          "selected_fraction": 0.26691042047531993,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.013721345854475694,
+            "filament_recall": 0.015646793798023983,
+            "filament_precision": -0.01923644332516113,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0010081632536560411,
+            "count_abs_error": -0.06459475929311395,
+            "pq_512": -0.0001843737133782601
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.62,
+          "selected": 143,
+          "selected_fraction": 0.26142595978062155,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.013471731617122692,
+            "filament_recall": 0.015352257945901294,
+            "filament_precision": -0.019164486031997257,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0010304853573635156,
+            "count_abs_error": -0.06459475929311395,
+            "pq_512": -0.00021995506101087743
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.63,
+          "selected": 141,
+          "selected_fraction": 0.2577696526508227,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.013333531913109462,
+            "filament_recall": 0.015199911815493005,
+            "filament_precision": -0.0192051116667728,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0010240469197093569,
+            "count_abs_error": -0.06276660572821449,
+            "pq_512": -0.0002886154868494552
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.64,
+          "selected": 136,
+          "selected_fraction": 0.24862888482632542,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.012922520350361153,
+            "filament_recall": 0.014761288890581233,
+            "filament_precision": -0.01887210456959751,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.001052436601752388,
+            "count_abs_error": -0.05971968312004876,
+            "pq_512": -0.0004039577550181238
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.65,
+          "selected": 135,
+          "selected_fraction": 0.24680073126142596,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.012914056676449582,
+            "filament_recall": 0.014761288890581233,
+            "filament_precision": -0.018516630265311505,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0010637215003011502,
+            "count_abs_error": -0.0578915295551493,
+            "pq_512": -0.00033188084070405574
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.66,
+          "selected": 133,
+          "selected_fraction": 0.24314442413162707,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.012941270700924204,
+            "filament_recall": 0.014665070281902313,
+            "filament_precision": -0.018397878409813762,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0008342287558874466,
+            "count_abs_error": -0.05667276051188299,
+            "pq_512": -0.0003148079453942596
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.67,
+          "selected": 129,
+          "selected_fraction": 0.23583180987202926,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.012429322394162959,
+            "filament_recall": 0.014136211572056401,
+            "filament_precision": -0.017910370792507246,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0008428917609794333,
+            "count_abs_error": -0.04875076173065204,
+            "pq_512": -0.0004203501931651921
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.68,
+          "selected": 125,
+          "selected_fraction": 0.22851919561243145,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011320754725570916,
+            "filament_recall": 0.0129766882461711,
+            "filament_precision": -0.017237508716537304,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0008528089646809144,
+            "count_abs_error": -0.03778184034125533,
+            "pq_512": -0.0007396306618455104
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.69,
+          "selected": 120,
+          "selected_fraction": 0.21937842778793418,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011788792421791044,
+            "filament_recall": 0.013497303117791458,
+            "filament_precision": -0.015690503010482238,
+            "merge_count": 0.029555149299207797,
+            "spine_coverage_matched": -0.000884588518986943,
+            "count_abs_error": -0.032297379646556976,
+            "pq_512": -0.00012879432676541497
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.7,
+          "selected": 118,
+          "selected_fraction": 0.21572212065813529,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011491519615377468,
+            "filament_recall": 0.01317628805728828,
+            "filament_precision": -0.015784812519782608,
+            "merge_count": 0.027726995734308348,
+            "spine_coverage_matched": -0.0008879575008751204,
+            "count_abs_error": -0.030469226081657523,
+            "pq_512": -0.00024298053844516422
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.71,
+          "selected": 114,
+          "selected_fraction": 0.20840950639853748,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011319090268216071,
+            "filament_recall": 0.012974297856373463,
+            "filament_precision": -0.015446023744065132,
+            "merge_count": 0.0271176112126752,
+            "spine_coverage_matched": -0.0008465913779410871,
+            "count_abs_error": -0.029859841560024372,
+            "pq_512": -0.00020833457441142504
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.72,
+          "selected": 112,
+          "selected_fraction": 0.20475319926873858,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011157172582105157,
+            "filament_recall": 0.012772732206910189,
+            "filament_precision": -0.015420017182409576,
+            "merge_count": 0.0271176112126752,
+            "spine_coverage_matched": -0.0008001999315193158,
+            "count_abs_error": -0.028641072516758074,
+            "pq_512": -0.00024142424167041446
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.73,
+          "selected": 107,
+          "selected_fraction": 0.1956124314442413,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011206588017477486,
+            "filament_recall": 0.012696559141706044,
+            "filament_precision": -0.014229738844050798,
+            "merge_count": 0.0271176112126752,
+            "spine_coverage_matched": -0.0006108770549009035,
+            "count_abs_error": -0.03229737964655698,
+            "pq_512": 8.984536901841022e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.74,
+          "selected": 102,
+          "selected_fraction": 0.18647166361974407,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.010934046228374779,
+            "filament_recall": 0.012289326216191587,
+            "filament_precision": -0.013416835517436316,
+            "merge_count": 0.0271176112126752,
+            "spine_coverage_matched": -0.00044798906724681167,
+            "count_abs_error": -0.029859841560024372,
+            "pq_512": 0.000246991999219756
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.75,
+          "selected": 97,
+          "selected_fraction": 0.1773308957952468,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.010308147650008193,
+            "filament_recall": 0.01161531000287007,
+            "filament_precision": -0.012754822332571214,
+            "merge_count": 0.0271176112126752,
+            "spine_coverage_matched": -0.0004339488947666635,
+            "count_abs_error": -0.028031687995124923,
+            "pq_512": 0.00021825288452643546
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.76,
+          "selected": 90,
+          "selected_fraction": 0.16453382084095064,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.00933175463851572,
+            "filament_recall": 0.010498830504306477,
+            "filament_precision": -0.011994476645351668,
+            "merge_count": 0.0271176112126752,
+            "spine_coverage_matched": -0.00027324043899277096,
+            "count_abs_error": -0.039000609384521635,
+            "pq_512": 0.00024606248915193544
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.77,
+          "selected": 79,
+          "selected_fraction": 0.14442413162705667,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.008269988508776025,
+            "filament_recall": 0.009296811000587865,
+            "filament_precision": -0.010944172761409758,
+            "merge_count": 0.02254722730042657,
+            "spine_coverage_matched": -0.00037273414302807647,
+            "count_abs_error": -0.05362583790371725,
+            "pq_512": 0.00041680974712675426
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.78,
+          "selected": 76,
+          "selected_fraction": 0.13893967093235832,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.00809644245932934,
+            "filament_recall": 0.00901388247268676,
+            "filament_precision": -0.010609011274511526,
+            "merge_count": 0.02254722730042657,
+            "spine_coverage_matched": -0.00028770100336540644,
+            "count_abs_error": -0.057282145033516155,
+            "pq_512": 0.0005057640375446791
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.79,
+          "selected": 73,
+          "selected_fraction": 0.13345521023765997,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.008232654890433075,
+            "filament_recall": 0.009119139799150668,
+            "filament_precision": -0.010376458939582592,
+            "merge_count": 0.02254722730042657,
+            "spine_coverage_matched": -0.00018936413069489672,
+            "count_abs_error": -0.05971968312004876,
+            "pq_512": 0.0005875152904125488
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.8,
+          "selected": 67,
+          "selected_fraction": 0.12248628884826325,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.008250859718139207,
+            "filament_recall": 0.008970826808058885,
+            "filament_precision": -0.009321555416671757,
+            "merge_count": 0.02071907373552712,
+            "spine_coverage_matched": 4.105618355551946e-06,
+            "count_abs_error": -0.055453991468616695,
+            "pq_512": 0.0008322770177773832
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.81,
+          "selected": 64,
+          "selected_fraction": 0.1170018281535649,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007588117411582153,
+            "filament_recall": 0.008284829549849559,
+            "filament_precision": -0.009267585755755111,
+            "merge_count": 0.02071907373552712,
+            "spine_coverage_matched": -5.637013605682575e-05,
+            "count_abs_error": -0.04936014625228519,
+            "pq_512": 0.0005343754797216285
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.82,
+          "selected": 59,
+          "selected_fraction": 0.10786106032906764,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.00685955489142914,
+            "filament_recall": 0.007492629671726462,
+            "filament_precision": -0.008821875666534968,
+            "merge_count": 0.018890920170627667,
+            "spine_coverage_matched": -0.00013456328289951014,
+            "count_abs_error": -0.04753199268738574,
+            "pq_512": 0.00029847547950141923
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.83,
+          "selected": 55,
+          "selected_fraction": 0.10054844606946983,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.006728805080606202,
+            "filament_recall": 0.007398208553539348,
+            "filament_precision": -0.008169434386069168,
+            "merge_count": 0.017062766605728214,
+            "spine_coverage_matched": -0.00020826037182428711,
+            "count_abs_error": -0.03960999390615478,
+            "pq_512": 0.0003827187512754963
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.84,
+          "selected": 50,
+          "selected_fraction": 0.09140767824497258,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005827461991011405,
+            "filament_recall": 0.006485849960530318,
+            "filament_precision": -0.008425101398914373,
+            "merge_count": 0.018890920170627667,
+            "spine_coverage_matched": -0.0002842691098531349,
+            "count_abs_error": -0.028641072516758077,
+            "pq_512": -7.453576815189725e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.85,
+          "selected": 49,
+          "selected_fraction": 0.08957952468007313,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005854598087177313,
+            "filament_recall": 0.006485849960530318,
+            "filament_precision": -0.008154263833744084,
+            "merge_count": 0.018890920170627667,
+            "spine_coverage_matched": -0.00023453263056510487,
+            "count_abs_error": -0.02985984156002438,
+            "pq_512": 1.6113227573653613e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.86,
+          "selected": 45,
+          "selected_fraction": 0.08226691042047532,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005688383693431516,
+            "filament_recall": 0.006268872138433665,
+            "filament_precision": -0.007532365165684539,
+            "merge_count": 0.018890920170627667,
+            "spine_coverage_matched": -0.00019491699893732446,
+            "count_abs_error": -0.022547227300426572,
+            "pq_512": 2.0684231857171328e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.87,
+          "selected": 42,
+          "selected_fraction": 0.07678244972577697,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005690312201987081,
+            "filament_recall": 0.0062231682993111785,
+            "filament_precision": -0.006871569532311208,
+            "merge_count": 0.018890920170627667,
+            "spine_coverage_matched": -0.00013602870292807152,
+            "count_abs_error": -0.033516148689823284,
+            "pq_512": 0.00024494949649969005
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.88,
+          "selected": 35,
+          "selected_fraction": 0.06398537477148081,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005140891495836647,
+            "filament_recall": 0.005559886965145595,
+            "filament_precision": -0.006055580029932112,
+            "merge_count": 0.011578305911029861,
+            "spine_coverage_matched": 1.7903420906201522e-05,
+            "count_abs_error": -0.024375380865326025,
+            "pq_512": 0.00025635096889733565
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.89,
+          "selected": 34,
+          "selected_fraction": 0.062157221206581355,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.00514638144648199,
+            "filament_recall": 0.005559886965145595,
+            "filament_precision": -0.005797053263178654,
+            "merge_count": 0.011578305911029861,
+            "spine_coverage_matched": 2.4961928878786466e-05,
+            "count_abs_error": -0.028031687995124926,
+            "pq_512": 0.00034446251150978345
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.9,
+          "selected": 30,
+          "selected_fraction": 0.054844606946983544,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.004927570021209484,
+            "filament_recall": 0.005350592400275162,
+            "filament_precision": -0.005166630466393883,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": -9.569105404272502e-06,
+            "count_abs_error": -0.025594149908592326,
+            "pq_512": 0.0004317901957583317
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.91,
+          "selected": 25,
+          "selected_fraction": 0.04570383912248629,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.003969900155981648,
+            "filament_recall": 0.004287791703105178,
+            "filament_precision": -0.004379508792617729,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": 6.725734451670567e-05,
+            "count_abs_error": -0.018281535648994516,
+            "pq_512": 0.0002219839159822785
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.92,
+          "selected": 21,
+          "selected_fraction": 0.038391224862888484,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.0033250371388205335,
+            "filament_recall": 0.003607082537612702,
+            "filament_precision": -0.004058463293327257,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": 8.550475128453946e-05,
+            "count_abs_error": -0.010968921389396709,
+            "pq_512": 9.397231049401091e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.93,
+          "selected": 19,
+          "selected_fraction": 0.03473491773308958,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.0029332899463420797,
+            "filament_recall": 0.003150044146387839,
+            "filament_precision": -0.003190090350000018,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": 8.913204010378418e-05,
+            "count_abs_error": -0.021937842778793418,
+            "pq_512": 0.000409915174736549
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.94,
+          "selected": 19,
+          "selected_fraction": 0.03473491773308958,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.0029332899463420797,
+            "filament_recall": 0.003150044146387839,
+            "filament_precision": -0.003190090350000018,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": 8.913204010378418e-05,
+            "count_abs_error": -0.021937842778793418,
+            "pq_512": 0.000409915174736549
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.95,
+          "selected": 16,
+          "selected_fraction": 0.029250457038391225,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.002883958818400349,
+            "filament_recall": 0.00309926210291841,
+            "filament_precision": -0.0024532425113132717,
+            "merge_count": 0.0042656916514320535,
+            "spine_coverage_matched": 7.94147569011427e-05,
+            "count_abs_error": -0.031078610603290677,
+            "pq_512": 0.0006690429679652449
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        }
+      ],
+      "policy": {
+        "development": {
+          "observations": 547,
+          "selected_v42": 0,
+          "selected_fraction": 0.0,
+          "endpoints": {
+            "spine_coverage": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_recall": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_precision": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "merge_count": {
+              "direction": "lower_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "spine_coverage_matched": {
+              "direction": "higher_is_better",
+              "n_valid": 545,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "count_abs_error": {
+              "direction": "lower_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "pq_512": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            }
+          }
+        },
+        "locked_evaluation_retrospective": {
+          "observations": 160,
+          "selected_v42": 0,
+          "selected_fraction": 0.0,
+          "endpoints": {
+            "spine_coverage": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_recall": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_precision": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "merge_count": {
+              "direction": "lower_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "spine_coverage_matched": {
+              "direction": "higher_is_better",
+              "n_valid": 138,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "count_abs_error": {
+              "direction": "lower_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "pq_512": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            }
+          }
+        }
+      }
+    },
+    "mask_plus_context": {
+      "feature_audit": {
+        "numeric": [
+          "v35_prediction_count",
+          "v42_prediction_count",
+          "delta_prediction_count",
+          "v35_prediction_components",
+          "v42_prediction_components",
+          "delta_prediction_components",
+          "year"
+        ],
+        "categorical": [
+          "site_code"
+        ],
+        "forbidden_feature_intersection": [],
+        "ground_truth_features_used_at_inference": false,
+        "ground_truth_used_as_development_training_target": true
+      },
+      "model": "class-weighted logistic regression; three-fold development OOF probabilities; full-development refit for locked prediction",
+      "development_classifier_diagnostics": {
+        "n": 547,
+        "positive": 190,
+        "positive_fraction": 0.3473491773308958,
+        "probability_mean": 0.46770240603067265,
+        "probability_sd": 0.2468346089126558,
+        "brier_score": 0.20176505114008797,
+        "roc_auc": 0.7523956951201533,
+        "average_precision": 0.6182237052778901
+      },
+      "locked_retrospective_classifier_diagnostics": {
+        "n": 160,
+        "positive": 20,
+        "positive_fraction": 0.125,
+        "probability_mean": 0.29416505674359783,
+        "probability_sd": 0.18197235852249835,
+        "brier_score": 0.11725744600494899,
+        "roc_auc": 0.8473214285714286,
+        "average_precision": 0.4501219908341985
+      },
+      "selected_threshold": {
+        "threshold": 1.01,
+        "selected": 0,
+        "selected_fraction": 0.0,
+        "endpoint_mean_differences_vs_v35": {
+          "spine_coverage": 0.0,
+          "filament_recall": 0.0,
+          "filament_precision": 0.0,
+          "merge_count": 0.0,
+          "spine_coverage_matched": 0.0,
+          "count_abs_error": 0.0,
+          "pq_512": 0.0
+        },
+        "meets_development_catalog_zero_harm_constraints": false,
+        "selection_status": "no_feasible_development_threshold_select_none",
+        "selection_basis": "development_oof_only"
+      },
+      "development_threshold_scan": [
+        {
+          "threshold": 0.05,
+          "selected": 547,
+          "selected_fraction": 1.0,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017181183722248757,
+            "filament_recall": 0.02337394289161851,
+            "filament_precision": -0.030847183604306615,
+            "merge_count": 0.054844606946983544,
+            "spine_coverage_matched": -0.006150237080853281,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.000897306268450037
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.06,
+          "selected": 546,
+          "selected_fraction": 0.9981718464351006,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017191805167970753,
+            "filament_recall": 0.023434881343781827,
+            "filament_precision": -0.030897965647776044,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006329237913523839,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0008756902506067991
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.07,
+          "selected": 546,
+          "selected_fraction": 0.9981718464351006,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017191805167970753,
+            "filament_recall": 0.023434881343781827,
+            "filament_precision": -0.030897965647776044,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006329237913523839,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0008756902506067991
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.08,
+          "selected": 545,
+          "selected_fraction": 0.9963436928702011,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017025609389343527,
+            "filament_recall": 0.0232686855651546,
+            "filament_precision": -0.031257067240881294,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006346227380054589,
+            "count_abs_error": -0.10054844606946983,
+            "pq_512": -0.0010401299346119908
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.09,
+          "selected": 542,
+          "selected_fraction": 0.9908592321755028,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.016917852370274253,
+            "filament_recall": 0.02311633943474631,
+            "filament_precision": -0.031485586436493726,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006258586595389862,
+            "count_abs_error": -0.10054844606946983,
+            "pq_512": -0.001167174866754604
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.1,
+          "selected": 541,
+          "selected_fraction": 0.9890310786106032,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01692737400342477,
+            "filament_recall": 0.02311633943474631,
+            "filament_precision": -0.031485586436493726,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.0062490300204663144,
+            "count_abs_error": -0.10054844606946983,
+            "pq_512": -0.0011705770455363777
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.11,
+          "selected": 539,
+          "selected_fraction": 0.9853747714808044,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.016849556581993965,
+            "filament_recall": 0.022975712237446357,
+            "filament_precision": -0.03171661683205794,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006189803838384129,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.001320086784068154
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.12,
+          "selected": 534,
+          "selected_fraction": 0.9762340036563071,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.0170988502499348,
+            "filament_recall": 0.023204231433058786,
+            "filament_precision": -0.03165567837989462,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.006135952192673898,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.0012259522820062209
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.13,
+          "selected": 525,
+          "selected_fraction": 0.9597806215722121,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017485383678943672,
+            "filament_recall": 0.023498767285181476,
+            "filament_precision": -0.03216464772959954,
+            "merge_count": 0.0542352224253504,
+            "spine_coverage_matched": -0.005892492178841515,
+            "count_abs_error": -0.0962827544180378,
+            "pq_512": -0.0011637114277948692
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.14,
+          "selected": 517,
+          "selected_fraction": 0.9451553930530164,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017768166495242637,
+            "filament_recall": 0.023701895459059198,
+            "filament_precision": -0.0322662118165384,
+            "merge_count": 0.05362583790371724,
+            "spine_coverage_matched": -0.005759782574911491,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0011285509385556597
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.15,
+          "selected": 510,
+          "selected_fraction": 0.9323583180987203,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01785660279441519,
+            "filament_recall": 0.023701895459059198,
+            "filament_precision": -0.032357619494783364,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.005600319022590797,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0011790268955881068
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.16,
+          "selected": 505,
+          "selected_fraction": 0.923217550274223,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017616547613906186,
+            "filament_recall": 0.023316413583632165,
+            "filament_precision": -0.03324267796667913,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.005475766675360277,
+            "count_abs_error": -0.09932967702620354,
+            "pq_512": -0.0014978482829129038
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.17,
+          "selected": 497,
+          "selected_fraction": 0.9085923217550275,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01745116302896036,
+            "filament_recall": 0.023055248788646527,
+            "filament_precision": -0.033610847781832494,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.005374630196422677,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0017888279531629657
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.18,
+          "selected": 493,
+          "selected_fraction": 0.9012797074954296,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01748525954386126,
+            "filament_recall": 0.023055248788646527,
+            "filament_precision": -0.033610847781832494,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.005331023009958348,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0017722418069078371
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.19,
+          "selected": 484,
+          "selected_fraction": 0.8848263254113345,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017878864544168403,
+            "filament_recall": 0.023055248788646527,
+            "filament_precision": -0.033610847781832494,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.004860346199995823,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0017565687463443336
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.2,
+          "selected": 473,
+          "selected_fraction": 0.8647166361974405,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01770719951230335,
+            "filament_recall": 0.022889053010019304,
+            "filament_precision": -0.03400140786160647,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.004863100846365478,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.00192634985205098
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.21,
+          "selected": 467,
+          "selected_fraction": 0.8537477148080439,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017969860526047966,
+            "filament_recall": 0.022997871674596652,
+            "filament_precision": -0.0339810950442187,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.004657323797100022,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0018801100625285743
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.22,
+          "selected": 455,
+          "selected_fraction": 0.8318098720292505,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018135672017909835,
+            "filament_recall": 0.02291873082763131,
+            "filament_precision": -0.03414190484853856,
+            "merge_count": 0.05179768433881779,
+            "spine_coverage_matched": -0.004274264879032483,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0019313463616475997
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.23,
+          "selected": 443,
+          "selected_fraction": 0.8098720292504571,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018838011730164646,
+            "filament_recall": 0.02360646478776015,
+            "filament_precision": -0.03317242947321309,
+            "merge_count": 0.04814137720901889,
+            "spine_coverage_matched": -0.004237629899955899,
+            "count_abs_error": -0.09932967702620354,
+            "pq_512": -0.0014368387900478173
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.24,
+          "selected": 432,
+          "selected_fraction": 0.7897623400365631,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018815232415110485,
+            "filament_recall": 0.02347588239026733,
+            "filament_precision": -0.03314196024713144,
+            "merge_count": 0.04722730042656916,
+            "spine_coverage_matched": -0.004061298078750856,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0014680513944257793
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.25,
+          "selected": 419,
+          "selected_fraction": 0.7659963436928702,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018956419167948473,
+            "filament_recall": 0.02347588239026733,
+            "filament_precision": -0.03314196024713144,
+            "merge_count": 0.04722730042656916,
+            "spine_coverage_matched": -0.0038499162872294205,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0014742431992893084
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.26,
+          "selected": 408,
+          "selected_fraction": 0.7458866544789763,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019114983507761182,
+            "filament_recall": 0.023581073766025435,
+            "filament_precision": -0.033020083342804804,
+            "merge_count": 0.04722730042656916,
+            "spine_coverage_matched": -0.0036691072148728704,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0013325815230502453
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.27,
+          "selected": 395,
+          "selected_fraction": 0.7221206581352834,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01993928901385371,
+            "filament_recall": 0.024129519835495272,
+            "filament_precision": -0.03261382699504937,
+            "merge_count": 0.04722730042656916,
+            "spine_coverage_matched": -0.003309405195550192,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0010871219742289674
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.28,
+          "selected": 382,
+          "selected_fraction": 0.6983546617915904,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01992689101394809,
+            "filament_recall": 0.02396332405686805,
+            "filament_precision": -0.032634139812437145,
+            "merge_count": 0.04722730042656916,
+            "spine_coverage_matched": -0.00299854680545005,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.0011458307051113534
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.29,
+          "selected": 371,
+          "selected_fraction": 0.6782449725776966,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020412296524821464,
+            "filament_recall": 0.024533171130371432,
+            "filament_precision": -0.03209634801483246,
+            "merge_count": 0.047227300426569155,
+            "spine_coverage_matched": -0.003057911283133676,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.0008614706530165396
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.3,
+          "selected": 364,
+          "selected_fraction": 0.6654478976234004,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020647022414635712,
+            "filament_recall": 0.02479433592535707,
+            "filament_precision": -0.03161391860187288,
+            "merge_count": 0.047227300426569155,
+            "spine_coverage_matched": -0.003023085928381447,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0006518373410602165
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.31,
+          "selected": 355,
+          "selected_fraction": 0.6489945155393053,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020769904588096803,
+            "filament_recall": 0.024921495650323006,
+            "filament_precision": -0.031150109271518765,
+            "merge_count": 0.04661791590493602,
+            "spine_coverage_matched": -0.0030064128441501083,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0003652675718926504
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.32,
+          "selected": 346,
+          "selected_fraction": 0.6325411334552102,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020422432725542675,
+            "filament_recall": 0.02450508289387369,
+            "filament_precision": -0.03122265504790366,
+            "merge_count": 0.04661791590493602,
+            "spine_coverage_matched": -0.0030120565617072935,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0005795873509995903
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.33,
+          "selected": 333,
+          "selected_fraction": 0.6087751371115173,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020277752328156887,
+            "filament_recall": 0.024220703450444882,
+            "filament_precision": -0.031082771909848678,
+            "merge_count": 0.044789762340036565,
+            "spine_coverage_matched": -0.002856583306183075,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0006333907130821384
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.34,
+          "selected": 328,
+          "selected_fraction": 0.5996343692870201,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.020238999479820666,
+            "filament_recall": 0.024119139363506025,
+            "filament_precision": -0.031031989866379252,
+            "merge_count": 0.04296160877513711,
+            "spine_coverage_matched": -0.002803907382728743,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.000670649293780366
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.35,
+          "selected": 324,
+          "selected_fraction": 0.5923217550274223,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02007703747787587,
+            "filament_recall": 0.02384453226289613,
+            "filament_precision": -0.03135342346020772,
+            "merge_count": 0.04113345521023766,
+            "spine_coverage_matched": -0.0026261522934432286,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0007776806094957242
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.36,
+          "selected": 317,
+          "selected_fraction": 0.5795246800731262,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.02025511750531013,
+            "filament_recall": 0.024060355947641204,
+            "filament_precision": -0.031150295286330003,
+            "merge_count": 0.04113345521023766,
+            "spine_coverage_matched": -0.0026533679544068923,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.0006555148515428304
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.37,
+          "selected": 309,
+          "selected_fraction": 0.5648994515539305,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019535224614104018,
+            "filament_recall": 0.023353034627888437,
+            "filament_precision": -0.030500285129921312,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.0028331205666087176,
+            "count_abs_error": -0.10237659963436929,
+            "pq_512": -0.0006983520112488941
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.38,
+          "selected": 300,
+          "selected_fraction": 0.5484460694698354,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019036185832958286,
+            "filament_recall": 0.022750290835016673,
+            "filament_precision": -0.0308535272564724,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.0027289316539755915,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0010840249560952722
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.39,
+          "selected": 291,
+          "selected_fraction": 0.5319926873857403,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01921272019484415,
+            "filament_recall": 0.02277749550116101,
+            "filament_precision": -0.030807361762409283,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.0025625471363130595,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0011116527330653925
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.4,
+          "selected": 284,
+          "selected_fraction": 0.5191956124314442,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01900016799381145,
+            "filament_recall": 0.022523585283813864,
+            "filament_precision": -0.03115925145186215,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.0025331613334674988,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0013219752740519434
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.41,
+          "selected": 281,
+          "selected_fraction": 0.5137111517367459,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.019034022689457735,
+            "filament_recall": 0.022523585283813864,
+            "filament_precision": -0.03115925145186215,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.0024722228813041833,
+            "count_abs_error": -0.09811090798293724,
+            "pq_512": -0.0013240193495356128
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.42,
+          "selected": 277,
+          "selected_fraction": 0.506398537477148,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018570787679833327,
+            "filament_recall": 0.022001255693842595,
+            "filament_precision": -0.031214386241914676,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.002468166349473941,
+            "count_abs_error": -0.09689213893967093,
+            "pq_512": -0.0015130286486342056
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.43,
+          "selected": 267,
+          "selected_fraction": 0.48811700182815354,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.018453658032646685,
+            "filament_recall": 0.021772736498230163,
+            "filament_precision": -0.030880411867720916,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.0023165131242375353,
+            "count_abs_error": -0.09872029250457039,
+            "pq_512": -0.00141485867630543
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.44,
+          "selected": 262,
+          "selected_fraction": 0.4789762340036563,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017966516188100825,
+            "filament_recall": 0.021279689021636065,
+            "filament_precision": -0.030696173497924965,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.002456986098348535,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.0016175411646390883
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.45,
+          "selected": 257,
+          "selected_fraction": 0.46983546617915906,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017567482845837482,
+            "filament_recall": 0.020822650630411204,
+            "filament_precision": -0.030676783990418455,
+            "merge_count": 0.037477148080438755,
+            "spine_coverage_matched": -0.002424733864532646,
+            "count_abs_error": -0.09750152346130408,
+            "pq_512": -0.0018233473557876956
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.46,
+          "selected": 250,
+          "selected_fraction": 0.4570383912248629,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017588118608939482,
+            "filament_recall": 0.020673206331058312,
+            "filament_precision": -0.030045635735869835,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0022792369276663635,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.0015053894780288617
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.47,
+          "selected": 241,
+          "selected_fraction": 0.4405850091407678,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017637709124201338,
+            "filament_recall": 0.020685106628607605,
+            "filament_precision": -0.02905490224970673,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0021638960495934316,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.0013341811812355164
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.48,
+          "selected": 239,
+          "selected_fraction": 0.4369287020109689,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017347113551036814,
+            "filament_recall": 0.020462548803315498,
+            "filament_precision": -0.02915265768338538,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0022882911461319794,
+            "count_abs_error": -0.09201706276660573,
+            "pq_512": -0.001435699737459753
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.49,
+          "selected": 235,
+          "selected_fraction": 0.4296160877513711,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.017194722347808878,
+            "filament_recall": 0.020279733446825553,
+            "filament_precision": -0.028744686617279032,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0022553316467648025,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.0013530268883687564
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.5,
+          "selected": 228,
+          "selected_fraction": 0.41681901279707495,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01735819952176876,
+            "filament_recall": 0.020384199364819805,
+            "filament_precision": -0.02778671964011644,
+            "merge_count": 0.036867763558805604,
+            "spine_coverage_matched": -0.0021790165302886526,
+            "count_abs_error": -0.09567336989640464,
+            "pq_512": -0.001000647803648989
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.51,
+          "selected": 222,
+          "selected_fraction": 0.40585009140767825,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01681608280844149,
+            "filament_recall": 0.019856066112737745,
+            "filament_precision": -0.027288330156352184,
+            "merge_count": 0.036867763558805604,
+            "spine_coverage_matched": -0.002204849135010058,
+            "count_abs_error": -0.09384521633150518,
+            "pq_512": -0.0010015591905382104
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.52,
+          "selected": 216,
+          "selected_fraction": 0.39488117001828155,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.016751878705515318,
+            "filament_recall": 0.019665633449727382,
+            "filament_precision": -0.027038772685588134,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0020383036916427335,
+            "count_abs_error": -0.09262644728823889,
+            "pq_512": -0.000966706541013427
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.53,
+          "selected": 213,
+          "selected_fraction": 0.38939670932358317,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.016026420941666324,
+            "filament_recall": 0.0187950841331086,
+            "filament_precision": -0.02709971113775145,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0019441260837539743,
+            "count_abs_error": -0.08897014015843999,
+            "pq_512": -0.0012926907141435659
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.54,
+          "selected": 209,
+          "selected_fraction": 0.3820840950639854,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.015516791808865348,
+            "filament_recall": 0.018196185773698356,
+            "filament_precision": -0.026852330040278944,
+            "merge_count": 0.03503960999390615,
+            "spine_coverage_matched": -0.0018863137665993996,
+            "count_abs_error": -0.08287629494210846,
+            "pq_512": -0.0013937368285423001
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.55,
+          "selected": 203,
+          "selected_fraction": 0.3711151736745887,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.015016866615808788,
+            "filament_recall": 0.017417044135324543,
+            "filament_precision": -0.02673480588253541,
+            "merge_count": 0.0332114564290067,
+            "spine_coverage_matched": -0.0015990868394637433,
+            "count_abs_error": -0.07739183424741011,
+            "pq_512": -0.0015427951748156967
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.56,
+          "selected": 195,
+          "selected_fraction": 0.35648994515539306,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.014809613298805199,
+            "filament_recall": 0.017289307764443745,
+            "filament_precision": -0.024987178129423193,
+            "merge_count": 0.03412553321145642,
+            "spine_coverage_matched": -0.0018086835525215263,
+            "count_abs_error": -0.07556368068251065,
+            "pq_512": -0.001153776701024703
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.57,
+          "selected": 188,
+          "selected_fraction": 0.3436928702010969,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.014658178839918327,
+            "filament_recall": 0.017098981786398657,
+            "filament_precision": -0.024299213341824038,
+            "merge_count": 0.0332114564290067,
+            "spine_coverage_matched": -0.0017715393394708305,
+            "count_abs_error": -0.06825106642291284,
+            "pq_512": -0.000959860600447921
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.58,
+          "selected": 182,
+          "selected_fraction": 0.3327239488117002,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.014667537245071978,
+            "filament_recall": 0.017017730516847573,
+            "filament_precision": -0.023578569979498774,
+            "merge_count": 0.0332114564290067,
+            "spine_coverage_matched": -0.0016398397157472641,
+            "count_abs_error": -0.0664229128580134,
+            "pq_512": -0.0008568565557465182
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.59,
+          "selected": 180,
+          "selected_fraction": 0.3290676416819013,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.014229624558530407,
+            "filament_recall": 0.01656250577003233,
+            "filament_precision": -0.023636606600606694,
+            "merge_count": 0.0332114564290067,
+            "spine_coverage_matched": -0.0016440330814579973,
+            "count_abs_error": -0.06398537477148081,
+            "pq_512": -0.001063576425552028
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.6,
+          "selected": 174,
+          "selected_fraction": 0.3180987202925046,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.014027354385944553,
+            "filament_recall": 0.016329633827836806,
+            "filament_precision": -0.022906927991586216,
+            "merge_count": 0.0332114564290067,
+            "spine_coverage_matched": -0.0016454315881215607,
+            "count_abs_error": -0.06520414381474711,
+            "pq_512": -0.0009064779774646536
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.61,
+          "selected": 163,
+          "selected_fraction": 0.2979890310786106,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.01380581249050611,
+            "filament_recall": 0.01616640583097078,
+            "filament_precision": -0.02118307546791651,
+            "merge_count": 0.032297379646556976,
+            "spine_coverage_matched": -0.0017898008620952158,
+            "count_abs_error": -0.07068860450944546,
+            "pq_512": -0.0004870458696320115
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.62,
+          "selected": 151,
+          "selected_fraction": 0.2760511882998172,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.012986849269059207,
+            "filament_recall": 0.015274642370651561,
+            "filament_precision": -0.019267306390355843,
+            "merge_count": 0.030469226081657523,
+            "spine_coverage_matched": -0.001775706731134828,
+            "count_abs_error": -0.056672760511883,
+            "pq_512": -0.00038608289055123523
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.63,
+          "selected": 144,
+          "selected_fraction": 0.263254113345521,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.012730836123524705,
+            "filament_recall": 0.014857767959261614,
+            "filament_precision": -0.01838180148291309,
+            "merge_count": 0.030469226081657523,
+            "spine_coverage_matched": -0.0014851250725834175,
+            "count_abs_error": -0.04996953077391834,
+            "pq_512": -0.0003814439420179158
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.64,
+          "selected": 139,
+          "selected_fraction": 0.25411334552102377,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011981553286556207,
+            "filament_recall": 0.014060489876791574,
+            "filament_precision": -0.01853220206750015,
+            "merge_count": 0.030469226081657523,
+            "spine_coverage_matched": -0.0016326615950017192,
+            "count_abs_error": -0.048750761730652035,
+            "pq_512": -0.0006943170862049724
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.65,
+          "selected": 137,
+          "selected_fraction": 0.25045703839122485,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011774278496163469,
+            "filament_recall": 0.013786266842056657,
+            "filament_precision": -0.018715017423990097,
+            "merge_count": 0.030469226081657523,
+            "spine_coverage_matched": -0.0015501423642417902,
+            "count_abs_error": -0.04692260816575258,
+            "pq_512": -0.000842218427194625
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.66,
+          "selected": 132,
+          "selected_fraction": 0.2413162705667276,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011427821914145778,
+            "filament_recall": 0.013366160846082288,
+            "filament_precision": -0.018159052974058548,
+            "merge_count": 0.030469226081657523,
+            "spine_coverage_matched": -0.001473852734484321,
+            "count_abs_error": -0.043266301035953685,
+            "pq_512": -0.0009234445031401695
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.67,
+          "selected": 128,
+          "selected_fraction": 0.2340036563071298,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011551811265860521,
+            "filament_recall": 0.013492060743462991,
+            "filament_precision": -0.017389573114085087,
+            "merge_count": 0.027726995734308348,
+            "spine_coverage_matched": -0.001456012264938872,
+            "count_abs_error": -0.03778184034125533,
+            "pq_512": -0.0006074044584272798
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.68,
+          "selected": 125,
+          "selected_fraction": 0.22851919561243145,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011437795812494062,
+            "filament_recall": 0.013263541547850559,
+            "filament_precision": -0.01671107225276887,
+            "merge_count": 0.027726995734308348,
+            "spine_coverage_matched": -0.0012392476343259778,
+            "count_abs_error": -0.035953686776355874,
+            "pq_512": -0.00045186815623699976
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.69,
+          "selected": 124,
+          "selected_fraction": 0.226691042047532,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011471034968219508,
+            "filament_recall": 0.013263541547850559,
+            "filament_precision": -0.016589195348442238,
+            "merge_count": 0.027726995734308348,
+            "spine_coverage_matched": -0.0011561497450123664,
+            "count_abs_error": -0.03778184034125533,
+            "pq_512": -0.00039921223348908486
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.7,
+          "selected": 119,
+          "selected_fraction": 0.21755027422303475,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011362916569267023,
+            "filament_recall": 0.013067318800815896,
+            "filament_precision": -0.015935088812654877,
+            "merge_count": 0.027726995734308348,
+            "spine_coverage_matched": -0.0010348896168350676,
+            "count_abs_error": -0.037781840341255334,
+            "pq_512": -0.0002858978667327443
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.71,
+          "selected": 112,
+          "selected_fraction": 0.20475319926873858,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.011675561796573348,
+            "filament_recall": 0.013246210090310476,
+            "filament_precision": -0.014830018786195456,
+            "merge_count": 0.026508226691042046,
+            "spine_coverage_matched": -0.0007330335438582522,
+            "count_abs_error": -0.04204753199268738,
+            "pq_512": 0.00011352926395232829
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.72,
+          "selected": 108,
+          "selected_fraction": 0.19744058500914077,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.010616659639690865,
+            "filament_recall": 0.01217930353894323,
+            "filament_precision": -0.014558697582515934,
+            "merge_count": 0.025898842169408895,
+            "spine_coverage_matched": -0.0007337732262841375,
+            "count_abs_error": -0.03412553321145642,
+            "pq_512": -0.00026263152697393046
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.73,
+          "selected": 101,
+          "selected_fraction": 0.1846435100548446,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.009897839810978065,
+            "filament_recall": 0.011359567301420133,
+            "filament_precision": -0.01388186578136969,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.0007948510880758092,
+            "count_abs_error": -0.042656916514320534,
+            "pq_512": -6.476348222512737e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.74,
+          "selected": 100,
+          "selected_fraction": 0.18281535648994515,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.00990773793528351,
+            "filament_recall": 0.011359567301420133,
+            "filament_precision": -0.01388186578136969,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.0007824784326940043,
+            "count_abs_error": -0.042656916514320534,
+            "pq_512": -7.01618436617993e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.75,
+          "selected": 94,
+          "selected_fraction": 0.17184643510054845,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.009154891079955346,
+            "filament_recall": 0.010473492601239785,
+            "filament_precision": -0.014055416506054946,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.0006423708993256361,
+            "count_abs_error": -0.048141377209018885,
+            "pq_512": -0.00033793947344602326
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.76,
+          "selected": 92,
+          "selected_fraction": 0.16819012797074953,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.009067836148293465,
+            "filament_recall": 0.01035923300343357,
+            "filament_precision": -0.013234665045449736,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.0006103540300144339,
+            "count_abs_error": -0.04814137720901889,
+            "pq_512": -3.281250174302117e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.77,
+          "selected": 88,
+          "selected_fraction": 0.16087751371115175,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.008632768473737675,
+            "filament_recall": 0.009839125444934788,
+            "filament_precision": -0.013095955491749325,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.0005352229164429751,
+            "count_abs_error": -0.05362583790371724,
+            "pq_512": -7.949266965946257e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.78,
+          "selected": 82,
+          "selected_fraction": 0.14990859232175502,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.008145980893448338,
+            "filament_recall": 0.009298104649047876,
+            "filament_precision": -0.012291532749483802,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.0004651954035310676,
+            "count_abs_error": -0.05301645338208409,
+            "pq_512": 8.971613619789889e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.79,
+          "selected": 77,
+          "selected_fraction": 0.14076782449725778,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007799245057681425,
+            "filament_recall": 0.008989455345883033,
+            "filament_precision": -0.011509972918563824,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.000594689614378112,
+            "count_abs_error": -0.04875076173065204,
+            "pq_512": 0.00013142209072744543
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.8,
+          "selected": 70,
+          "selected_fraction": 0.12797074954296161,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007490809677998955,
+            "filament_recall": 0.008475942857964694,
+            "filament_precision": -0.010196696513879742,
+            "merge_count": 0.02437538086532602,
+            "spine_coverage_matched": -0.000342748641370469,
+            "count_abs_error": -0.04326630103595369,
+            "pq_512": 0.0003066391973947336
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.81,
+          "selected": 67,
+          "selected_fraction": 0.12248628884826325,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007512317366997773,
+            "filament_recall": 0.008475942857964694,
+            "filament_precision": -0.00979731067788782,
+            "merge_count": 0.02254722730042657,
+            "spine_coverage_matched": -0.0003212409523716516,
+            "count_abs_error": -0.05240706886045095,
+            "pq_512": 0.0004959992049430028
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.82,
+          "selected": 64,
+          "selected_fraction": 0.1170018281535649,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007773834611099449,
+            "filament_recall": 0.008785980597041212,
+            "filament_precision": -0.009024698159388646,
+            "merge_count": 0.02071907373552712,
+            "spine_coverage_matched": -0.0005531765924981495,
+            "count_abs_error": -0.04875076173065204,
+            "pq_512": 0.0007332819413861843
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.83,
+          "selected": 60,
+          "selected_fraction": 0.10968921389396709,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007009366710121515,
+            "filament_recall": 0.007843443548471255,
+            "filament_precision": -0.009301919414672061,
+            "merge_count": 0.02071907373552712,
+            "spine_coverage_matched": -0.0003855494748711648,
+            "count_abs_error": -0.042656916514320534,
+            "pq_512": 0.00027534416739449926
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.84,
+          "selected": 60,
+          "selected_fraction": 0.10968921389396709,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.007009366710121515,
+            "filament_recall": 0.007843443548471255,
+            "filament_precision": -0.009301919414672061,
+            "merge_count": 0.02071907373552712,
+            "spine_coverage_matched": -0.0003855494748711648,
+            "count_abs_error": -0.042656916514320534,
+            "pq_512": 0.00027534416739449926
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.85,
+          "selected": 57,
+          "selected_fraction": 0.10420475319926874,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.006813456014621676,
+            "filament_recall": 0.007598350433177042,
+            "filament_precision": -0.009038678017975452,
+            "merge_count": 0.018890920170627667,
+            "spine_coverage_matched": -0.000271792379991985,
+            "count_abs_error": -0.03595368677635588,
+            "pq_512": 0.00017209091791320778
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.86,
+          "selected": 48,
+          "selected_fraction": 0.08775137111517367,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005645490371668863,
+            "filament_recall": 0.0062365157075397575,
+            "filament_precision": -0.008305679890096155,
+            "merge_count": 0.017062766605728214,
+            "spine_coverage_matched": -0.00018528853448844748,
+            "count_abs_error": -0.02437538086532602,
+            "pq_512": -0.00016854046763133492
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.87,
+          "selected": 42,
+          "selected_fraction": 0.07678244972577697,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.00529203729616229,
+            "filament_recall": 0.005788345950700704,
+            "filament_precision": -0.00745986589300245,
+            "merge_count": 0.015234613040828763,
+            "spine_coverage_matched": -9.358142666019499e-05,
+            "count_abs_error": -0.023765996343692874,
+            "pq_512": -7.439679851818235e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.88,
+          "selected": 41,
+          "selected_fraction": 0.07495429616087751,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.005231098843998976,
+            "filament_recall": 0.005727407498537389,
+            "filament_precision": -0.007314774340232653,
+            "merge_count": 0.015234613040828763,
+            "spine_coverage_matched": -0.00010608162197574675,
+            "count_abs_error": -0.02132845825716027,
+            "pq_512": -7.812472957289708e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.89,
+          "selected": 37,
+          "selected_fraction": 0.06764168190127971,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.004744610843359798,
+            "filament_recall": 0.005232282574710453,
+            "filament_precision": -0.0064497868664700414,
+            "merge_count": 0.009750152346130409,
+            "spine_coverage_matched": -0.00018886209421746552,
+            "count_abs_error": -0.022547227300426572,
+            "pq_512": 0.00017134790141034808
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.9,
+          "selected": 33,
+          "selected_fraction": 0.0603290676416819,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.004428227257948982,
+            "filament_recall": 0.004856495453036677,
+            "filament_precision": -0.005497357212029419,
+            "merge_count": 0.009750152346130409,
+            "spine_coverage_matched": -0.00016202001531798654,
+            "count_abs_error": -0.03656307129798904,
+            "pq_512": 0.0004193053332166082
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.91,
+          "selected": 30,
+          "selected_fraction": 0.054844606946983544,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.003938029612815323,
+            "filament_recall": 0.004270548797620187,
+            "filament_precision": -0.005233290585988387,
+            "merge_count": 0.007921998781230958,
+            "spine_coverage_matched": -5.239488830552967e-05,
+            "count_abs_error": -0.034734917733089586,
+            "pq_512": 0.0003074090760868073
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.92,
+          "selected": 25,
+          "selected_fraction": 0.04570383912248629,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.003223357750000762,
+            "filament_recall": 0.003530643133019733,
+            "filament_precision": -0.004996743984807218,
+            "merge_count": 0.007921998781230958,
+            "spine_coverage_matched": -1.8595144774688664e-05,
+            "count_abs_error": -0.029250457038391225,
+            "pq_512": 5.872274834040552e-05
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.93,
+          "selected": 21,
+          "selected_fraction": 0.038391224862888484,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.0029259898223768926,
+            "filament_recall": 0.0032054427392635802,
+            "filament_precision": -0.0038838917750628685,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": 2.2030490000854356e-05,
+            "count_abs_error": -0.02376599634369287,
+            "pq_512": 0.00017329692407107292
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.94,
+          "selected": 19,
+          "selected_fraction": 0.03473491773308958,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.002722775293414264,
+            "filament_recall": 0.0029395294934600235,
+            "filament_precision": -0.003625365008309411,
+            "merge_count": 0.006093845216331505,
+            "spine_coverage_matched": 9.731359155163649e-05,
+            "count_abs_error": -0.021937842778793418,
+            "pq_512": 0.00015411667685722672
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        },
+        {
+          "threshold": 0.95,
+          "selected": 16,
+          "selected_fraction": 0.029250457038391225,
+          "endpoint_mean_differences_vs_v35": {
+            "spine_coverage": 0.002564625500895185,
+            "filament_recall": 0.002766870545663965,
+            "filament_precision": -0.002774783536155727,
+            "merge_count": 0.0042656916514320535,
+            "spine_coverage_matched": 0.00010591254896229427,
+            "count_abs_error": -0.02010968921389397,
+            "pq_512": 0.00037182850712112677
+          },
+          "meets_development_catalog_zero_harm_constraints": false
+        }
+      ],
+      "policy": {
+        "development": {
+          "observations": 547,
+          "selected_v42": 0,
+          "selected_fraction": 0.0,
+          "endpoints": {
+            "spine_coverage": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_recall": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_precision": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "merge_count": {
+              "direction": "lower_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "spine_coverage_matched": {
+              "direction": "higher_is_better",
+              "n_valid": 545,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "count_abs_error": {
+              "direction": "lower_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "pq_512": {
+              "direction": "higher_is_better",
+              "n_valid": 547,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            }
+          }
+        },
+        "locked_evaluation_retrospective": {
+          "observations": 160,
+          "selected_v42": 0,
+          "selected_fraction": 0.0,
+          "endpoints": {
+            "spine_coverage": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_recall": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "filament_precision": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "merge_count": {
+              "direction": "lower_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "spine_coverage_matched": {
+              "direction": "higher_is_better",
+              "n_valid": 138,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "count_abs_error": {
+              "direction": "lower_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            },
+            "pq_512": {
+              "direction": "higher_is_better",
+              "n_valid": 160,
+              "mean_difference_vs_v35": 0.0,
+              "bootstrap_95ci": {
+                "low": 0.0,
+                "high": 0.0
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "mde_reference": {
+    "locked_80pct_mde_beyond_unregistered_boundary": 0.032376171568249186,
+    "interpretation": "A policy mean below this value is not automatically useless; this is an approximate detectability reference, not an operational margin.",
+    "policies": {
+      "v35_baseline": {
+        "locked_primary_mean_difference": 0.0,
+        "locked_primary_bootstrap_95ci": {
+          "low": 0.0,
+          "high": 0.0
+        },
+        "fraction_of_mde": 0.0
+      },
+      "v42_all": {
+        "locked_primary_mean_difference": 0.013263115524525668,
+        "locked_primary_bootstrap_95ci": {
+          "low": -0.012483139539940482,
+          "high": 0.039215222822038834
+        },
+        "fraction_of_mde": 0.4096566975674357
+      },
+      "oracle_primary": {
+        "locked_primary_mean_difference": 0.03408534940742355,
+        "locked_primary_bootstrap_95ci": {
+          "low": 0.016081748763035142,
+          "high": 0.05619927204063807
+        },
+        "fraction_of_mde": 1.0527912275103746
+      },
+      "oracle_catalog_safe": {
+        "locked_primary_mean_difference": 0.02831492196075529,
+        "locked_primary_bootstrap_95ci": {
+          "low": 0.011259180393294977,
+          "high": 0.049443037913089974
+        },
+        "fraction_of_mde": 0.8745605360123339
+      },
+      "observable_gate_mask_only": {
+        "locked_primary_mean_difference": 0.0,
+        "locked_primary_bootstrap_95ci": {
+          "low": 0.0,
+          "high": 0.0
+        },
+        "fraction_of_mde": 0.0
+      },
+      "observable_gate_mask_plus_context": {
+        "locked_primary_mean_difference": 0.0,
+        "locked_primary_bootstrap_95ci": {
+          "low": 0.0,
+          "high": 0.0
+        },
+        "fraction_of_mde": 0.0
+      }
+    }
+  },
+  "limitations": [
+    "Oracle policies use ground truth and are non-deployable ceilings.",
+    "Observable gates require running both V35 and V42 before selection.",
+    "The gate acts at observation level and cannot establish proposal-level S1 value.",
+    "Threshold scanning makes development performance optimistic.",
+    "Locked results are retrospective because the block was inspected previously.",
+    "pq_512 is an observation-level proxy, not official 2048-pixel micro PQ.",
+    "No S1 model, registration margin, GPU training, or review-derived label is used."
+  ]
+}

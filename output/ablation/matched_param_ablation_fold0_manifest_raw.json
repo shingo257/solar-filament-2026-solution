@@ -1,0 +1,155 @@
+{
+  "experiment_id": "matched_param_ablation_fold0",
+  "purpose": "report/main.tex Future Work item 1. edge priorの効果とattention容量増加の効果を分離するmatched-parameterablation",
+  "fold": 0,
+  "recipe": "build_v51_edgeattnet_refiner.pyと完全同一(crop320/context1.65/14epoch/LR2e-4/crop Diceでbest選択)。モデルクラスとseedのみ変更",
+  "reference_baseline_pq_fold0": 0.4393,
+  "reference_edgeatt_pq_fold0_v51": 0.4454,
+  "runs": [
+    {
+      "variant": "base",
+      "seed": 3407,
+      "n_params": 31037633,
+      "checkpoint": "/content/drive/MyDrive/solar_filament_v30/artifacts/ablation_base_seed3407_fold0.pt",
+      "best_crop_dice": 0.7880979217412732,
+      "minutes": 21.8,
+      "batch_size": 8,
+      "pq": 0.4420054168646913,
+      "sq": 0.6762061793134885,
+      "rq": 0.6536548029085343,
+      "tp": 1708,
+      "fp": 769,
+      "fn": 1041,
+      "denominator": 2613.0,
+      "delta_vs_base_refiner": 0.002705416864691279
+    },
+    {
+      "variant": "base",
+      "seed": 8407,
+      "n_params": 31037633,
+      "checkpoint": "/content/drive/MyDrive/solar_filament_v30/artifacts/ablation_base_seed8407_fold0.pt",
+      "best_crop_dice": 0.7897736605577965,
+      "minutes": 21.8,
+      "batch_size": 8,
+      "pq": 0.4408186138858394,
+      "sq": 0.6781225021392424,
+      "rq": 0.6500574932924492,
+      "tp": 1696,
+      "fp": 773,
+      "fn": 1053,
+      "denominator": 2609.0,
+      "delta_vs_base_refiner": 0.0015186138858394038
+    },
+    {
+      "variant": "plain_mhsa",
+      "seed": 3407,
+      "n_params": 35238081,
+      "checkpoint": "/content/drive/MyDrive/solar_filament_v30/artifacts/ablation_plain_mhsa_seed3407_fold0.pt",
+      "best_crop_dice": 0.7944523374918983,
+      "minutes": 21.8,
+      "batch_size": 8,
+      "pq": 0.4404640299569296,
+      "sq": 0.6795470733721579,
+      "rq": 0.6481729481538168,
+      "tp": 1694,
+      "fp": 784,
+      "fn": 1055,
+      "denominator": 2613.5,
+      "delta_vs_base_refiner": 0.001164029956929602
+    },
+    {
+      "variant": "plain_mhsa",
+      "seed": 8407,
+      "n_params": 35238081,
+      "checkpoint": "/content/drive/MyDrive/solar_filament_v30/artifacts/ablation_plain_mhsa_seed8407_fold0.pt",
+      "best_crop_dice": 0.7958614788908835,
+      "minutes": 22.0,
+      "batch_size": 8,
+      "pq": 0.4420533410420123,
+      "sq": 0.6803924657322139,
+      "rq": 0.649703462789363,
+      "tp": 1698,
+      "fp": 780,
+      "fn": 1051,
+      "denominator": 2613.5,
+      "delta_vs_base_refiner": 0.002753341042012303
+    },
+    {
+      "variant": "edge_att",
+      "seed": 3407,
+      "n_params": 35240157,
+      "checkpoint": "/content/drive/MyDrive/solar_filament_v30/artifacts/ablation_edge_att_seed3407_fold0.pt",
+      "best_crop_dice": 0.7886282194740515,
+      "minutes": 22.0,
+      "batch_size": 8,
+      "pq": 0.4405060282495663,
+      "sq": 0.6766856271699687,
+      "rq": 0.6509758897818599,
+      "tp": 1701,
+      "fp": 776,
+      "fn": 1048,
+      "denominator": 2613.0,
+      "delta_vs_base_refiner": 0.0012060282495662822
+    },
+    {
+      "variant": "edge_att",
+      "seed": 8407,
+      "n_params": 35240157,
+      "checkpoint": "/content/drive/MyDrive/solar_filament_v30/artifacts/ablation_edge_att_seed8407_fold0.pt",
+      "best_crop_dice": 0.7913004619158498,
+      "minutes": 22.2,
+      "batch_size": 8,
+      "pq": 0.4404429673260754,
+      "sq": 0.6788323989636713,
+      "rq": 0.6488243165742688,
+      "tp": 1697,
+      "fp": 785,
+      "fn": 1052,
+      "denominator": 2615.5,
+      "delta_vs_base_refiner": 0.0011429673260753836
+    }
+  ],
+  "summary_by_variant": {
+    "base": {
+      "n_params": 31037633,
+      "seeds": [
+        3407,
+        8407
+      ],
+      "pq_per_seed": [
+        0.4420054168646913,
+        0.4408186138858394
+      ],
+      "pq_mean": 0.44141201537526537,
+      "pq_std": 0.0005934014894259376
+    },
+    "plain_mhsa": {
+      "n_params": 35238081,
+      "seeds": [
+        3407,
+        8407
+      ],
+      "pq_per_seed": [
+        0.4404640299569296,
+        0.4420533410420123
+      ],
+      "pq_mean": 0.441258685499471,
+      "pq_std": 0.0007946555425413504
+    },
+    "edge_att": {
+      "n_params": 35240157,
+      "seeds": [
+        3407,
+        8407
+      ],
+      "pq_per_seed": [
+        0.4405060282495663,
+        0.4404429673260754
+      ],
+      "pq_mean": 0.4404744977878209,
+      "pq_std": 3.153046174544927e-05
+    }
+  },
+  "torch": "2.11.0+cu128",
+  "gpu": "NVIDIA A100-SXM4-40GB"
+}

@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "status": "fixed_gt_free_set_context_features_not_model_not_threshold_not_registered",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\build_s1_set_context_features.py",
+  "script_sha256": "546fc85b236a6709924c3564ff84234f2e78001ed00e3cdd817d6b32df71f203",
+  "scope": {
+    "time_block_role": "development only",
+    "locked_rows_read": 0,
+    "ground_truth_read": false,
+    "target_columns_loaded": false,
+    "s1_predictions_read": false,
+    "blinded_review_responses_read": false,
+    "private_key_read": false,
+    "model_fitting_performed": false,
+    "threshold_selection_performed": false,
+    "frozen_ownership_replayed": true
+  },
+  "feature_contract": {
+    "image_shape": [
+      2048,
+      2048
+    ],
+    "minimum_exclusive_area": 20,
+    "frozen_containment_threshold": 0.8,
+    "identifiers": [
+      "file_name",
+      "fold",
+      "candidate_index"
+    ],
+    "base_inference_features": [
+      "detector_score",
+      "source_count",
+      "log_area",
+      "bbox_extent",
+      "log_aspect",
+      "perimeter_over_sqrt_area",
+      "solidity",
+      "center_radius",
+      "semantic_mean",
+      "semantic_q10",
+      "local_contrast"
+    ],
+    "gt_free_set_context_features": [
+      "proposal_count",
+      "full_output_count",
+      "without_output_count",
+      "output_count_delta",
+      "full_output_per_proposal_ratio",
+      "detector_score_observation_mean",
+      "detector_score_observation_std",
+      "detector_score_observation_z",
+      "detector_score_observation_percentile",
+      "semantic_mean_observation_mean",
+      "semantic_mean_observation_std",
+      "semantic_mean_observation_z",
+      "semantic_mean_observation_percentile",
+      "source_count_observation_percentile",
+      "refined_area_fraction",
+      "refined_area_observation_percentile",
+      "overlap_neighbor_count",
+      "pairwise_iou_max",
+      "pairwise_iou_mean_positive",
+      "pairwise_iou_sum",
+      "self_covered_by_other_max",
+      "other_covered_by_self_max",
+      "containment_conflict_count",
+      "dropped_by_containment",
+      "dropped_by_min_area_after_ownership",
+      "ownership_output_kept",
+      "ownership_exclusive_area_fraction",
+      "ownership_retained_fraction",
+      "ownership_order_percentile"
+    ],
+    "forbidden_output_tokens": [
+      "target",
+      "hit_iou",
+      "variant",
+      "marginal",
+      "verifier",
+      "selected_l2",
+      "threshold",
+      "delta_pq",
+      "delta_spine",
+      "delta_filament",
+      "delta_merge",
+      "delta_count"
+    ]
+  },
+  "summary": {
+    "candidate_rows": 137,
+    "observations": 12,
+    "base_feature_count": 11,
+    "context_feature_count": 29,
+    "missing_feature_values": 0,
+    "non_finite_feature_values": 0,
+    "ownership": {
+      "output_kept_candidates": 125,
+      "dropped_by_containment": 12,
+      "dropped_by_min_area_after_ownership": 0,
+      "output_count_delta_distribution": {
+        "-1": 2,
+        "0": 20,
+        "1": 115
+      }
+    },
+    "competition_geometry": {
+      "candidates_with_overlap_neighbor": 22,
+      "candidates_with_containment_conflict": 22,
+      "ownership_retained_fraction_median": 1.0,
+      "ownership_retained_fraction_min": 0.0
+    }
+  },
+  "inputs": {
+    "selection": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_utility_selection.csv",
+    "selection_sha256": "e39753670d7079492541d4ff5e257323d65966a6bc810c714214bacb9f986a09",
+    "candidate_table": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv",
+    "candidate_table_sha256": "ffdba295972f70459f7273a6be4ace0b3948440a39a941240df2bc21221b28b3",
+    "candidate_columns_loaded": [
+      "file_name",
+      "fold",
+      "candidate_index",
+      "detector_score",
+      "source_count",
+      "log_area",
+      "bbox_extent",
+      "log_aspect",
+      "perimeter_over_sqrt_area",
+      "solidity",
+      "center_radius",
+      "semantic_mean",
+      "semantic_q10",
+      "local_contrast"
+    ],
+    "refined_cache_root": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache",
+    "refined_cache_manifest": [
+      {
+        "file_name": "20121118092514Th.jpeg",
+        "fold": 0,
+        "candidate_count": 16,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_0\\20121118092514Th.npz",
+        "sha256": "6cd56a86244213a73340ef0451951023ceb1db7ba325c190a789ee18254534a9"
+      },
+      {
+        "file_name": "20131016185334Ch.jpeg",
+        "fold": 0,
+        "candidate_count": 10,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_0\\20131016185334Ch.npz",
+        "sha256": "11d928331ef5b05cc0d2205abae059636c46cca4f73bdc22a486897fd251d01b"
+      },
+      {
+        "file_name": "20150113155654Bh.jpeg",
+        "fold": 0,
+        "candidate_count": 13,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_0\\20150113155654Bh.npz",
+        "sha256": "1a90d36284b5200d597ad63343fec3be6171a8d03ec6c8010fbad11c20c16179"
+      },
+      {
+        "file_name": "20150423120034Ch.jpeg",
+        "fold": 0,
+        "candidate_count": 16,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_0\\20150423120034Ch.npz",
+        "sha256": "755d8b737a72cc74b4969fe0377c9f9261507015a9d169f1ae107624e35c4bc7"
+      },
+      {
+        "file_name": "20110109104734Ch.jpeg",
+        "fold": 1,
+        "candidate_count": 6,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_1\\20110109104734Ch.npz",
+        "sha256": "3df98956b5749f02fc8fbc2407e5576d7a49eff2b45da163bd874a58833366a2"
+      },
+      {
+        "file_name": "20140414020354Uh.jpeg",
+        "fold": 1,
+        "candidate_count": 12,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_1\\20140414020354Uh.npz",
+        "sha256": "9f6634dad7f3894b426df3f9f865bdbcf130f140bda1840a9cb63e8772552daa"
+      },
+      {
+        "file_name": "20150720082014Th.jpeg",
+        "fold": 1,
+        "candidate_count": 7,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_1\\20150720082014Th.npz",
+        "sha256": "a231f10770be55f6ea5239f225700cde00ac1166b9cd84c4f5e6f6d781c52958"
+      },
+      {
+        "file_name": "20160810234034Lh.jpeg",
+        "fold": 1,
+        "candidate_count": 6,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_1\\20160810234034Lh.npz",
+        "sha256": "c670633053b6225514b0bd1c6992eb620c2c384251c6ef590b7d7268731ca778"
+      },
+      {
+        "file_name": "20130201084914Th.jpeg",
+        "fold": 2,
+        "candidate_count": 12,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_2\\20130201084914Th.npz",
+        "sha256": "a1f847f9702c41c612b98558576ff1c7eaace1717e9370c69f8e65cadb461c43"
+      },
+      {
+        "file_name": "20130319144654Bh.jpeg",
+        "fold": 2,
+        "candidate_count": 9,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_2\\20130319144654Bh.npz",
+        "sha256": "6ca446a6908b4c2d40dd5808ce9859a3f4c15a9a0b4e19ccc8352a64582df096"
+      },
+      {
+        "file_name": "20140615195814Mh.jpeg",
+        "fold": 2,
+        "candidate_count": 13,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_2\\20140615195814Mh.npz",
+        "sha256": "982e8609e388baf635031ffb9d3c5dadf71d4ee6841d3a7e451a06b5ea3756a3"
+      },
+      {
+        "file_name": "20150706083014Th.jpeg",
+        "fold": 2,
+        "candidate_count": 17,
+        "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache\\fold_2\\20150706083014Th.npz",
+        "sha256": "0b7f2f03554594e8ac5c53f21862d40a1d9cf6bb187230f89299f505f734c5db"
+      }
+    ],
+    "refined_cache_manifest_sha256": "1a184f4cfa17b714ed0a5fdc4933a11b2fe24fc5c6fe3e0bcf78e7737cd3d184"
+  },
+  "artifacts": {
+    "features": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_set_context_features.csv",
+    "features_sha256": "5f0f47d4562ae45d107d35dfab9c9584c0ee221e2fd5fa444da06fd348ff7f7d"
+  },
+  "limitations": [
+    "Features are fixed-pilot engineering evidence, not classifier performance.",
+    "No feature-target association, model fit, threshold, or margin was evaluated.",
+    "Full-development generation remains blocked on S0-4 review and registered margins.",
+    "Set-context features must remain observation-grouped in all downstream splits."
+  ]
+}

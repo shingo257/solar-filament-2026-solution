@@ -22,7 +22,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.v32_overlap_cluster import (  # noqa: E402
+from solar_filament.pipeline.v32_overlap_cluster import (  # noqa: E402
     HEIGHT,
     WIDTH,
     decode_mask,

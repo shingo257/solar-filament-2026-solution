@@ -1,0 +1,567 @@
+<title>Solar Filament 技術ノート</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #faf6ee;
+    --bg-elevated: #ffffff;
+    --bg-inset: #f2ead9;
+    --ink: #241f16;
+    --ink-dim: #6f6553;
+    --border: #e1d5ba;
+    --accent: #c1501f;
+    --accent-dim: #d97a3f;
+    --accent-ink: #ffffff;
+    --good: #3c7a4d;
+    --good-bg: #e6f1e8;
+    --bad: #ad3a2e;
+    --bad-bg: #f7e6e2;
+    --code-bg: #efe6d2;
+    --shadow: 0 1px 2px rgba(36,31,22,0.05), 0 12px 32px rgba(36,31,22,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171310;
+      --bg-elevated: #201b15;
+      --bg-inset: #29221a;
+      --ink: #f2ead9;
+      --ink-dim: #a89a80;
+      --border: #3c3223;
+      --accent: #e08a4f;
+      --accent-dim: #c1682f;
+      --accent-ink: #171310;
+      --good: #74bb85;
+      --good-bg: #1e2c21;
+      --bad: #e0897c;
+      --bad-bg: #332320;
+      --code-bg: #2a2318;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171310;
+    --bg-elevated: #201b15;
+    --bg-inset: #29221a;
+    --ink: #f2ead9;
+    --ink-dim: #a89a80;
+    --border: #3c3223;
+    --accent: #e08a4f;
+    --accent-dim: #c1682f;
+    --accent-ink: #171310;
+    --good: #74bb85;
+    --good-bg: #1e2c21;
+    --bad: #e0897c;
+    --bad-bg: #332320;
+    --code-bg: #2a2318;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.45);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    line-height: 1.7;
+    font-size: 16px;
+  }
+  ::selection { background: var(--accent-dim); color: white; }
+
+  .shell { display: grid; grid-template-columns: 260px minmax(0,1fr); max-width: 1180px; margin: 0 auto; }
+  @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+
+  .toc {
+    position: sticky; top: 0; align-self: start;
+    padding: 40px 20px 40px 24px; height: 100vh; overflow-y: auto;
+  }
+  .toc-title { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  .toc a {
+    display: block; font-size: 13.5px; color: var(--ink-dim); text-decoration: none;
+    padding: 5px 0; border-left: 2px solid transparent; padding-left: 10px; margin-left: -12px;
+  }
+  .toc a:hover { color: var(--ink); }
+  .toc a.lvl2 { padding-left: 22px; font-size: 12.5px; }
+
+  main { padding: 48px 32px 120px; min-width: 0; }
+  @media (max-width: 860px) { main { padding: 32px 20px 100px; } }
+
+  .kicker { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 {
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 700;
+    font-size: clamp(30px, 4vw, 42px); line-height: 1.2; margin: 0 0 14px; text-wrap: balance;
+  }
+  .lede { font-size: 17px; color: var(--ink-dim); max-width: 62ch; margin: 0 0 40px; }
+
+  section { margin: 64px 0; scroll-margin-top: 24px; }
+  h2 {
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 700; font-size: 26px;
+    margin: 0 0 8px; padding-top: 10px; border-top: 3px solid var(--accent);
+  }
+  .h2-num { font-family: "IBM Plex Mono", monospace; color: var(--accent); font-weight: 600; margin-right: 8px; }
+  h3 {
+    font-family: "IBM Plex Sans", sans-serif; font-weight: 700; font-size: 18px;
+    margin: 32px 0 10px; scroll-margin-top: 24px;
+  }
+  p { max-width: 68ch; margin: 0 0 16px; }
+  ul, ol { max-width: 66ch; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  strong { font-weight: 600; }
+
+  .callout {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 18px 22px; margin: 20px 0; box-shadow: var(--shadow); max-width: 68ch;
+  }
+  .callout.good { border-left-color: var(--good); }
+  .callout.bad { border-left-color: var(--bad); }
+  .callout-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; display: block; }
+  .callout.good .callout-label { color: var(--good); }
+  .callout.bad .callout-label { color: var(--bad); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .formula {
+    font-family: "IBM Plex Mono", monospace; background: var(--code-bg); border-radius: 8px;
+    padding: 18px 22px; margin: 18px 0; overflow-x: auto; font-size: 14.5px; max-width: 68ch;
+  }
+  code { font-family: "IBM Plex Mono", monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+  table { border-collapse: collapse; margin: 20px 0; font-size: 14px; max-width: 100%; }
+  .table-wrap { overflow-x: auto; margin: 20px 0; }
+  th, td { padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-dim); }
+  tr.hi td { background: var(--good-bg); font-weight: 600; }
+  tr.lo td { background: var(--bad-bg); }
+
+  .diagram {
+    display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 24px 0;
+    font-family: "IBM Plex Mono", monospace; font-size: 13px;
+  }
+  .diagram .stage {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; box-shadow: var(--shadow); max-width: 180px;
+  }
+  .diagram .stage .t { font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .diagram .arrow { padding: 0 10px; color: var(--ink-dim); }
+
+  .badge { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    padding: 2px 8px; border-radius: 999px; background: var(--code-bg); color: var(--ink-dim); margin-left: 6px; }
+
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 30px; position: relative; }
+  .checklist li::before {
+    content: "?"; position: absolute; left: 0; top: -1px;
+    width: 20px; height: 20px; border-radius: 5px; background: var(--accent); color: var(--accent-ink);
+    font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--ink-dim); max-width: 68ch; }
+</style>
+
+<div class="shell">
+  <nav class="toc">
+    <p class="toc-title">目次</p>
+    <a href="#history">1. 歴史と人間の精度</a>
+    <a href="#history-manual" class="lvl2">手作業の時代</a>
+    <a href="#history-scale" class="lvl2">自動化が必要になった理由</a>
+    <a href="#history-human-accuracy" class="lvl2">人間の精度</a>
+    <a href="#pq">2. PQという指標</a>
+    <a href="#pq-cliff" class="lvl2">崖と分母</a>
+    <a href="#pq-dice" class="lvl2">Diceとの違い</a>
+    <a href="#pipeline">3. 検出→精密化→後処理</a>
+    <a href="#pipeline-yolo" class="lvl2">YOLO検出器</a>
+    <a href="#pipeline-refiner" class="lvl2">refiner</a>
+    <a href="#pipeline-post" class="lvl2">重複除去</a>
+    <a href="#pseudo">4. pseudo-labelingの理論</a>
+    <a href="#pseudo-why" class="lvl2">効きうる理由</a>
+    <a href="#pseudo-risk" class="lvl2">効かない理由</a>
+    <a href="#foldbias">5. 単一fold検証の罠</a>
+    <a href="#position">6. 現在地と競合状況</a>
+    <a href="#judge">7. 自分で判断するために</a>
+  </nav>
+
+  <main>
+    <p class="kicker">Internal Technical Note · 2026-08-29</p>
+    <h1>Solar Filament Segmentation<br>技術ノート</h1>
+    <p class="lede">
+      このプロジェクトで積み上げてきた判断はすべて実測に基づいているが、
+      「なぜその実測を信じてよいのか」を理解しないと、次に似た主張が
+      出てきたときに自分で真偽を判断できない。ここでは指標・パイプライン・
+      pseudo-labelingの理論、そしてこのプロジェクト自身が2度陥った
+      落とし穴を、実際の数値とともに説明する。
+    </p>
+
+    <section id="history">
+      <h2><span class="h2-num">00</span>歴史と人間の精度</h2>
+      <p>
+        指標やパイプラインの中身に入る前に、そもそもこのタスクが
+        どこから来たのかを押さえておく。<strong>これは新しく発明された
+        人工課題ではなく、人間が100年近く手作業でやってきた仕事を
+        機械に肩代わりさせようとしている</strong>。そして「人間はどれだけ
+        正確にできるのか」という問いには、実はこのプロジェクト自身が
+        測定した答えがある。
+      </p>
+
+      <h3 id="history-manual">手作業の時代 — なぜ長年人間がやってきたか</h3>
+      <p>
+        フィラメントとは、太陽の彩層をH-alpha波長で撮影したときに
+        disk上で暗い筋として見えるプロミネンス(プラズマの塊)のこと。
+        これが噴出するとCME(コロナ質量放出)を引き起こし、地磁気嵐→
+        衛星障害・電力網リスク・GPS誤差につながりうる。つまり
+        「今どこにフィラメントがあるか」を毎日追い続けること自体に、
+        宇宙天気予報という実用上の価値がある。
+      </p>
+      <p>
+        この理由から、フランスのMeudon天文台をはじめとする観測所は
+        20世紀初頭からH-alpha全面像の日々の観測を続け、専門家が
+        フィラメントの位置・形状を目視でシノプティックチャートに
+        手描きしてきた。NOAAの宇宙天気予報でも、McIntoshらが確立した
+        手法に基づき、予報官が画像を見てフィラメントを識別・トレース
+        する運用が長らく標準だった。
+      </p>
+      <div class="callout">
+        <span class="callout-label">この節の情報の性質について</span>
+        <p>
+          ここまでの歴史的経緯(観測所名・年代・手法の詳細)は太陽物理学
+          分野で一般的に語られる通説であり、一次文献まで遡って裏取り
+          したものではない。一方、次の「人間の精度」で示す数値は
+          <strong>このプロジェクト自身が実測した値</strong>であり、
+          性質が異なる。
+        </p>
+      </div>
+
+      <h3 id="history-scale">自動化が必要になった理由 — 観測網の拡大</h3>
+      <p>
+        転機になったのは観測網の拡大。NSO(米国立太陽観測所)が運用する
+        GONGネットワークは世界6局に望遠鏡を配置し、地球の自転を
+        カバーしながらほぼ連続的にH-alpha全面像を撮り続けている。
+        これによって観測データ量が以前とは桁違いに増え、人手による
+        毎日のカタログ化が追いつかなくなった。
+      </p>
+      <p>
+        2000年代以降、閾値処理やモルフォロジー演算を組み合わせた
+        自動検出アルゴリズム(Bernasconi, Rust &amp; Hakim, 2005の
+        ASSA=Automated Solar Synoptic Analyzerが代表例)が登場し、
+        2010年代以降は深層学習ベースの手法へと置き換わりつつある。
+        §3・§4で扱うYOLO検出器やrefinerによるパイプライン、そして
+        このプロジェクトが調べた2026年の類似研究(CHASE衛星データでの
+        pseudo-labeling、§4参照)も、この自動化の延長線上にある。
+        今もなお発展途上の分野であり、「解決済みの枯れたタスク」では
+        ない。
+      </p>
+
+      <h3 id="history-human-accuracy">人間の精度 — 専門家同士でも一致率0.76</h3>
+      <p>
+        このコンペのデータセット名は<code>MAGFiLO</code>
+        (Manually Annotated GONG Filaments from H-alpha Observations)。
+        名前の通り、正解データ(GT)自体がGONG画像に対して人間の
+        アノテータが輪郭を手描きしたものであり、しかも
+        <strong>1枚の画像に複数のアノテータ</strong>が付いている
+        (GTの個体IDは<code>&lt;annotator_id&gt;-&lt;image_id&gt;_&lt;n&gt;</code>形式で、
+        評価は(annotator, image)単位ごとに独立して行われる)。
+      </p>
+      <p>
+        この構造を利用すると、「アノテータ同士がどれだけ一致するか」を
+        リーダーボードと同じPQ指標で直接測定できる。実際に測った結果が
+        次の通り。
+      </p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>比較対象</th><th>PQ</th></tr>
+          <tr class="hi"><td>アノテータ同士の一致度(不一致が課す事実上の天井)</td><td>0.7587</td></tr>
+          <tr><td>　うち意見が割れた画像だけに絞ると</td><td>約 0.61</td></tr>
+          <tr><td>現在の自社モデル(V35, 全fold OOF)</td><td>0.4426</td></tr>
+          <tr><td>Public(自己ベスト)</td><td>0.37</td></tr>
+          <tr><td>公開リーダーボード1位スナップショット</td><td>0.48</td></tr>
+        </table>
+      </div>
+      <p>
+        <strong>専門家同士がトレースしても、PQで測るとお互い0.76までしか
+        一致しない。</strong>これはアノテータの技量不足ではなく、
+        フィラメントの境界がH-alpha画像上で本質的に拡散的で曖昧
+        (太陽黒点のような輪郭のはっきりした構造とは違う)なために
+        生じる、タスクの物理的な性質そのものが持つ上限だと考えられる。
+      </p>
+      <div class="callout good">
+        <span class="callout-label">この数字をどう使うか</span>
+        <p>
+          0.7587は「機械が原理的に到達しうる天井」に近い目安になる。
+          現在の公開1位(0.48)ですら、この天井までまだ距離がある。
+          つまりこのタスクは<strong>人間の能力を機械が超える必要はなく、
+          人間の一致率に漸近すれば十分に良い、という設計の余地が
+          もともと大きいタスク</strong>だと言える。§2で説明するPQの
+          IoU&gt;0.5という「崖」も、人間同士の判定にすら完全な一致を
+          求めない設計になっている背景として理解できる。
+        </p>
+      </div>
+      <p>
+        算出コードは<code>scratch/run_annotator_ceiling.py</code>。
+        再現したい場合はローカルPC(GPU不要)で数分で実行できる。
+      </p>
+    </section>
+
+    <section id="pq">
+      <h2><span class="h2-num">02</span>PQという指標</h2>
+      <p>
+        リーダーボードの指標はPanoptic Quality(PQ)。真の個体集合とモデルの
+        予測集合を突き合わせ、以下の式で1つの数値にする。
+      </p>
+      <div class="formula">
+PQ = Σ IoU(TPペア) / ( |TP| + 0.5·|FP| + 0.5·|FN| )<br>
+&nbsp;&nbsp;&nbsp;TP ⟺ IoU(予測, 正解) &gt; 0.5
+      </div>
+      <p>
+        IoU(Intersection over Union)は「予測と正解がどれだけ重なっているか」を
+        0〜1で表す。0.5なら予測領域の半分だけが正解と一致している状態。
+      </p>
+
+      <h3 id="pq-cliff">崖と分母 — なぜ「惜しい」が二重に痛いのか</h3>
+      <p>
+        IoU 0.5という基準は硬い崖である。IoU 0.49の予測はTPにならず、
+        <strong>得点がゼロなだけでなく、分母を押し上げる</strong>。
+        分母の「+0.5|FP|」はその予測自体を誤検出として計上し、
+        「+0.5|FN|」は対応するはずだった正解を検出漏れとして計上する。
+        つまり1つの「惜しい」予測が、得点ゼロと引き換えに分母を2重に
+        増やす。これがPQを難しくしている最大の理由で、
+        「多少ずれてもいいから塗る」という直感が裏目に出る設計になっている。
+      </p>
+      <div class="callout">
+        <span class="callout-label">具体例</span>
+        <p>
+          IoU 0.5の予測がTPになったとする。分母は+1、分子は+0.5〜1程度で、
+          PQは確実に上がる。ところがIoU 0.49なら分母は+1(0.5+0.5)、
+          分子は+0で、PQは確実に下がる。<strong>0.01の違いが得点の
+          符号を反転させる。</strong>
+        </p>
+      </div>
+
+      <h3 id="pq-dice">Diceとの違い — このプロジェクトが実際に犯した誤り</h3>
+      <p>
+        本コンペは2026-08-07に評価方法がDiceからPQへ変更され、08-12に
+        リーダーボードが再採点された。このプロジェクトはそれ以前、
+        Hungarian matched Diceという独自指標をローカル基準にしており、
+        指標変更後もしばらくそれを使い続けていた。結果、ローカル指標と
+        リーダーボードの相関が失われ、「ローカルで良くなったのにPublicが
+        動かない」という状態に数週間気づかなかった。
+      </p>
+      <p>
+        Diceは連続値で、0.3でも0.4でも「まあまあ」の評価が付く。PQは
+        0.5を境に評価が非連続に変わる。<strong>指標の性質を取り違えると、
+        最適化の方向そのものが逆転しうる。</strong>これが、本ノート全体を
+        通して繰り返す教訓の最初の実例である。
+      </p>
+    </section>
+
+    <section id="pipeline">
+      <h2><span class="h2-num">03</span>検出→精密化→後処理</h2>
+      <p>
+        現在の確定パイプライン(V35)は3段階。それぞれ役割が異なり、
+        どこで何を測っているかを混同すると、改善したはずが悪化する。
+      </p>
+      <div class="diagram">
+        <div class="stage"><div class="t">1. YOLO検出器</div>大まかな候補領域を出す。anchor+NMS方式</div>
+        <div class="arrow">→</div>
+        <div class="stage"><div class="t">2. refiner</div>候補ごとに輪郭を精密化するU-Net</div>
+        <div class="arrow">→</div>
+        <div class="stage"><div class="t">3. 重複除去</div>同一画素を複数個体が奪い合わないよう調停</div>
+      </div>
+
+      <h3 id="pipeline-yolo">YOLO検出器 — なぜ「だいたい」でよいのか</h3>
+      <p>
+        YOLO11m-segは2048×2048のH-Alpha画像から、フィラメントらしき
+        領域の候補マスクを大量に出す。この段階の候補は精度より網羅性が
+        優先される(conf 0.26という比較的緩い閾値で採用)。理由は
+        後段のrefinerが形を整えてくれるため、候補が多少粗くても
+        最終的な精度への影響が小さいから。
+      </p>
+
+      <h3 id="pipeline-refiner">refiner — 「削る」専用に学習されている</h3>
+      <p>
+        MediSeg U-Net(31Mパラメータ)が、YOLO候補1つずつをcontext 1.65倍で
+        切り出し、確率マップ(0〜1、画素ごとに「ここは本当にフィラメントか」)
+        を出す。この確率マップの使い方に2つの流儀がある。
+      </p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>方式</th><th>定義</th><th>fold0 OOF PQ</th><th>結果</th></tr>
+          <tr class="hi"><td>shrink(確定構成)</td><td>確率マップ AND 元候補</td><td>0.4393</td><td>採用</td></tr>
+          <tr class="lo"><td>free(交差制約なし)</td><td>確率マップだけで判定</td><td>0.4258〜0.4361<span class="badge">fold依存</span></td><td>不採用(§4参照)</td></tr>
+        </table>
+      </div>
+      <p>
+        <code>shrink</code>は「候補の内側しか削れない」制約付き。
+        候補が既に実物より大きめに出る傾向があるため、この制約は
+        ほとんどの場合むしろ有利に働く。「細い構造を拾うために外側へ
+        広げた方がよいのでは」という直感は、実測では一貫して裏目に
+        出ている(§1のcliff効果が影響: 広げてIoUが0.5を割ると二重減点)。
+      </p>
+
+      <h3 id="pipeline-post">重複除去 — 提出規約への対応</h3>
+      <p>
+        Kaggleは同一画像内でmaskが1画素でも重複していると提出を拒否する。
+        複数の候補が同じ領域を指すことがあるため、面積の大きい方から
+        「もう使われた画素」を除外していく(<code>drop_contained_then_area_asc</code>)。
+        実測では、この制約自体はPQへの悪影響がほぼ無い(オラクル上限との
+        差はΔ0.01未満)ことを確認済み。
+      </p>
+    </section>
+
+    <section id="pseudo">
+      <h2><span class="h2-num">04</span>pseudo-labelingの理論</h2>
+      <p>
+        今回試みているのは、707観測の年代分布の偏り(2011-17年が87%、
+        2018-22年が13%)を、モデル自身が生成したラベルで補う手法。
+        「なぜ効くことがあるのか」「なぜ逆効果になりうるのか」の両方を
+        理解しておく必要がある。
+      </p>
+
+      <h3 id="pseudo-why">効きうる理由</h3>
+      <p>
+        検出モデルは学習データの分布に強く依存する。2018-22年のデータが
+        薄いと、その年代特有の見え方(太陽活動周期による模様の違いなど)への
+        対応力が弱くなる可能性がある。実際には正解ラベルの無い画像でも、
+        <strong>複数の独立したモデル(3-fold)が同じ場所を検出し、かつ
+        confidenceが高い</strong>候補は、統計的に正しい確率が高い。これを
+        新しい教師データとして使うのがpseudo-labelingの基本発想。
+      </p>
+
+      <h3 id="pseudo-risk">効かない理由 — モデルバイアスの増幅</h3>
+      <div class="callout bad">
+        <span class="callout-label">実際に起きたこと(V47)</span>
+        <p>
+          refinerを再学習する際、教師データの質を上げようとして
+          「マッチ度の低い候補は使わない」という厳格化を行ったところ、
+          検証用の指標(crop_dice)は0.7040→0.7622と大きく改善したのに、
+          実運用の指標(PQ)はむしろ悪化した(0.4353→0.4296)。
+        </p>
+      </div>
+      <p>
+        モデルが自分自身の推論結果を教師データとして使うと、
+        <strong>そのモデルが既に得意なパターンをさらに強化し、苦手な
+        パターンはますます見えなくなる</strong>可能性がある。これは
+        「モデルバイアスの増幅(model bias amplification)」と呼ばれる
+        現象で、同じ課題でpseudo-labelingを行った先行研究
+        (<em>A Modern ConvNet for Solar Filament Detection</em>, 2026)でも
+        同様の懸念が明記されており、実測の改善幅もわずか(IoU換算+0.003〜0.006)
+        だった。
+      </p>
+      <p>
+        今回のパイプラインでは、この対策として<strong>3-foldの合意
+        (2/3以上が同じ場所を検出)+confidence 0.5以上(本番の0.26より
+        厳しい)</strong>という二重のフィルタをかけている。150枚中72個体
+        しか採用しなかった(平均0.48個体/画像、実データは1画像あたり
+        平均6.4個体)のは、このフィルタが意図通り保守的に働いている
+        結果である。
+      </p>
+      <div class="callout bad">
+        <span class="callout-label">実際の結果(V49、2026-08-29)</span>
+        <p>
+          この保守的なフィルタを適用したうえで、fold0のtrain splitに
+          pseudo-label 72個体(35画像)を追加して再学習した。評価は
+          pseudo-labelが一切混じっていないfold0の実観測236枚のみで
+          実施(リークなし)。結果、fold0 OOF PQは<strong>0.4393→0.4332
+          (Δ−0.0061)</strong>と悪化し、fold1/2への展開は行わないと
+          判定した。文献(CHASE論文)から「効いても小幅な改善」と
+          事前に見込んでいたが、実測は悪化だった。上で説明した
+          モデルバイアス増幅が、このプロジェクトでも実際に再現された
+          ことになる。
+        </p>
+      </div>
+    </section>
+
+    <section id="foldbias">
+      <h2><span class="h2-num">05</span>単一fold検証の罠</h2>
+      <p>
+        このプロジェクトで最も重要な、そして2度独立に発生した事故がこれ。
+        707観測を3分割(fold0/1/2)し、1つを検証用に残して残り2つで
+        学習する。<strong>3つのうち1つだけで良い結果が出ても、それが
+        「本物の改善」か「たまたまその分割に合っていただけ」かは、
+        残り2つで確認するまで分からない。</strong>
+      </p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>施策</th><th>fold0</th><th>fold1</th><th>fold2</th><th>結論</th></tr>
+          <tr class="hi"><td>WBF drop_contained@0.80</td><td>+0.0007</td><td>−0.0027</td><td>−0.0062</td><td>不採用</td></tr>
+          <tr class="hi"><td>refiner free@0.86</td><td>−0.0032</td><td>−0.0157</td><td>−0.0106</td><td>不採用</td></tr>
+        </table>
+      </div>
+      <p>
+        2つとも、fold0だけを見ていた時点では「基準に迫っている、あるいは
+        上回っている」と判断していた。fold1・fold2で検証して初めて、
+        それがfold0特有の当たりだったと分かった。
+      </p>
+      <div class="callout">
+        <span class="callout-label">なぜ繰り返し起きるのか</span>
+        <p>
+          閾値を0.01刻みで細かく探索するような「精密な」手続きほど、
+          統計的には「たまたま良く見える点」を見つけやすくなる
+          (多重比較問題)。<strong>探索の精密さは選択バイアスへの
+          防御にならない。</strong>唯一の防御は、独立したデータ
+          (別のfold)で確認することだけ。
+        </p>
+      </div>
+    </section>
+
+    <section id="position">
+      <h2><span class="h2-num">06</span>現在地と競合状況</h2>
+      <p>
+        確定している最良構成はV35(<code>shrink@0.45 + drop_contained</code>)、
+        全fold OOF PQ <strong>0.4426</strong>、Public <strong>0.37</strong>。
+        これ以外に全fold検証を通過した改善は現時点で存在しない。
+      </p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>系統</th><th>試みた施策数</th><th>結果</th></tr>
+          <tr><td>検出器強化(augmentation・モデルサイズ・解像度)</td><td>6</td><td>全て不合格</td></tr>
+          <tr><td>アーキテクチャ差し替え(RF-DETR)</td><td>2</td><td>基準未達</td></tr>
+          <tr><td>アンサンブル(multi-seed・WBF)</td><td>3</td><td>全て不合格(fold0限定含む)</td></tr>
+          <tr><td>refiner再学習・後処理設計</td><td>4</td><td>全て不合格(fold0限定含む)</td></tr>
+          <tr><td>データ側(pseudo-labeling, fold0パイロット)</td><td>1</td><td>不合格(Δ−0.0061)</td></tr>
+        </table>
+      </div>
+      <p>
+        現在の公開リーダーボードは上位7チームがPQ 0.55で並び、
+        自チームの0.37はその下の0.37〜0.40クラスタに位置する。
+        上位陣が完全一致で並ぶ挙動は技術的に不自然で、運営自身も
+        「スコアの比較でなく本質的な取り組みを」と注意喚起している。
+      </p>
+    </section>
+
+    <section id="judge">
+      <h2><span class="h2-num">07</span>自分で判断するための視点</h2>
+      <p>
+        今後、似たような「改善しました」という報告(このプロジェクトの
+        ものも、他の文献のものも)を見たときに、次のチェックリストで
+        確認すると素人判断でも大筋を外さない。
+      </p>
+      <ul class="checklist">
+        <li><strong>全データで検証されているか。</strong>一部のfold・一部の
+        サンプルだけの結果は、確認するまで「たまたま」の可能性が残る(§4)。</li>
+        <li><strong>指標の定義が同じか。</strong>Dice・IoU・PQは似て非なる
+        指標。特にPQのような閾値付きの指標は、連続値の指標と挙動が
+        大きく異なる(§1)。</li>
+        <li><strong>検証用の指標と実運用の指標が一致しているか。</strong>
+        crop_diceが良くなってもPQが悪化した実例がある(§3)。「学習が
+        うまくいった」ことと「実際に役立つ」ことは別物。</li>
+        <li><strong>比較対象(baseline)が何かを確認する。</strong>
+        「基準を上回った」という主張は、その基準がどう測られたものかを
+        確認しないと意味を判断できない。</li>
+        <li><strong>サンプル数は十分か。</strong>n=25のような小さい
+        サンプルでの好結果は、フルデータで再現しないことがある
+        (このプロジェクトでも実際に発生した)。</li>
+      </ul>
+    </section>
+
+    <footer>
+      Solar Filament Segmentation Challenge 2026 内部技術ノート。
+      数値の正本は<code>README.md</code>、詳細な実験ログは<code>RESEARCH_LOG.md</code>を参照。
+    </footer>
+  </main>
+</div>

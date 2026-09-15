@@ -1,0 +1,278 @@
+<title>Solar Filament Detection</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg-elevated: #151822;
+    --ink: #eef0f4;
+    --ink-dim: #9aa1b0;
+    --border: #262b3a;
+    --accent: #ff8a3d;
+    --accent-soft: #ffb37a;
+    --overlay-fill: rgba(255,138,61,0.16);
+    --overlay-stroke: #ffb37a;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 20px 50px rgba(0,0,0,0.5);
+  }
+  /* この見せ方はダーク前提(宇宙・観測データの文脈)で固定する */
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif; line-height: 1.6;
+  }
+  ::selection { background: var(--accent); color: #0d0f14; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 90px 0 60px; position: relative; }
+  .kicker {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 18px;
+  }
+  h1 {
+    font-family: "Fraunces", Georgia, serif; font-weight: 600; font-style: normal;
+    font-size: clamp(36px, 6vw, 64px); line-height: 1.05; margin: 0 0 22px;
+    letter-spacing: -0.01em; text-wrap: balance; max-width: 16ch;
+  }
+  h1 em { font-style: italic; color: var(--accent-soft); }
+  .lede { font-size: 18px; color: var(--ink-dim); max-width: 56ch; margin: 0 0 8px; }
+
+  .stat-strip {
+    display: flex; flex-wrap: wrap; gap: 40px; margin: 48px 0 0;
+    padding-top: 28px; border-top: 1px solid var(--border);
+  }
+  .stat .n {
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 34px; color: var(--accent-soft);
+    line-height: 1;
+  }
+  .stat .l { font-size: 13px; color: var(--ink-dim); margin-top: 6px; }
+  .stat .info { color: var(--accent); margin-left: 2px; }
+  .footnote { font-size: 12px; color: var(--ink-dim); max-width: 62ch; margin: 14px 0 0; line-height: 1.6; }
+
+  .section-head { padding: 70px 0 8px; }
+  .section-head h2 {
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 28px; margin: 0 0 10px;
+  }
+  .section-head p { color: var(--ink-dim); max-width: 60ch; font-size: 15px; }
+
+  .gallery {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px; padding: 24px 0 40px;
+  }
+  .card {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+    overflow: hidden; box-shadow: var(--shadow);
+  }
+  .card .frame { position: relative; aspect-ratio: 1; background: #000; }
+  .card .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .card .frame polygon {
+    fill: var(--overlay-fill); stroke: var(--overlay-stroke); stroke-width: 0.6;
+    vector-effect: non-scaling-stroke;
+  }
+  .card .meta {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-dim);
+  }
+  .card .meta .count { color: var(--accent-soft); font-weight: 600; }
+  .card .meta .tag {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+    background: var(--border); padding: 2px 7px; border-radius: 999px; color: var(--ink-dim);
+  }
+  .card .frame img.is-hidden { display: none; }
+  .toggle-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.03em; text-transform: uppercase;
+    background: rgba(13,15,20,0.72); backdrop-filter: blur(4px);
+    color: var(--ink); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 12px; cursor: pointer;
+  }
+  .toggle-btn:hover { border-color: var(--accent); color: var(--accent-soft); }
+
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 40px 0 8px;
+  }
+  @media (max-width: 700px) { .compare { grid-template-columns: 1fr; } }
+  .compare figure { margin: 0; background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  .compare .frame { position: relative; aspect-ratio: 1; background: #000; }
+  .compare .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .compare .frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .compare figcaption {
+    padding: 10px 14px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-dim);
+    display: flex; justify-content: space-between;
+  }
+  .compare-label { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px; }
+
+  .about {
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; padding: 60px 0 80px;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 760px) { .about, .gallery { grid-template-columns: 1fr; } }
+  .about h3 { font-family: "Fraunces", serif; font-weight: 600; font-size: 20px; margin: 0 0 14px; }
+  .about p { color: var(--ink-dim); font-size: 14.5px; max-width: 52ch; }
+  .about ul { color: var(--ink-dim); font-size: 14.5px; padding-left: 20px; max-width: 50ch; }
+  .about li { margin-bottom: 8px; }
+
+  .pipeline-mini {
+    display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+  }
+  .pipeline-mini span {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 14px; color: var(--ink-dim);
+  }
+  .pipeline-mini span.hi { color: var(--accent-soft); border-color: var(--accent); }
+
+  footer {
+    padding: 40px 0 60px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--ink-dim); max-width: 68ch;
+  }
+  footer a { color: var(--accent-soft); }
+</style>
+
+<div class="wrap">
+  <section class="hero">
+    <p class="kicker">Research Demonstration · Not for Commercial Use</p>
+    <h1>太陽フィラメントを<br><em>個体単位</em>で検出する</h1>
+    <p class="lede">
+      太陽観測衛星GONGが撮影したH-Alpha全面画像から、太陽フィラメント
+      (磁力線に支えられた低温プラズマの帯、太陽フレア・コロナ質量放出の
+      核となる構造)を1本ずつ切り出すインスタンスセグメンテーション技術。
+      下記はすべて、モデルが実際に検出した結果そのものです。
+    </p>
+    <div class="stat-strip">
+      <div class="stat"><div class="n">0.44</div><div class="l">Panoptic Quality<span class="info">*</span></div></div>
+      <div class="stat"><div class="n">2048²</div><div class="l">px 全面画像から検出</div></div>
+      <div class="stat"><div class="n">2段階</div><div class="l">検出+輪郭精密化パイプライン</div></div>
+      <div class="stat"><div class="n">GONG</div><div class="l">6観測地点のネットワークデータに対応</div></div>
+    </div>
+    <p class="footnote">
+      * Panoptic Quality(PQ)は個体単位の検出精度を表す学術指標(0〜1、1が完全一致)。
+      公開研究ベンチマーク「Filament Segmentation Challenge 2026」の非公開評価用データに
+      対する社内検証値(2026-08時点、継続検証中)。専門家同士の判定が一致する割合にも
+      理論上の上限があり、単純な「正答率」とは性質が異なる指標です。
+    </p>
+  </section>
+
+  <section>
+    <p class="compare-label">生データ vs 技術強調表示(同一観測)</p>
+    <div class="compare" id="compare"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>検出結果ギャラリー</h2>
+      <p>
+        オレンジの輪郭が検出されたフィラメント。画像はいずれも公開データ
+        (NSO/GONGアーカイブ)、輪郭線はすべて自社パイプラインが生成した
+        検出結果です。右上のボタンで生データ/技術強調表示を切り替えられます。
+      </p>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section class="about">
+    <div>
+      <h3>技術の概要</h3>
+      <p>
+        フィラメントは太陽面の0.2%程度しか占めない、細く暗い構造です。
+        1枚の観測画像に数個体から数十個体が混在し、個体同士が近接・
+        癒着して見えることも珍しくありません。
+      </p>
+      <div class="pipeline-mini">
+        <span>検出器(候補領域の抽出)</span>
+        <span>→</span>
+        <span class="hi">輪郭精密化ネットワーク</span>
+        <span>→</span>
+        <span>個体分離・重複調整</span>
+      </div>
+      <p>
+        2段階のパイプラインで、まず候補領域を広く抽出し、専用に学習した
+        精密化ネットワークで各候補の輪郭を画素単位で整える構成を採用して
+        います。
+      </p>
+    </div>
+    <div>
+      <h3>データ出典と利用範囲</h3>
+      <ul>
+        <li>掲載画像はNSO Integrated Synoptic Program(GONGネットワーク)による公開観測データです。</li>
+        <li>GONGはBig Bear・Cerro Tololo・Learmonth・Udaipur・Instituto de Astrofísica de Canarias・High Altitude Observatoryの各観測所で構成されています。</li>
+        <li>本ページは技術デモンストレーションであり、特定コンペティションの正解データ・成績を示すものではありません。</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    Acknowledgment: This page utilizes GONG data obtained by the NSO Integrated
+    Synoptic Program, managed by the National Solar Observatory, operated by
+    AURA under a cooperative agreement with the National Science Foundation.
+  </footer>
+</div>
+
+<script>
+const DATA = __CASE_DATA_JSON__;
+
+function polygonsToSvg(instances) {
+  const polys = [];
+  instances.forEach(inst => {
+    inst.polygons.forEach(poly => {
+      const pts = poly.map(p => p.join(",")).join(" ");
+      polys.push(`<polygon points="${pts}"></polygon>`);
+    });
+  });
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${polys.join("")}</svg>`;
+}
+
+// 最上部: 検出数が最も多い症例を生データ/技術強調表示で並べて常時表示
+const heroCase = DATA.cases[0];
+document.getElementById("compare").innerHTML = `
+  <figure>
+    <div class="frame">
+      <img src="data:image/jpeg;base64,${heroCase.thumb_gray_b64}" alt="Solar H-Alpha observation ${heroCase.date}, raw grayscale">
+      ${polygonsToSvg(heroCase.instances)}
+    </div>
+    <figcaption><span>生データ(自然なH-Alphaグレースケール)</span><span>${heroCase.date}</span></figcaption>
+  </figure>
+  <figure>
+    <div class="frame">
+      <img src="data:image/jpeg;base64,${heroCase.thumb_color_b64}" alt="Solar H-Alpha observation ${heroCase.date}, enhanced">
+      ${polygonsToSvg(heroCase.instances)}
+    </div>
+    <figcaption><span>技術強調表示(検出パイプラインへの入力表現)</span><span>${heroCase.date}</span></figcaption>
+  </figure>
+`;
+
+// ギャラリー: カードごとにトグルボタンで生データ/技術強調表示を切り替え
+document.getElementById("gallery").innerHTML = DATA.cases.map((c, i) => `
+  <div class="card" data-index="${i}">
+    <div class="frame">
+      <button class="toggle-btn" data-action="toggle">カラーに切替</button>
+      <img class="img-gray" src="data:image/jpeg;base64,${c.thumb_gray_b64}" alt="Solar H-Alpha observation ${c.date}">
+      <img class="img-color is-hidden" src="data:image/jpeg;base64,${c.thumb_color_b64}" alt="Solar H-Alpha observation ${c.date}, enhanced">
+      ${polygonsToSvg(c.instances)}
+    </div>
+    <div class="meta">
+      <span>${c.date}</span>
+      <span class="count">${c.n_instances} detected</span>
+    </div>
+  </div>
+`).join("");
+
+document.getElementById("gallery").addEventListener("click", (e) => {
+  const btn = e.target.closest(".toggle-btn");
+  if (!btn) return;
+  const card = btn.closest(".card");
+  const gray = card.querySelector(".img-gray");
+  const color = card.querySelector(".img-color");
+  const showingColor = !color.classList.contains("is-hidden");
+  gray.classList.toggle("is-hidden", !showingColor);
+  color.classList.toggle("is-hidden", showingColor);
+  btn.textContent = showingColor ? "カラーに切替" : "生データに切替";
+});
+</script>

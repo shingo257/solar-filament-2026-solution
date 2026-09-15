@@ -1,0 +1,324 @@
+<title>Pseudo-Label QA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f5f2ea;
+    --bg-elevated: #ffffff;
+    --ink: #201c14;
+    --ink-dim: #6b6355;
+    --border: #ddd5c2;
+    --accent: #b5652f;
+    --accent-ink: #ffffff;
+    --good: #3f7d4f;
+    --good-bg: #e5f0e6;
+    --warn: #b5652f;
+    --warn-bg: #f6e9dd;
+    --bad: #b03636;
+    --bad-bg: #f5e2e0;
+    --overlay-3: #3f7d4f;
+    --overlay-2: #c98a2c;
+    --chip-bg: #eee7d6;
+    --shadow: 0 1px 2px rgba(32,28,20,0.06), 0 8px 24px rgba(32,28,20,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140f;
+      --bg-elevated: #221e17;
+      --ink: #f1ece0;
+      --ink-dim: #a89e8a;
+      --border: #3a3327;
+      --accent: #e08a4f;
+      --accent-ink: #17140f;
+      --good: #6fbb80;
+      --good-bg: #1e2e21;
+      --warn: #e08a4f;
+      --warn-bg: #332619;
+      --bad: #e28080;
+      --bad-bg: #332020;
+      --overlay-3: #6fbb80;
+      --overlay-2: #e0b24f;
+      --chip-bg: #2b2619;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140f;
+    --bg-elevated: #221e17;
+    --ink: #f1ece0;
+    --ink-dim: #a89e8a;
+    --border: #3a3327;
+    --accent: #e08a4f;
+    --accent-ink: #17140f;
+    --good: #6fbb80;
+    --good-bg: #1e2e21;
+    --warn: #e08a4f;
+    --warn-bg: #332619;
+    --bad: #e28080;
+    --bad-bg: #332020;
+    --overlay-3: #6fbb80;
+    --overlay-2: #e0b24f;
+    --chip-bg: #2b2619;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  header { margin-bottom: 28px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 8px;
+  }
+  h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; text-wrap: balance; }
+  .subtitle { color: var(--ink-dim); font-size: 15px; max-width: 60ch; margin: 0; }
+
+  .stat-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin: 20px 0 24px;
+  }
+  .stat {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    min-width: 120px;
+  }
+  .stat .n {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 20px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .l { font-size: 12px; color: var(--ink-dim); }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 20px; padding: 12px 16px;
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .controls span { font-size: 12px; color: var(--ink-dim); margin-right: 4px; }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--chip-bg);
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .chip.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+  }
+  .card.judged-reject { opacity: 0.45; }
+  .thumb-wrap { position: relative; aspect-ratio: 1; background: #000; }
+  .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .thumb-wrap polygon {
+    fill: rgba(180, 90, 40, 0.18);
+    stroke-width: 0.6;
+    vector-effect: non-scaling-stroke;
+  }
+  .thumb-wrap polygon.agree3 { stroke: var(--overlay-3); fill: rgba(63,125,79,0.20); }
+  .thumb-wrap polygon.agree2 { stroke: var(--overlay-2); fill: rgba(201,138,44,0.20); }
+
+  .card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .filename {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; color: var(--ink-dim);
+    word-break: break-all;
+  }
+  .inst-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .inst-badge {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--chip-bg);
+    display: inline-flex; gap: 6px; align-items: center;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.agree3 { background: var(--overlay-3); }
+  .dot.agree2 { background: var(--overlay-2); }
+
+  .verdict-row { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
+  .verdict-btn {
+    flex: 1; font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 13px;
+    padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-elevated); color: var(--ink); cursor: pointer;
+  }
+  .verdict-btn.accept.active { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+  .verdict-btn.reject.active { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--ink-dim); margin-bottom: 16px; flex-wrap: wrap; }
+  .legend .dot { margin-right: 5px; }
+
+  footer { margin-top: 40px; font-size: 12px; color: var(--ink-dim); text-align: center; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card { transition: opacity 0.2s ease; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Pseudo-Label Quality Check</p>
+    <h1>Pseudo-Label QA</h1>
+    <p class="subtitle" id="scope-text">
+      GONGアーカイブから追加取得した2018〜2022年の観測画像に、3-fold YOLOアンサンブル(WBF融合・2/3合意)+refiner(shrink@0.45確定構成)で生成したpseudo-labelを目視確認します。
+    </p>
+  </header>
+
+  <div class="stat-row" id="stat-row"></div>
+
+  <div class="legend">
+    <span><span class="dot agree3"></span>3/3 fold合意</span>
+    <span><span class="dot agree2"></span>2/3 fold合意</span>
+  </div>
+
+  <div class="controls">
+    <span>フィルタ:</span>
+    <button class="chip active" data-filter="all">すべて</button>
+    <button class="chip" data-filter="unjudged">未判定のみ</button>
+    <button class="chip" data-filter="accepted">承認済み</button>
+    <button class="chip" data-filter="rejected">却下済み</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>採用件数はブラウザのlocalStorageに保存されます(この端末のみ)。</footer>
+</div>
+
+<script>
+const CASES = __CASE_DATA_JSON__;
+const STORAGE_KEY = "pseudo-label-qa-votes";
+
+function loadVotes() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch (e) { return {}; }
+}
+function saveVotes(votes) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(votes)); }
+  catch (e) {}
+}
+let votes = loadVotes();
+let activeFilter = "all";
+
+function renderStats() {
+  const total = CASES.cases.length;
+  const totalInst = CASES.n_total_instances;
+  const accepted = Object.values(votes).filter(v => v === "accept").length;
+  const rejected = Object.values(votes).filter(v => v === "reject").length;
+  const statRow = document.getElementById("stat-row");
+  statRow.innerHTML = [
+    ["images_with_labels", total, "画像数"],
+    ["total_instances", totalInst, "候補個体数"],
+    ["accepted", accepted, "承認済み"],
+    ["rejected", rejected, "却下済み"],
+  ].map(([key, n, label]) => `
+    <div class="stat"><div class="n">${n}</div><div class="l">${label}</div></div>
+  `).join("");
+}
+
+function polygonsToSvg(instances) {
+  const polys = [];
+  instances.forEach((inst, i) => {
+    const cls = inst.agreement >= 3 ? "agree3" : "agree2";
+    inst.polygons.forEach(poly => {
+      const pts = poly.map(p => p.join(",")).join(" ");
+      polys.push(`<polygon class="${cls}" points="${pts}"></polygon>`);
+    });
+  });
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${polys.join("")}</svg>`;
+}
+
+function badgeHtml(inst) {
+  const cls = inst.agreement >= 3 ? "agree3" : "agree2";
+  return `<span class="inst-badge"><span class="dot ${cls}"></span>conf ${inst.confidence.toFixed(2)} · ${inst.agreement}/3fold</span>`;
+}
+
+function cardHtml(c) {
+  const verdict = votes[c.file_name];
+  const rejectedClass = verdict === "reject" ? " judged-reject" : "";
+  return `
+    <div class="card${rejectedClass}" data-name="${c.file_name}">
+      <div class="thumb-wrap">
+        <img src="data:image/jpeg;base64,${c.thumb_b64}" alt="${c.file_name}">
+        ${polygonsToSvg(c.instances)}
+      </div>
+      <div class="card-body">
+        <div class="filename">${c.file_name}</div>
+        <div class="inst-list">${c.instances.map(badgeHtml).join("")}</div>
+        <div class="verdict-row">
+          <button class="verdict-btn accept${verdict === "accept" ? " active" : ""}" data-action="accept">承認</button>
+          <button class="verdict-btn reject${verdict === "reject" ? " active" : ""}" data-action="reject">却下</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function passesFilter(c) {
+  const v = votes[c.file_name];
+  if (activeFilter === "unjudged") return !v;
+  if (activeFilter === "accepted") return v === "accept";
+  if (activeFilter === "rejected") return v === "reject";
+  return true;
+}
+
+function render() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = CASES.cases.filter(passesFilter).map(cardHtml).join("");
+  renderStats();
+}
+
+document.addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (chip) {
+    document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    activeFilter = chip.dataset.filter;
+    render();
+    return;
+  }
+  const btn = e.target.closest(".verdict-btn");
+  if (btn) {
+    const card = btn.closest(".card");
+    const name = card.dataset.name;
+    const action = btn.dataset.action;
+    votes[name] = votes[name] === action ? undefined : action;
+    if (votes[name] === undefined) delete votes[name];
+    saveVotes(votes);
+    render();
+  }
+});
+
+render();
+</script>

@@ -1,0 +1,41 @@
+{
+  "experiment": "v51_fold0_detailed_audit",
+  "purpose": "査読(2026-08-30)対応: edge-attention runsのper-image内訳・Dice/IoU分布・one-to-many/many-to-one分布を実測(fold0 OOF、236画像、既存V34キャッシュ再利用)",
+  "fold": 0,
+  "n_images": 236,
+  "standard_refiner": {
+    "pq": 0.4392877864424061,
+    "sq": 0.6732925179828005,
+    "rq": 0.6524471529232527,
+    "tp": 1713,
+    "fp": 789,
+    "fn": 1036,
+    "denominator": 2625.5,
+    "iou_median": 0.6777367773677737,
+    "iou_q1": 0.607152682255846,
+    "iou_q3": 0.7398221806270473,
+    "dice_median": 0.8079178885630499,
+    "dice_q1": 0.7555631633002396,
+    "dice_q3": 0.8504572350726197,
+    "one_to_many_gt": 0,
+    "many_to_one_pred": 0
+  },
+  "edge_attention_refiner": {
+    "pq": 0.44549237566050875,
+    "sq": 0.6799142518452901,
+    "rq": 0.6552184697576798,
+    "tp": 1717,
+    "fp": 775,
+    "fn": 1032,
+    "denominator": 2620.5,
+    "iou_median": 0.6884955752212389,
+    "iou_q1": 0.6150358896864375,
+    "iou_q3": 0.7429378531073446,
+    "dice_median": 0.8155136268343816,
+    "dice_q1": 0.7616374269005848,
+    "dice_q3": 0.852512155591572,
+    "one_to_many_gt": 0,
+    "many_to_one_pred": 0
+  },
+  "note": "one_to_many_gt/many_to_one_predが両方0なのは、排他化ステップ(drop_contained+greedy_disjoint)が予測集合を強制的に非重複にしているため。"
+}

@@ -1,0 +1,69 @@
+{
+  "package_id": "s0-blinded-review-2026-08-24-v1",
+  "protocol_version": "s0-visual-review-v1",
+  "status": "awaiting independent blinded human review",
+  "selection_seed": 20260824,
+  "observations": 24,
+  "unique_observations": 24,
+  "comparison_counts": {
+    "matched_spine_tradeoff": 8,
+    "stratified_rescue": 8,
+    "late_time_rejection": 8
+  },
+  "position_balance": {
+    "late_time_rejection": {
+      "first_model_as_a": 4,
+      "first_model_as_b": 4
+    },
+    "matched_spine_tradeoff": {
+      "first_model_as_a": 4,
+      "first_model_as_b": 4
+    },
+    "stratified_rescue": {
+      "first_model_as_a": 4,
+      "first_model_as_b": 4
+    }
+  },
+  "blind_integrity": {
+    "review_html_contains_model_mapping": false,
+    "private_key": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\blinded_review_v1\\private\\blind_key.json",
+    "instruction": "do not open private/ until response JSON is exported"
+  },
+  "source_files": {
+    "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_case_metrics_v3.csv": "70f8b589846242920371451aadd12fe46be82f8874b0003dd9ebbc67aa9442f0",
+    "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_verifier_official_case_metrics_0-1-2.csv": "586fe1b51572bf964ea878990ec5223df1da0ae704e2c61b0b7fed7cf0bf6b9e",
+    "G:\\マイドライブ\\solar_filament_v30\\competition_data\\MAGFiLO_1.0_Kaggle_2026\\train\\MAGFiLO_1.0_Annotations_kaggle2026_train.json": "5da9e92b5a1a1947fd5d57adb6688269625c48ec1ef884daf2a01618c9ed54a1",
+    "G:\\マイドライブ\\solar_filament_v30\\artifacts\\grouped_folds.csv": "febb3f67237a058fa8a71f188fac262035048b55d860c0e4509514877f6af67e"
+  },
+  "generated_files": {
+    "selection_manifest.csv": "e7bce8efba46873732a7b71eb5bf64c5ab46050724a63c3801010679b3f6460a",
+    "private\\selection_audit.csv": "f27617df69909f4f576588e8452a59743241bee1eaf57b55a4e52ab3693a090f",
+    "private\\blind_key.json": "f70314cedf762f525163aefb2364247488dabdf2f78591040cc617318b4d721e",
+    "review.html": "119ad756fb101681dc07c60fb18ab2fbf0733a4b045af07669b5f56d2d69e5dc",
+    "REVIEW_PROTOCOL.md": "c8db8d156ab4578e1cdcdb20b58c10b4618f927e4fb31296ae75a34f10dfdac5",
+    "assets\\case_001.png": "5b1fe804b30f010da5aa546c96585fda13a81b6e3917e55a38ea58476aefbabe",
+    "assets\\case_002.png": "768eed8fa1bface13c381a0b3e5a0efcbff122a2c6172463560cd066e1a2b262",
+    "assets\\case_003.png": "dc7abd4f61b83f82a2eefb702da95c7b4b51bd70011de272218609ae16b8cd5e",
+    "assets\\case_004.png": "f7b53223fb5180ce9bffad8fdaa688e5c60994080803f289c13cfc0b5e5b08c9",
+    "assets\\case_005.png": "8ab2c768ccbaa1afba0ef7d95ff97b095aaf9e7c6b54df67ffffe6f3174c346a",
+    "assets\\case_006.png": "5abeaaedefddfe94dd6acd6c7aa36de6003db31bc29fb033154b7523a0ad5bed",
+    "assets\\case_007.png": "a10e13fbce9b0691a532ad6e1bf0831d865535d85dad4d1b792b0f9ab8c4114d",
+    "assets\\case_008.png": "75a74ceed3c076ffbbb4df00ce49ea92f2a5c7b88764dcbcfb7b4c5cb3819452",
+    "assets\\case_009.png": "bb491258d0159fcfc4e64b74d92f3eb894c47076cf3cd1163a40d9981cc71136",
+    "assets\\case_010.png": "d99ecbb5c89bc3de300ecf7ef89277221f122c4b8d6e2ab3a767fb2992dd0d26",
+    "assets\\case_011.png": "a41b3343c3e6cd07055750d90941a4a65be3dd6b37bb78152b71b46c863870b8",
+    "assets\\case_012.png": "292a5cf8511607bac797fd3f5e7624608c34817668f7c72434aff4af4e5bdebd",
+    "assets\\case_013.png": "2e48ae2d59f190f441f66aacfcfa352a5bd7db6eeae333247dee486568323f62",
+    "assets\\case_014.png": "ea8bd4d30fd22aedd79112b1f9a4fb2a9524f645170f0869c398e98e2dfa55bb",
+    "assets\\case_015.png": "6afd79d6d29539c8d1d10b328cc809f3d659b461b8ececf9a0cdb3d214912fed",
+    "assets\\case_016.png": "89b28ae207256421dce12380ab69144698188062a844bbd94cee47a7c7734dcd",
+    "assets\\case_017.png": "15a676e4d3946b4a13faac225e7076c545e37ba55c25199871919113b529e8fd",
+    "assets\\case_018.png": "dd98ef593bf2f114543a317deb64f319817e6d041cd9fa2d4490b71f79be913e",
+    "assets\\case_019.png": "1c6bdc4e3eeb3e57ea9d3552fef2181c490a09fb821f640a7250cfc56536380f",
+    "assets\\case_020.png": "2e171968d4aacb37db4bab000ec02a876a894a7b9e92d068963100d907a2395f",
+    "assets\\case_021.png": "b104aaaaea9c8b596f92c1bb7b845e2f61a7c7c868565515a05641307f877a60",
+    "assets\\case_022.png": "141f3b358ae917082c1b236187bf00ae902d0eca990024c29a0ebe5604dce855",
+    "assets\\case_023.png": "e348a5f8a9e7dde87ff2b6f7442eee8209131933f49f0603e50dd29951b743be",
+    "assets\\case_024.png": "f34eb5372519c529fc2df9fbaf0b996aca288f997027f534e43d6aef2c123d4c"
+  }
+}

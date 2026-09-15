@@ -1,0 +1,110 @@
+{
+  "scope": "236観測、fold0のみ。hybrid variant ((候補内∩shrink閾値) ∪ (全体でfree閾値以上))のグリッド探索",
+  "baseline_shrink045_fold0_pq": 0.4393,
+  "results": {
+    "shrink0.45_free0.86": {
+      "pq": 0.43092044850789735,
+      "sq": 0.6708618761125327,
+      "rq": 0.642338555598013,
+      "tp": 1681,
+      "fp": 804,
+      "fn": 1068,
+      "denominator": 2617.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.00838,
+      "beats_baseline": false
+    },
+    "shrink0.45_free0.9": {
+      "pq": 0.43229146998623735,
+      "sq": 0.671385061778744,
+      "rq": 0.6438800840175674,
+      "tp": 1686,
+      "fp": 802,
+      "fn": 1063,
+      "denominator": 2618.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.007009,
+      "beats_baseline": false
+    },
+    "shrink0.5_free0.86": {
+      "pq": 0.4314029641782605,
+      "sq": 0.6714702498327504,
+      "rq": 0.6424751718869366,
+      "tp": 1682,
+      "fp": 805,
+      "fn": 1067,
+      "denominator": 2618.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.007897,
+      "beats_baseline": false
+    },
+    "shrink0.5_free0.9": {
+      "pq": 0.4333580424527411,
+      "sq": 0.6718460829854958,
+      "rq": 0.6450257781172427,
+      "tp": 1689,
+      "fp": 799,
+      "fn": 1060,
+      "denominator": 2618.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.005942,
+      "beats_baseline": false
+    },
+    "shrink0.6_free0.86": {
+      "pq": 0.43331961796479596,
+      "sq": 0.6720561373411349,
+      "rq": 0.6447669977081741,
+      "tp": 1688,
+      "fp": 799,
+      "fn": 1061,
+      "denominator": 2618.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.00598,
+      "beats_baseline": false
+    },
+    "shrink0.6_free0.9": {
+      "pq": 0.4340634096420819,
+      "sq": 0.6727982849452271,
+      "rq": 0.6451612903225806,
+      "tp": 1690,
+      "fp": 800,
+      "fn": 1059,
+      "denominator": 2619.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.005237,
+      "beats_baseline": false
+    },
+    "shrink0.4_free0.86": {
+      "pq": 0.4298246860402697,
+      "sq": 0.6703523262022563,
+      "rq": 0.6411922048146733,
+      "tp": 1678,
+      "fp": 807,
+      "fn": 1071,
+      "denominator": 2617.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.009475,
+      "beats_baseline": false
+    },
+    "shrink0.35_free0.86": {
+      "pq": 0.4283150764473417,
+      "sq": 0.6699943544905517,
+      "rq": 0.6392816201757738,
+      "tp": 1673,
+      "fp": 812,
+      "fn": 1076,
+      "denominator": 2617.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15",
+      "delta_vs_baseline": -0.010985,
+      "beats_baseline": false
+    }
+  }
+}

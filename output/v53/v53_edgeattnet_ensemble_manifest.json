@@ -1,0 +1,21 @@
+{
+  "_provenance": "Google Driveからの再取得ではなく、2026-08-30のColabセッション出力をこのセッションの記録から書き起こしたもの。数値は改変していない。原本との機械的差分検証は未実施(査読2026-08-30の指摘 #3への対応)。",
+  "experiment_id": "v53_edgeattnet_ensemble",
+  "purpose": "V52(fold2単体+EdgeAttNet refiner、Public 0.39)を土台に、3-foldアンサンブルを追加するとさらに伸びるかを確認。標準refiner基準ではアンサンブルは効かなかった(V50)が、EdgeAttNet refinerでも同じ結論が成り立つかは未検証だった",
+  "diff_vs_v52": "YOLO推論をfold2単体からensemble_proposals(3-fold、IoUクラスタリング+多数決投票、V30本体から変更なし)へ変更。refiner・後処理はV52と完全同一",
+  "refiner_architecture": "MediSegEdgeAttUNet (all_data, warm-started from fold0)",
+  "fold_ensemble": "V30本体のensemble_proposalsを変更せず流用",
+  "metric_definition_version": "official-v1-2026-08-15",
+  "submission_conf": 0.26,
+  "ownership_rule": "drop_contained_then_area_asc",
+  "refiner_method": "shrink",
+  "refiner_threshold": 0.45,
+  "min_area": 20,
+  "compare_against": {"experiment_id": "v52_edgeattnet_refiner_fold2_only", "kaggle_public_score": 0.39},
+  "rows": 1299,
+  "test_images_total": 180,
+  "submission_sha256": "5f20bda19dab3decc0fa6bb70c4fb7232339e9081c18efb27f2e6a9cd938f6b7",
+  "kaggle_public_score": 0.38,
+  "decision": "REJECTED: V52(0.39)より悪化(Δ-0.01)。標準refiner基準で確認済みだった「アンサンブル統合は効かない、むしろ悪化しうる」(V50)という結論が、EdgeAttNet refinerでも再現した。V52(fold2単体+EdgeAttNet refiner)を引き続き提出正本とする。計算コストも1/3で済み、V53を採用する理由はない。",
+  "gpu": "NVIDIA A100-SXM4-40GB"
+}

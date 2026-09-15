@@ -1,0 +1,123 @@
+{
+  "schema_version": "s1-proposal-marginal-utility-pilot-v1",
+  "status": "fixed_development_cpu_pilot_not_s1_not_registered",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\run_s1_proposal_marginal_utility_pilot.py",
+  "script_sha256": "10477fc2671ec0725d3fdf3349cabe6e7cb97ee797454796ddf507faff2b2fa9",
+  "seed": 20260824,
+  "selection_contract": "4 lowest seeded SHA-256 file names per fold among development observations with at least one V42 fused candidate; no outcome selection.",
+  "scope": {
+    "observations": 12,
+    "per_fold": 4,
+    "candidates": 137,
+    "time_block_role": "development only",
+    "locked_rows_read": 0,
+    "s1_predictions_read": false,
+    "blinded_review_responses_read": false,
+    "private_key_read": false
+  },
+  "target_contract": {
+    "context": "Candidate addition to the frozen accept-all proposal set after shrink refiner and ownership; measured by leave-one-out.",
+    "official_pq_linearized_utility": "delta TP-IoU numerator minus archived V35 PQ times delta denominator",
+    "catalog_safe": "positive spine coverage delta, nonnegative precision delta, nonpositive merge and count-error deltas"
+  },
+  "summary": {
+    "candidates": 137,
+    "observations": 12,
+    "final_pq_positive": 88,
+    "final_catalog_safe_positive": 56,
+    "final_pq_neutral": 14,
+    "final_pq_neutral_fraction": 0.10218978102189781,
+    "catalog_safety_failures_among_pre_refiner_proxy_positive": {
+      "proxy_positive_candidates": 87,
+      "nonpositive_spine_delta": 8,
+      "negative_precision_delta": 4,
+      "positive_merge_delta": 1,
+      "positive_count_error_delta": 22,
+      "failures_overlap": true
+    },
+    "pre_refiner_proxy_vs_final_pq": {
+      "tp": 80,
+      "fp": 7,
+      "fn": 8,
+      "tn": 42,
+      "agreement": 0.8905109489051095,
+      "precision": 0.9195402298850575,
+      "recall": 0.9090909090909091
+    },
+    "verifier_accept_vs_final_pq": {
+      "tp": 72,
+      "fp": 21,
+      "fn": 16,
+      "tn": 28,
+      "agreement": 0.7299270072992701,
+      "precision": 0.7741935483870968,
+      "recall": 0.8181818181818182
+    },
+    "pre_refiner_proxy_vs_final_catalog_safe": {
+      "tp": 55,
+      "fp": 32,
+      "fn": 1,
+      "tn": 49,
+      "agreement": 0.7591240875912408,
+      "precision": 0.632183908045977,
+      "recall": 0.9821428571428571
+    },
+    "verifier_accept_vs_final_catalog_safe": {
+      "tp": 48,
+      "fp": 45,
+      "fn": 8,
+      "tn": 36,
+      "agreement": 0.6131386861313869,
+      "precision": 0.5161290322580645,
+      "recall": 0.8571428571428571
+    },
+    "pre_refiner_utility_vs_final_pq_utility_spearman": {
+      "rho": 0.7664807836905496,
+      "pvalue": 9.79260579962631e-28,
+      "n": 137
+    },
+    "pre_refiner_utility_vs_final_spine_delta_spearman": {
+      "rho": 0.6413942826862487,
+      "pvalue": 3.075761046941736e-17,
+      "n": 137
+    },
+    "endpoint_delta_means": {
+      "pq_512": 0.01762875246828738,
+      "spine_coverage": 0.04836073882192633,
+      "filament_recall": 0.05334140214100552,
+      "filament_precision": 0.0006050721379188567,
+      "merge_count": 0.043795620437956206,
+      "count_abs_error": -0.22141119221411196
+    }
+  },
+  "runtime": {
+    "cache_hits": 0,
+    "cache_builds": 12,
+    "elapsed_seconds": 377.7308750000084,
+    "seconds_per_observation": 31.477572916667366,
+    "seconds_per_candidate": 2.757159671532908,
+    "projected_seconds_for_547_development_observations_at_pilot_rate": 17218.23238541705,
+    "development_candidates_available": 4899,
+    "projected_seconds_for_development_at_pilot_candidate_rate": 13507.325230839717
+  },
+  "inputs": {
+    "strata": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\observation_strata.csv",
+    "strata_sha256": "73edf7db655906588670bb5918f0e869278e4891bd1fefbc895372e3a41046b7",
+    "candidates": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv",
+    "candidates_sha256": "ffdba295972f70459f7273a6be4ace0b3948440a39a941240df2bc21221b28b3"
+  },
+  "artifacts": {
+    "selection": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_utility_selection.csv",
+    "selection_sha256": "e39753670d7079492541d4ff5e257323d65966a6bc810c714214bacb9f986a09",
+    "candidate_rows": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_utility_pilot.csv",
+    "candidate_rows_sha256": "1853fb337d7f0a1ac3b608689085e85162616736c59a4b36ba49cae921846b3f",
+    "refined_cache_root": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_proposal_marginal_refined_cache"
+  },
+  "limitations": [
+    "Fixed 12-observation feasibility sample; not a performance estimate.",
+    "Leave-one-out effects are conditional on the accept-all proposal set.",
+    "Candidate interactions make marginal utilities non-additive.",
+    "No model fitting, threshold selection, locked evaluation, or GPU is used.",
+    "A successful pilot would still require development nested OOF and a new holdout."
+  ]
+}

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solar-filament"
+version = "0.35.0"
+description = "Solar Filament Segmentation Challenge 2026 — competition and scientific pipeline"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24.0",
+  "pandas>=2.0.0",
+  "scipy>=1.10.0",
+  "opencv-python>=4.7.0",
+  "pycocotools>=2.0.7",
+  "scikit-learn>=1.2.0",
+  "scikit-image>=0.21.0",
+]
+
+[project.optional-dependencies]
+train = [
+  "torch>=2.0.0",
+  "torchvision>=0.15.0",
+  "ultralytics>=8.3.0",
+  "segmentation-models-pytorch>=0.3.3",
+  "albumentations>=1.3.0",
+]
+dev = [
+  "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["solar_filament*", "src*", "scratch*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]

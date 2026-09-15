@@ -1,0 +1,17 @@
+{
+  "scope": "60観測、fold0のみ。WBF(iou=0.5,vote=0.6)→refiner閾値スイープ",
+  "refiner_threshold": 0.35,
+  "pq": 0.43505359303082336,
+  "sq": 0.6696986211338202,
+  "rq": 0.6496259351620948,
+  "tp": 521,
+  "fp": 289,
+  "fn": 273,
+  "denominator": 802.0,
+  "iou_threshold": 0.5,
+  "metric_version": "official-v1-2026-08-15",
+  "near_miss": 91,
+  "baseline_fold0_pq": 0.4393,
+  "delta_vs_baseline": -0.004246,
+  "continue_fold12": false
+}

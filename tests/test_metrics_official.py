@@ -14,7 +14,7 @@ from scipy.optimize import linear_sum_assignment
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.metrics_official import (  # noqa: E402
+from solar_filament.metrics.metrics_official import (  # noqa: E402
     DEFAULT_DELTAS,
     PanopticQuality,
     cell_reduce,

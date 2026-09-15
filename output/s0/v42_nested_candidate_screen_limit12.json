@@ -1,0 +1,56 @@
+{
+  "schema_version": "v42-nested-candidate-screen-v1",
+  "status": "screening only; no promotion without refiner+ownership official all-fold PQ",
+  "candidate_label": "mean annotator-variant marginal value > 0 at IoU > 0.5",
+  "features": [
+    "detector_score",
+    "source_count",
+    "log_area",
+    "bbox_extent",
+    "log_aspect",
+    "perimeter_over_sqrt_area",
+    "solidity",
+    "center_radius",
+    "semantic_mean",
+    "semantic_q10",
+    "local_contrast"
+  ],
+  "rows": 46,
+  "observations": 12,
+  "baseline_accept_all_utility": 6.013690972820363,
+  "verifier_utility": -4.412420604206167,
+  "by_outer_fold": [
+    {
+      "fold": 0,
+      "candidates": 22,
+      "accepted": 9,
+      "accepted_precision": 0.6666666666666666,
+      "positive_recall": 0.4,
+      "screening_utility": -1.5156580292825836,
+      "selected_threshold": 0.7,
+      "selected_l2": 0.1
+    },
+    {
+      "fold": 1,
+      "candidates": 13,
+      "accepted": 8,
+      "accepted_precision": 0.75,
+      "positive_recall": 0.6666666666666666,
+      "screening_utility": 1.3811066147103137,
+      "selected_threshold": 0.4,
+      "selected_l2": 0.1
+    },
+    {
+      "fold": 2,
+      "candidates": 11,
+      "accepted": 11,
+      "accepted_precision": 0.09090909090909091,
+      "positive_recall": 1.0,
+      "screening_utility": -4.277869189633895,
+      "selected_threshold": 0.4,
+      "selected_l2": 10.0
+    }
+  ],
+  "candidate_table": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_candidate_table_limit12.csv",
+  "nested_predictions": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions_limit12.csv"
+}

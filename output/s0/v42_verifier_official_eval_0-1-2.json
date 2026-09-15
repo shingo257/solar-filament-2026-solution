@@ -1,0 +1,82 @@
+{
+  "schema_version": "v42-verifier-official-eval-v1",
+  "status": "retrospective nested-OOF complete; not independent holdout",
+  "scope": "707 observations, folds [0, 1, 2], outer-OOF verifier + fold-specific refiner",
+  "settings": {
+    "wbf_iou_threshold": 0.5,
+    "wbf_vote_threshold": 0.6,
+    "refiner": "shrink@0.45",
+    "ownership_drop_contained_threshold": 0.8,
+    "verifier_application": "before refiner"
+  },
+  "pq": 0.44030333299215885,
+  "sq": 0.6826137433116479,
+  "rq": 0.6450255906891958,
+  "tp": 4600,
+  "fp": 1464,
+  "fn": 3599,
+  "denominator": 7131.5,
+  "iou_threshold": 0.5,
+  "metric_version": "official-v1-2026-08-15",
+  "pq_observation_cluster_bootstrap": {
+    "estimate": 0.44030333299215885,
+    "ci_low": 0.4296302811351901,
+    "ci_high": 0.45000549965899933
+  },
+  "bootstrap_repeats": 2000,
+  "by_fold": {
+    "0": {
+      "pq": 0.4350061063900274,
+      "sq": 0.6808172744220639,
+      "rq": 0.6389469285415796,
+      "tp": 1529,
+      "fp": 508,
+      "fn": 1220,
+      "denominator": 2393.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "1": {
+      "pq": 0.4406928919655992,
+      "sq": 0.6834474510991919,
+      "rq": 0.644808743169399,
+      "tp": 1475,
+      "fp": 435,
+      "fn": 1190,
+      "denominator": 2287.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "2": {
+      "pq": 0.44511163454546593,
+      "sq": 0.6835642959091083,
+      "rq": 0.6511627906976745,
+      "tp": 1596,
+      "fp": 521,
+      "fn": 1189,
+      "denominator": 2451.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    }
+  },
+  "proposal_counts": {
+    "fused": 5444,
+    "accepted": 3860,
+    "rejected": 1584,
+    "final_instances": 3740,
+    "accepted_fraction": 0.7090374724467303
+  },
+  "archived_v42_accept_all_pq": 0.4399323740073615,
+  "delta_vs_v42_accept_all": 0.0003709589847973316,
+  "archived_v35_pq": 0.4426332944385452,
+  "delta_vs_v35": -0.002329961446386364,
+  "formal_gate_pq": 0.452633,
+  "passes_v35": false,
+  "passes_formal_gate": false,
+  "decision": "reject as V35 replacement; retain as negative result and S1 hypothesis evidence",
+  "limitation": "same 707 grouped OOF observations used for nested model selection; no time/site holdout claim",
+  "case_metrics": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_verifier_official_case_metrics_0-1-2.csv",
+  "stratum_metrics": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_verifier_official_stratum_metrics_0-1-2.csv",
+  "prediction_manifest": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_verifier_official_prediction_manifest_0-1-2.csv",
+  "nested_predictions": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv"
+}

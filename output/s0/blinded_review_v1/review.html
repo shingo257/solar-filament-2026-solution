@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S0-4 Blinded Visual Review</title>
+<style>
+:root{color-scheme:dark;--bg:#08111f;--panel:#111c2e;--line:#2c3e57;--text:#e8eef8;--muted:#9eacc2;--accent:#4dd4ac}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}
+.top{position:sticky;top:0;z-index:5;background:#08111ff2;border-bottom:1px solid var(--line);padding:14px 24px;backdrop-filter:blur(8px)}
+.top h1{margin:0 0 4px;font-size:21px}.top p{margin:3px 0;color:var(--muted)}.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+button,.file-button{border:1px solid var(--line);background:#17263c;color:var(--text);padding:8px 12px;border-radius:7px;cursor:pointer}button.primary{background:#12674f;border-color:#279a78}.file-button input{display:none}
+main{max-width:1500px;margin:auto;padding:20px}.case-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:15px;margin:0 0 22px}.case-card header{display:flex;justify-content:space-between;align-items:center}.case-card h2{margin:0;font-size:18px}.status{color:#ffca6b}.complete .status{color:var(--accent)}
+img{display:block;width:100%;height:auto;border-radius:6px;background:#050a12;margin:12px 0}fieldset{border:1px solid var(--line);border-radius:7px;margin:10px 0;padding:10px}legend{color:#c7d6eb;padding:0 5px}fieldset label{display:inline-flex;gap:5px;align-items:center;margin:3px 14px 3px 0}.tag-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.confidence,.notes{display:block;margin-top:10px}.notes textarea{display:block;width:100%;background:#091322;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px}select,input{accent-color:var(--accent)}
+@media(max-width:800px){.tag-grid{grid-template-columns:1fr}.top{position:static}main{padding:10px}}
+</style></head><body>
+<section class="top"><h1>S0-4 Blinded Visual Review</h1>
+<p>モデル対応表はこのページに含まれません。reference outline / spineを基準にA/Bを独立判定してください。</p>
+<p><strong id="progress">0 / 24 完了</strong>　回答はこのブラウザ内へ自動保存されます。</p>
+<div class="controls"><label>Reviewer ID <input id="reviewer" autocomplete="off"></label><button class="primary" id="export">判定JSONを書き出す</button><label class="file-button">JSONを読み込む<input id="import" type="file" accept="application/json"></label><button id="clear">このブラウザの回答を消去</button></div></section>
+<main>
+        <article class="case-card" data-case="case_001">
+          <header><h2>case_001</h2><span class="status">未回答</span></header>
+          <img src="assets/case_001.png" alt="case_001 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_001-morphology" value="A">A</label><label><input type="radio" name="case_001-morphology" value="B">B</label><label><input type="radio" name="case_001-morphology" value="tie">同等</label><label><input type="radio" name="case_001-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_001-catalog" value="A">A</label><label><input type="radio" name="case_001-catalog" value="B">B</label><label><input type="radio" name="case_001-catalog" value="tie">同等</label><label><input type="radio" name="case_001-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_002">
+          <header><h2>case_002</h2><span class="status">未回答</span></header>
+          <img src="assets/case_002.png" alt="case_002 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_002-morphology" value="A">A</label><label><input type="radio" name="case_002-morphology" value="B">B</label><label><input type="radio" name="case_002-morphology" value="tie">同等</label><label><input type="radio" name="case_002-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_002-catalog" value="A">A</label><label><input type="radio" name="case_002-catalog" value="B">B</label><label><input type="radio" name="case_002-catalog" value="tie">同等</label><label><input type="radio" name="case_002-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_003">
+          <header><h2>case_003</h2><span class="status">未回答</span></header>
+          <img src="assets/case_003.png" alt="case_003 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_003-morphology" value="A">A</label><label><input type="radio" name="case_003-morphology" value="B">B</label><label><input type="radio" name="case_003-morphology" value="tie">同等</label><label><input type="radio" name="case_003-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_003-catalog" value="A">A</label><label><input type="radio" name="case_003-catalog" value="B">B</label><label><input type="radio" name="case_003-catalog" value="tie">同等</label><label><input type="radio" name="case_003-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_004">
+          <header><h2>case_004</h2><span class="status">未回答</span></header>
+          <img src="assets/case_004.png" alt="case_004 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_004-morphology" value="A">A</label><label><input type="radio" name="case_004-morphology" value="B">B</label><label><input type="radio" name="case_004-morphology" value="tie">同等</label><label><input type="radio" name="case_004-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_004-catalog" value="A">A</label><label><input type="radio" name="case_004-catalog" value="B">B</label><label><input type="radio" name="case_004-catalog" value="tie">同等</label><label><input type="radio" name="case_004-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_005">
+          <header><h2>case_005</h2><span class="status">未回答</span></header>
+          <img src="assets/case_005.png" alt="case_005 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_005-morphology" value="A">A</label><label><input type="radio" name="case_005-morphology" value="B">B</label><label><input type="radio" name="case_005-morphology" value="tie">同等</label><label><input type="radio" name="case_005-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_005-catalog" value="A">A</label><label><input type="radio" name="case_005-catalog" value="B">B</label><label><input type="radio" name="case_005-catalog" value="tie">同等</label><label><input type="radio" name="case_005-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_006">
+          <header><h2>case_006</h2><span class="status">未回答</span></header>
+          <img src="assets/case_006.png" alt="case_006 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_006-morphology" value="A">A</label><label><input type="radio" name="case_006-morphology" value="B">B</label><label><input type="radio" name="case_006-morphology" value="tie">同等</label><label><input type="radio" name="case_006-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_006-catalog" value="A">A</label><label><input type="radio" name="case_006-catalog" value="B">B</label><label><input type="radio" name="case_006-catalog" value="tie">同等</label><label><input type="radio" name="case_006-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_007">
+          <header><h2>case_007</h2><span class="status">未回答</span></header>
+          <img src="assets/case_007.png" alt="case_007 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_007-morphology" value="A">A</label><label><input type="radio" name="case_007-morphology" value="B">B</label><label><input type="radio" name="case_007-morphology" value="tie">同等</label><label><input type="radio" name="case_007-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_007-catalog" value="A">A</label><label><input type="radio" name="case_007-catalog" value="B">B</label><label><input type="radio" name="case_007-catalog" value="tie">同等</label><label><input type="radio" name="case_007-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_008">
+          <header><h2>case_008</h2><span class="status">未回答</span></header>
+          <img src="assets/case_008.png" alt="case_008 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_008-morphology" value="A">A</label><label><input type="radio" name="case_008-morphology" value="B">B</label><label><input type="radio" name="case_008-morphology" value="tie">同等</label><label><input type="radio" name="case_008-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_008-catalog" value="A">A</label><label><input type="radio" name="case_008-catalog" value="B">B</label><label><input type="radio" name="case_008-catalog" value="tie">同等</label><label><input type="radio" name="case_008-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_009">
+          <header><h2>case_009</h2><span class="status">未回答</span></header>
+          <img src="assets/case_009.png" alt="case_009 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_009-morphology" value="A">A</label><label><input type="radio" name="case_009-morphology" value="B">B</label><label><input type="radio" name="case_009-morphology" value="tie">同等</label><label><input type="radio" name="case_009-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_009-catalog" value="A">A</label><label><input type="radio" name="case_009-catalog" value="B">B</label><label><input type="radio" name="case_009-catalog" value="tie">同等</label><label><input type="radio" name="case_009-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_010">
+          <header><h2>case_010</h2><span class="status">未回答</span></header>
+          <img src="assets/case_010.png" alt="case_010 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_010-morphology" value="A">A</label><label><input type="radio" name="case_010-morphology" value="B">B</label><label><input type="radio" name="case_010-morphology" value="tie">同等</label><label><input type="radio" name="case_010-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_010-catalog" value="A">A</label><label><input type="radio" name="case_010-catalog" value="B">B</label><label><input type="radio" name="case_010-catalog" value="tie">同等</label><label><input type="radio" name="case_010-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_011">
+          <header><h2>case_011</h2><span class="status">未回答</span></header>
+          <img src="assets/case_011.png" alt="case_011 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_011-morphology" value="A">A</label><label><input type="radio" name="case_011-morphology" value="B">B</label><label><input type="radio" name="case_011-morphology" value="tie">同等</label><label><input type="radio" name="case_011-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_011-catalog" value="A">A</label><label><input type="radio" name="case_011-catalog" value="B">B</label><label><input type="radio" name="case_011-catalog" value="tie">同等</label><label><input type="radio" name="case_011-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_012">
+          <header><h2>case_012</h2><span class="status">未回答</span></header>
+          <img src="assets/case_012.png" alt="case_012 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_012-morphology" value="A">A</label><label><input type="radio" name="case_012-morphology" value="B">B</label><label><input type="radio" name="case_012-morphology" value="tie">同等</label><label><input type="radio" name="case_012-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_012-catalog" value="A">A</label><label><input type="radio" name="case_012-catalog" value="B">B</label><label><input type="radio" name="case_012-catalog" value="tie">同等</label><label><input type="radio" name="case_012-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_013">
+          <header><h2>case_013</h2><span class="status">未回答</span></header>
+          <img src="assets/case_013.png" alt="case_013 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_013-morphology" value="A">A</label><label><input type="radio" name="case_013-morphology" value="B">B</label><label><input type="radio" name="case_013-morphology" value="tie">同等</label><label><input type="radio" name="case_013-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_013-catalog" value="A">A</label><label><input type="radio" name="case_013-catalog" value="B">B</label><label><input type="radio" name="case_013-catalog" value="tie">同等</label><label><input type="radio" name="case_013-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_014">
+          <header><h2>case_014</h2><span class="status">未回答</span></header>
+          <img src="assets/case_014.png" alt="case_014 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_014-morphology" value="A">A</label><label><input type="radio" name="case_014-morphology" value="B">B</label><label><input type="radio" name="case_014-morphology" value="tie">同等</label><label><input type="radio" name="case_014-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_014-catalog" value="A">A</label><label><input type="radio" name="case_014-catalog" value="B">B</label><label><input type="radio" name="case_014-catalog" value="tie">同等</label><label><input type="radio" name="case_014-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_015">
+          <header><h2>case_015</h2><span class="status">未回答</span></header>
+          <img src="assets/case_015.png" alt="case_015 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_015-morphology" value="A">A</label><label><input type="radio" name="case_015-morphology" value="B">B</label><label><input type="radio" name="case_015-morphology" value="tie">同等</label><label><input type="radio" name="case_015-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_015-catalog" value="A">A</label><label><input type="radio" name="case_015-catalog" value="B">B</label><label><input type="radio" name="case_015-catalog" value="tie">同等</label><label><input type="radio" name="case_015-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_016">
+          <header><h2>case_016</h2><span class="status">未回答</span></header>
+          <img src="assets/case_016.png" alt="case_016 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_016-morphology" value="A">A</label><label><input type="radio" name="case_016-morphology" value="B">B</label><label><input type="radio" name="case_016-morphology" value="tie">同等</label><label><input type="radio" name="case_016-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_016-catalog" value="A">A</label><label><input type="radio" name="case_016-catalog" value="B">B</label><label><input type="radio" name="case_016-catalog" value="tie">同等</label><label><input type="radio" name="case_016-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_017">
+          <header><h2>case_017</h2><span class="status">未回答</span></header>
+          <img src="assets/case_017.png" alt="case_017 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_017-morphology" value="A">A</label><label><input type="radio" name="case_017-morphology" value="B">B</label><label><input type="radio" name="case_017-morphology" value="tie">同等</label><label><input type="radio" name="case_017-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_017-catalog" value="A">A</label><label><input type="radio" name="case_017-catalog" value="B">B</label><label><input type="radio" name="case_017-catalog" value="tie">同等</label><label><input type="radio" name="case_017-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_018">
+          <header><h2>case_018</h2><span class="status">未回答</span></header>
+          <img src="assets/case_018.png" alt="case_018 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_018-morphology" value="A">A</label><label><input type="radio" name="case_018-morphology" value="B">B</label><label><input type="radio" name="case_018-morphology" value="tie">同等</label><label><input type="radio" name="case_018-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_018-catalog" value="A">A</label><label><input type="radio" name="case_018-catalog" value="B">B</label><label><input type="radio" name="case_018-catalog" value="tie">同等</label><label><input type="radio" name="case_018-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_019">
+          <header><h2>case_019</h2><span class="status">未回答</span></header>
+          <img src="assets/case_019.png" alt="case_019 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_019-morphology" value="A">A</label><label><input type="radio" name="case_019-morphology" value="B">B</label><label><input type="radio" name="case_019-morphology" value="tie">同等</label><label><input type="radio" name="case_019-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_019-catalog" value="A">A</label><label><input type="radio" name="case_019-catalog" value="B">B</label><label><input type="radio" name="case_019-catalog" value="tie">同等</label><label><input type="radio" name="case_019-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_020">
+          <header><h2>case_020</h2><span class="status">未回答</span></header>
+          <img src="assets/case_020.png" alt="case_020 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_020-morphology" value="A">A</label><label><input type="radio" name="case_020-morphology" value="B">B</label><label><input type="radio" name="case_020-morphology" value="tie">同等</label><label><input type="radio" name="case_020-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_020-catalog" value="A">A</label><label><input type="radio" name="case_020-catalog" value="B">B</label><label><input type="radio" name="case_020-catalog" value="tie">同等</label><label><input type="radio" name="case_020-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_021">
+          <header><h2>case_021</h2><span class="status">未回答</span></header>
+          <img src="assets/case_021.png" alt="case_021 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_021-morphology" value="A">A</label><label><input type="radio" name="case_021-morphology" value="B">B</label><label><input type="radio" name="case_021-morphology" value="tie">同等</label><label><input type="radio" name="case_021-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_021-catalog" value="A">A</label><label><input type="radio" name="case_021-catalog" value="B">B</label><label><input type="radio" name="case_021-catalog" value="tie">同等</label><label><input type="radio" name="case_021-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_022">
+          <header><h2>case_022</h2><span class="status">未回答</span></header>
+          <img src="assets/case_022.png" alt="case_022 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_022-morphology" value="A">A</label><label><input type="radio" name="case_022-morphology" value="B">B</label><label><input type="radio" name="case_022-morphology" value="tie">同等</label><label><input type="radio" name="case_022-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_022-catalog" value="A">A</label><label><input type="radio" name="case_022-catalog" value="B">B</label><label><input type="radio" name="case_022-catalog" value="tie">同等</label><label><input type="radio" name="case_022-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_023">
+          <header><h2>case_023</h2><span class="status">未回答</span></header>
+          <img src="assets/case_023.png" alt="case_023 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_023-morphology" value="A">A</label><label><input type="radio" name="case_023-morphology" value="B">B</label><label><input type="radio" name="case_023-morphology" value="tie">同等</label><label><input type="radio" name="case_023-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_023-catalog" value="A">A</label><label><input type="radio" name="case_023-catalog" value="B">B</label><label><input type="radio" name="case_023-catalog" value="tie">同等</label><label><input type="radio" name="case_023-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article>
+
+        <article class="case-card" data-case="case_024">
+          <header><h2>case_024</h2><span class="status">未回答</span></header>
+          <img src="assets/case_024.png" alt="case_024 blinded comparison">
+          <fieldset data-field="morphology"><legend>1. reference spine・輪郭をより保存するのは？</legend><label><input type="radio" name="case_024-morphology" value="A">A</label><label><input type="radio" name="case_024-morphology" value="B">B</label><label><input type="radio" name="case_024-morphology" value="tie">同等</label><label><input type="radio" name="case_024-morphology" value="neither">どちらも不可</label></fieldset>
+          <fieldset data-field="catalog"><legend>2. カタログ用途で有害なFP / split / mergeが少ないのは？</legend><label><input type="radio" name="case_024-catalog" value="A">A</label><label><input type="radio" name="case_024-catalog" value="B">B</label><label><input type="radio" name="case_024-catalog" value="tie">同等</label><label><input type="radio" name="case_024-catalog" value="neither">どちらも不可</label></fieldset>
+          <div class="tag-grid">
+            <fieldset data-field="tags_a"><legend>Output Aの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+            <fieldset data-field="tags_b"><legend>Output Bの問題</legend><label><input type="checkbox" value="spine_missing">spine欠落</label><label><input type="checkbox" value="fragmentation">切断/split</label><label><input type="checkbox" value="merge">merge</label><label><input type="checkbox" value="false_positive">偽陽性</label><label><input type="checkbox" value="limb_artifact">太陽縁artifact</label><label><input type="checkbox" value="unclear">判定困難</label></fieldset>
+          </div>
+          <label class="confidence">確信度
+            <select data-field="confidence"><option value="">未選択</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="notes">メモ<textarea data-field="notes" rows="2"></textarea></label>
+        </article></main>
+<script>
+const packageId="s0-blinded-review-2026-08-24-v1",caseIds=["case_001", "case_002", "case_003", "case_004", "case_005", "case_006", "case_007", "case_008", "case_009", "case_010", "case_011", "case_012", "case_013", "case_014", "case_015", "case_016", "case_017", "case_018", "case_019", "case_020", "case_021", "case_022", "case_023", "case_024"],storageKey=packageId+':responses';
+let state={package_id:packageId,protocol_version:'s0-visual-review-v1',reviewer_id:'',responses:{}};
+const load=()=>{try{const saved=JSON.parse(localStorage.getItem(storageKey));if(saved&&saved.package_id===packageId)state=saved}catch(e){}};
+const valueFor=(card,field)=>{const root=card.querySelector(`[data-field="${field}"]`);if(!root)return null;if(root.matches('select,textarea'))return root.value;const checked=root.querySelector('input[type=radio]:checked');return checked?checked.value:null};
+const tagsFor=(card,field)=>[...card.querySelectorAll(`[data-field="${field}"] input:checked`)].map(x=>x.value);
+function collect(){state.reviewer_id=document.getElementById('reviewer').value.trim();document.querySelectorAll('.case-card').forEach(card=>{const id=card.dataset.case;state.responses[id]={morphology:valueFor(card,'morphology'),catalog:valueFor(card,'catalog'),tags_a:tagsFor(card,'tags_a'),tags_b:tagsFor(card,'tags_b'),confidence:valueFor(card,'confidence'),notes:valueFor(card,'notes')||''}});state.saved_at=new Date().toISOString();localStorage.setItem(storageKey,JSON.stringify(state));update()}
+function hydrate(){document.getElementById('reviewer').value=state.reviewer_id||'';document.querySelectorAll('.case-card').forEach(card=>{const r=state.responses[card.dataset.case]||{};for(const field of ['morphology','catalog']){const el=card.querySelector(`[data-field="${field}"] input[value="${r[field]||''}"]`);if(el)el.checked=true}for(const field of ['tags_a','tags_b'])for(const value of r[field]||[]){const el=card.querySelector(`[data-field="${field}"] input[value="${value}"]`);if(el)el.checked=true}for(const field of ['confidence','notes']){const el=card.querySelector(`[data-field="${field}"]`);if(el)el.value=r[field]||''}});update()}
+function update(){let done=0;document.querySelectorAll('.case-card').forEach(card=>{const r=state.responses[card.dataset.case]||{};const ok=!!r.morphology&&!!r.catalog&&!!r.confidence;card.classList.toggle('complete',ok);card.querySelector('.status').textContent=ok?'完了':'未回答';if(ok)done++});document.getElementById('progress').textContent=`${done} / ${caseIds.length} 完了`}
+document.addEventListener('change',collect);document.addEventListener('input',e=>{if(e.target.matches('textarea,#reviewer'))collect()});
+document.getElementById('export').onclick=()=>{collect();state.exported_at=new Date().toISOString();state.case_order=caseIds;const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=packageId+'-responses.json';a.click();URL.revokeObjectURL(a.href)};
+document.getElementById('import').onchange=async e=>{const parsed=JSON.parse(await e.target.files[0].text());if(parsed.package_id!==packageId){alert('別packageのJSONです');return}state=parsed;localStorage.setItem(storageKey,JSON.stringify(state));hydrate()};
+document.getElementById('clear').onclick=()=>{if(confirm('このブラウザに保存した回答を消去しますか？')){localStorage.removeItem(storageKey);state={package_id:packageId,protocol_version:'s0-visual-review-v1',reviewer_id:'',responses:{}};location.reload()}};
+load();hydrate();
+</script></body></html>

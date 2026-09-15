@@ -1,0 +1,193 @@
+{
+  "schema_version": 2,
+  "status": "pre_registration_candidate_structure_frozen_execution_blocked",
+  "track": "scientific_operational",
+  "seed": 20260824,
+  "registry": {
+    "path": "output/s0/s1_grouped_nested_split_registry.csv",
+    "sha256": "48b69680ac40a411b65cdc8cd9246a475ca88002f8483bae3acf2f31a9db2219",
+    "group_key": "file_name",
+    "outer_folds": 3,
+    "inner_folds_per_outer": 3
+  },
+  "feature_contract": {
+    "path": "output/s0/s1_set_context_features.json",
+    "sha256": "84007c51f82184582ee992e22d832c4d92fa932bb608ce9e1dc63de52ae12d77",
+    "pilot_builder_sha256": "546fc85b236a6709924c3564ff84234f2e78001ed00e3cdd817d6b32df71f203",
+    "missing_value_policy": "fail_closed",
+    "forbidden_prediction_features": [
+      "site_code",
+      "year",
+      "time_block_role",
+      "selection_hash",
+      "fold",
+      "outer_fold",
+      "inner_fold",
+      "target",
+      "marginal_utility",
+      "verifier_probability",
+      "verifier_accept"
+    ]
+  },
+  "common_model": {
+    "estimator": "logistic_regression",
+    "penalty": "l2",
+    "solver": "lbfgs",
+    "max_iter": 2000,
+    "class_weight": "balanced",
+    "standard_scaler": "fit_inner_training_only",
+    "additional_calibrator": "none_primary",
+    "inverse_regularization_grid": [
+      0.01,
+      0.1,
+      1.0,
+      10.0
+    ],
+    "selection_objective": "observation_equal_weighted_binary_log_loss",
+    "candidate_weight_within_observation": "1_over_candidate_count",
+    "single_feature_stepwise_selection": false
+  },
+  "head_sufficiency_contract": {
+    "events_per_fitted_degree_of_freedom": 10,
+    "features_per_primary_head": 6,
+    "intercept_degrees_of_freedom": 1,
+    "minimum_candidate_events_per_outer_training": 70,
+    "minimum_event_observations_per_outer_training": 30,
+    "insufficient_head_action": "block_operational_promotion_no_fallback_threshold_search"
+  },
+  "heads": [
+    {
+      "name": "final_pq_benefit",
+      "role": "benefit",
+      "label_column": "final_pq_benefit",
+      "target_definition": "final_pq_linearized_utility > 0",
+      "features": [
+        "detector_score",
+        "source_count",
+        "semantic_mean",
+        "local_contrast",
+        "refined_area_fraction",
+        "ownership_retained_fraction"
+      ]
+    },
+    {
+      "name": "spine_benefit",
+      "role": "benefit",
+      "label_column": "spine_benefit",
+      "target_definition": "delta_spine_coverage > 0",
+      "features": [
+        "detector_score",
+        "source_count",
+        "log_aspect",
+        "perimeter_over_sqrt_area",
+        "semantic_mean",
+        "refined_area_fraction"
+      ]
+    },
+    {
+      "name": "count_harm",
+      "role": "harm",
+      "label_column": "count_harm",
+      "target_definition": "delta_count_abs_error > 0",
+      "features": [
+        "proposal_count",
+        "full_output_count",
+        "output_count_delta",
+        "containment_conflict_count",
+        "other_covered_by_self_max",
+        "source_count"
+      ]
+    },
+    {
+      "name": "precision_harm",
+      "role": "harm",
+      "label_column": "precision_harm",
+      "target_definition": "delta_filament_precision < 0",
+      "features": [
+        "detector_score",
+        "semantic_mean",
+        "local_contrast",
+        "refined_area_fraction",
+        "center_radius",
+        "output_count_delta"
+      ]
+    },
+    {
+      "name": "merge_harm",
+      "role": "harm",
+      "label_column": "merge_harm",
+      "target_definition": "delta_merge_count > 0",
+      "features": [
+        "pairwise_iou_max",
+        "self_covered_by_other_max",
+        "other_covered_by_self_max",
+        "containment_conflict_count",
+        "refined_area_fraction",
+        "output_count_delta"
+      ]
+    }
+  ],
+  "inner_selection": {
+    "eligible_hyperparameters": "inverse_regularization_grid_only",
+    "feature_sets": "fixed_per_head_no_stepwise_search",
+    "primary_metric": "observation_equal_weighted_binary_log_loss",
+    "reported_descriptive_metrics": [
+      "brier_score",
+      "average_precision",
+      "roc_auc_when_both_classes_present",
+      "calibration_by_observation"
+    ],
+    "threshold_selection_allowed": false
+  },
+  "decision_policy": {
+    "status": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "registration_provenance": {
+      "registered_before_target_values_loaded": false,
+      "registered_at": null,
+      "registered_by": null,
+      "public_review_response_sha256": null,
+      "endpoint_registration_sha256": null,
+      "rationale_document": null,
+      "rationale_document_sha256": null
+    },
+    "final_pq_benefit_min_probability": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "spine_benefit_min_probability": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "count_harm_max_probability": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "precision_harm_max_probability": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "merge_harm_max_probability": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "minimum_selection_rate": "TBD_AFTER_S0_4_AND_MARGIN_REGISTRATION",
+    "candidate_scores_are_sufficient_for_acceptance": false,
+    "replay_frozen_ownership_before_endpoint_evaluation": true
+  },
+  "final_acceptance_gates": [
+    "registered_all_spine_coverage_superiority",
+    "filament_precision_noninferiority",
+    "merge_noninferiority",
+    "count_absolute_error_noninferiority",
+    "official_pq_noninferiority",
+    "time_site_stratified_report",
+    "zero_harm_operational_validation_sample_contract"
+  ],
+  "execution_inputs": {
+    "full_development_features": "output/s1/full_development_set_context_features.csv",
+    "full_development_labels": "output/s1/full_development_proposal_marginal_labels.csv",
+    "default_public_review_response": "output/s0/blinded_review_v1/review_response.json",
+    "endpoint_registration": "S1_ENDPOINT_REGISTRATION_DRAFT_2026-08-24.md"
+  },
+  "start_gates": {
+    "structure_validation_required": true,
+    "registry_hash_match_required": true,
+    "complete_s0_4_response_required": true,
+    "all_endpoint_margins_registered_required": true,
+    "decision_policy_registered_before_model_results_required": true,
+    "full_development_features_4899_rows_required": true,
+    "full_development_labels_4899_rows_required": true,
+    "locked_rows_allowed": false,
+    "private_key_required_for_model_fit": false
+  },
+  "promotion_boundary": {
+    "new_independent_time_site_block_required_for_confirmatory_claim": true,
+    "without_new_block": "exploratory_only",
+    "competition_submission_canonical_model": "V35_unchanged"
+  }
+}

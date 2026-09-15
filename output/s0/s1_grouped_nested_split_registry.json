@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "status": "target_independent_grouped_nested_split_registry_frozen_not_model_not_s1",
+  "script": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\scratch\\build_s1_grouped_nested_split_registry.py",
+  "script_sha256": "95ac3c366c2e84eebd777e38b6cfffc804eb495c029627b1a715b10251e1b832",
+  "seed": 20260824,
+  "scope": {
+    "development_observations": 547,
+    "locked_observations_excluded": 160,
+    "development_candidates": 4899,
+    "outer_folds": [
+      0,
+      1,
+      2
+    ],
+    "inner_folds_per_outer_cycle": 3,
+    "registry_rows": 1641,
+    "locked_rows_in_registry": 0,
+    "ground_truth_read": false,
+    "target_columns_loaded": false,
+    "feature_values_loaded": false,
+    "s1_predictions_read": false,
+    "review_responses_read": false,
+    "private_key_read": false,
+    "model_fitting_performed": false,
+    "threshold_selection_performed": false
+  },
+  "split_contract": {
+    "outer_test": "frozen source fold; each observation is outer test exactly once",
+    "outer_train": "the other two source folds",
+    "inner_assignment": "three target-independent folds greedily balanced by site×year cell, then prediction candidate count and observation count",
+    "group_key": "file_name observation; all candidates remain together",
+    "site_year_use": "split balance and reporting only; forbidden as prediction features",
+    "inner_fit_fraction": "approximately two thirds of each outer-training cycle",
+    "freeze_rule": "registry SHA-256 must not change after harm labels are joined"
+  },
+  "balance": {
+    "0": {
+      "outer_test_observations": 183,
+      "outer_test_candidates": 1672,
+      "outer_train_observations": 364,
+      "outer_train_candidates": 3227,
+      "inner_validation": [
+        {
+          "inner_fold": 0,
+          "validation_observations": 117,
+          "validation_candidates": 1077,
+          "site_counts": {
+            "Bh": 18,
+            "Ch": 19,
+            "Lh": 19,
+            "Mh": 22,
+            "Th": 22,
+            "Uh": 17
+          },
+          "year_counts": {
+            "2011": 15,
+            "2012": 19,
+            "2013": 20,
+            "2014": 25,
+            "2015": 20,
+            "2016": 18
+          },
+          "balance_strata_present": 36
+        },
+        {
+          "inner_fold": 1,
+          "validation_observations": 124,
+          "validation_candidates": 1076,
+          "site_counts": {
+            "Bh": 19,
+            "Ch": 21,
+            "Lh": 21,
+            "Mh": 24,
+            "Th": 22,
+            "Uh": 17
+          },
+          "year_counts": {
+            "2011": 18,
+            "2012": 19,
+            "2013": 21,
+            "2014": 24,
+            "2015": 22,
+            "2016": 20
+          },
+          "balance_strata_present": 36
+        },
+        {
+          "inner_fold": 2,
+          "validation_observations": 123,
+          "validation_candidates": 1074,
+          "site_counts": {
+            "Bh": 18,
+            "Ch": 23,
+            "Lh": 21,
+            "Mh": 23,
+            "Th": 22,
+            "Uh": 16
+          },
+          "year_counts": {
+            "2011": 17,
+            "2012": 19,
+            "2013": 23,
+            "2014": 24,
+            "2015": 22,
+            "2016": 18
+          },
+          "balance_strata_present": 36
+        }
+      ],
+      "inner_observation_max_minus_min": 7,
+      "inner_candidate_max_minus_min": 3,
+      "inner_candidate_relative_range": 0.00278896808180973,
+      "missing_site_year_cells_across_inner_folds": 0
+    },
+    "1": {
+      "outer_test_observations": 184,
+      "outer_test_candidates": 1535,
+      "outer_train_observations": 363,
+      "outer_train_candidates": 3364,
+      "inner_validation": [
+        {
+          "inner_fold": 0,
+          "validation_observations": 119,
+          "validation_candidates": 1122,
+          "site_counts": {
+            "Bh": 22,
+            "Ch": 17,
+            "Lh": 20,
+            "Mh": 24,
+            "Th": 20,
+            "Uh": 16
+          },
+          "year_counts": {
+            "2011": 20,
+            "2012": 21,
+            "2013": 19,
+            "2014": 22,
+            "2015": 19,
+            "2016": 18
+          },
+          "balance_strata_present": 36
+        },
+        {
+          "inner_fold": 1,
+          "validation_observations": 119,
+          "validation_candidates": 1121,
+          "site_counts": {
+            "Bh": 20,
+            "Ch": 19,
+            "Lh": 21,
+            "Mh": 21,
+            "Th": 21,
+            "Uh": 17
+          },
+          "year_counts": {
+            "2011": 19,
+            "2012": 19,
+            "2013": 22,
+            "2014": 20,
+            "2015": 22,
+            "2016": 17
+          },
+          "balance_strata_present": 36
+        },
+        {
+          "inner_fold": 2,
+          "validation_observations": 125,
+          "validation_candidates": 1121,
+          "site_counts": {
+            "Bh": 21,
+            "Ch": 19,
+            "Lh": 20,
+            "Mh": 24,
+            "Th": 22,
+            "Uh": 19
+          },
+          "year_counts": {
+            "2011": 20,
+            "2012": 22,
+            "2013": 24,
+            "2014": 21,
+            "2015": 19,
+            "2016": 19
+          },
+          "balance_strata_present": 36
+        }
+      ],
+      "inner_observation_max_minus_min": 6,
+      "inner_candidate_max_minus_min": 1,
+      "inner_candidate_relative_range": 0.0008917954815695601,
+      "missing_site_year_cells_across_inner_folds": 0
+    },
+    "2": {
+      "outer_test_observations": 180,
+      "outer_test_candidates": 1692,
+      "outer_train_observations": 367,
+      "outer_train_candidates": 3207,
+      "inner_validation": [
+        {
+          "inner_fold": 0,
+          "validation_observations": 121,
+          "validation_candidates": 1067,
+          "site_counts": {
+            "Bh": 21,
+            "Ch": 21,
+            "Lh": 18,
+            "Mh": 22,
+            "Th": 19,
+            "Uh": 20
+          },
+          "year_counts": {
+            "2011": 21,
+            "2012": 21,
+            "2013": 24,
+            "2014": 22,
+            "2015": 16,
+            "2016": 17
+          },
+          "balance_strata_present": 36
+        },
+        {
+          "inner_fold": 1,
+          "validation_observations": 119,
+          "validation_candidates": 1069,
+          "site_counts": {
+            "Bh": 21,
+            "Ch": 21,
+            "Lh": 20,
+            "Mh": 20,
+            "Th": 19,
+            "Uh": 18
+          },
+          "year_counts": {
+            "2011": 20,
+            "2012": 22,
+            "2013": 24,
+            "2014": 23,
+            "2015": 14,
+            "2016": 16
+          },
+          "balance_strata_present": 36
+        },
+        {
+          "inner_fold": 2,
+          "validation_observations": 127,
+          "validation_candidates": 1071,
+          "site_counts": {
+            "Bh": 20,
+            "Ch": 22,
+            "Lh": 22,
+            "Mh": 20,
+            "Th": 23,
+            "Uh": 20
+          },
+          "year_counts": {
+            "2011": 22,
+            "2012": 22,
+            "2013": 25,
+            "2014": 23,
+            "2015": 18,
+            "2016": 17
+          },
+          "balance_strata_present": 36
+        }
+      ],
+      "inner_observation_max_minus_min": 8,
+      "inner_candidate_max_minus_min": 4,
+      "inner_candidate_relative_range": 0.0037418147801683817,
+      "missing_site_year_cells_across_inner_folds": 0
+    }
+  },
+  "inputs": {
+    "observation_strata": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\observation_strata.csv",
+    "observation_strata_sha256": "73edf7db655906588670bb5918f0e869278e4891bd1fefbc895372e3a41046b7",
+    "strata_columns_loaded": [
+      "file_name",
+      "fold",
+      "site_code",
+      "year",
+      "time_block_role"
+    ],
+    "candidate_table": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\v42_nested_candidate_predictions.csv",
+    "candidate_table_sha256": "ffdba295972f70459f7273a6be4ace0b3948440a39a941240df2bc21221b28b3",
+    "candidate_columns_loaded": [
+      "file_name",
+      "fold",
+      "candidate_index"
+    ]
+  },
+  "artifacts": {
+    "registry": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_grouped_nested_split_registry.csv",
+    "registry_sha256": "48b69680ac40a411b65cdc8cd9246a475ca88002f8483bae3acf2f31a9db2219"
+  },
+  "limitations": [
+    "Target-independent balance does not guarantee equal harm prevalence.",
+    "Source folds remain the historical grouped folds, not a new time/site holdout.",
+    "Site and year are audit strata, never prediction features.",
+    "No model, feature scaling, threshold, margin, locked evaluation, or review response was used."
+  ]
+}

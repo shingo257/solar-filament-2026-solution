@@ -1,0 +1,28 @@
+{
+  "experiment_id": "matched_param_ablation_all_folds",
+  "purpose": "Cross-fold synthesis of the matched-parameter ablation (report/main.tex Future Work item 1, completed 2026-08-31). All three folds x two seeds each, verified against raw Drive JSON and executed Colab notebooks for every fold.",
+  "per_fold_means": {
+    "fold0": {"base": 0.44141201537526537, "plain_mhsa": 0.441258685499471, "edge_att": 0.4404744977878209},
+    "fold1": {"base": 0.4404655301192768, "plain_mhsa": 0.4426489460456593, "edge_att": 0.44170662536900396},
+    "fold2": {"base": 0.44335990562663335, "plain_mhsa": 0.4457917964157798, "edge_att": 0.4463729469173069}
+  },
+  "pooled_6seed_means": {
+    "base": 0.4417458170403918,
+    "plain_mhsa": 0.44323314398696936,
+    "edge_att": 0.4428513567247106,
+    "note": "Simple mean of all 6 seed-level PQ values per variant (2 seeds x 3 folds). Descriptive only -- folds are disjoint held-out sets, not a substitute for the project's observation-cluster bootstrap."
+  },
+  "per_fold_paired_diffs": {
+    "plain_mhsa_minus_base": {"fold0": -0.000153, "fold1": 0.002183, "fold2": 0.002432, "sign_agreement": "2 of 3 folds positive (fold1, fold2); fold0 essentially zero/slightly negative"},
+    "edge_att_minus_base": {"fold0": -0.000938, "fold1": 0.001241, "fold2": 0.003013, "sign_agreement": "2 of 3 folds positive (fold1, fold2); fold0 negative"},
+    "edge_att_minus_plain_mhsa": {"fold0": -0.000784, "fold1": -0.000942, "fold2": 0.000581, "sign_agreement": "2 of 3 folds negative (fold0, fold1), essentially zero in fold2 -- no fold shows edge_att clearly beating plain_mhsa"}
+  },
+  "finding": "Across all three folds, adding bottleneck attention capacity (with or without the edge prior) tends to help over the plain U-Net baseline: 2 of 3 folds show a clear, seed-consistent positive delta for both plain_mhsa and edge_att vs base, and fold0 is roughly neutral. However, the edge prior specifically does not show a consistent additional benefit over plain attention: edge_att is at or below plain_mhsa in 2 of 3 folds (fold0, fold1), and the fold2 edge_att-vs-plain_mhsa difference is inconsistent in sign across its own two seeds (near zero for one seed, small positive for the other). This does not support the original claim that the edge-guided attention mechanism specifically drives the refiner improvement; if there is a real effect here, the evidence points to attention capacity in general, not the edge prior.",
+  "caveats": "n=2 seeds per fold per variant (6 total per variant). This is a much more thorough check than the original single-seed-per-fold protocol, but still short of the full observation-cluster bootstrap used elsewhere in this project for formal acceptance decisions. Folds are disjoint held-out data; cross-fold pooling here is descriptive, not a formal statistical test.",
+  "source_files": [
+    "matched_param_ablation_fold0_manifest_raw.json (Drive-verified)",
+    "matched_param_ablation_fold1_manifest_raw.json (Drive-verified)",
+    "matched_param_ablation_fold2_manifest_raw.json (Drive-verified)",
+    "executed_matched_param_ablation_fold{0,1,2}.ipynb (Drive-verified, execution_count 1-8 each, cell 7 has 181 outputs each)"
+  ]
+}

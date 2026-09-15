@@ -1,0 +1,29 @@
+{
+  "experiment_id": "matched_param_ablation_fold2",
+  "purpose": "report/main.tex Future Work item 1. Third and final fold for the matched-parameter ablation, completing the 3-fold check.",
+  "fold": 2,
+  "recipe": "Identical to build_v51_edgeattnet_refiner.py and the fold-0/fold-1 ablations (crop 320, context 1.65, 14 epochs, LR 2e-4 cosine annealing, AMP, crop-Dice-selected best checkpoint, fold-2 held out). Only the model class and seed vary.",
+  "provenance": "Executed by the user in their own Colab session; output pasted back into chat and VERIFIED 2026-08-31 against the raw JSON read directly from mounted Google Drive (G:\\\\マイドライブ\\\\solar_filament_v30\\\\artifacts\\\\matched_param_ablation_fold2_manifest.json, saved alongside as matched_param_ablation_fold2_manifest_raw.json) and the executed Colab notebook (Google Drive > Colab Notebooks > 'solar_filament_matched_param_ablation_fold2_colab.ipynb', execution_count 1-8, cell 7 has 181 outputs) -- all values match exactly.",
+  "reference_baseline_pq_fold2_original_single_seed": 0.4471,
+  "reference_edgeatt_pq_fold2_original_single_seed_v51": 0.4483,
+  "builder_script": "scratch/build_matched_param_ablation.py --fold 2",
+  "runs": [
+    {"variant": "base", "seed": 3407, "n_params": 31037633, "pq": 0.4429155934201867, "sq": 0.6791027885112315, "rq": 0.65220700152207, "tp": 1714, "fp": 757, "fn": 1071, "denominator": 2628.0},
+    {"variant": "base", "seed": 8407, "n_params": 31037633, "pq": 0.44380421783308, "sq": 0.6787517941539102, "rq": 0.6538534728829686, "tp": 1718, "fp": 752, "fn": 1067, "denominator": 2627.5},
+    {"variant": "plain_mhsa", "seed": 3407, "n_params": 35238081, "pq": 0.4452798273794359, "sq": 0.6818184988082436, "rq": 0.6530767765288626, "tp": 1714, "fp": 750, "fn": 1071, "denominator": 2624.5},
+    {"variant": "plain_mhsa", "seed": 8407, "n_params": 35238081, "pq": 0.44630376545212375, "sq": 0.6807298722183525, "rq": 0.655625356938892, "tp": 1722, "fp": 746, "fn": 1063, "denominator": 2626.5},
+    {"variant": "edge_att", "seed": 3407, "n_params": 35240157, "pq": 0.4452602575619746, "sq": 0.6791382499921756, "rq": 0.655625356938892, "tp": 1722, "fp": 746, "fn": 1063, "denominator": 2626.5},
+    {"variant": "edge_att", "seed": 8407, "n_params": 35240157, "pq": 0.44748563627263915, "sq": 0.6780711372486731, "rq": 0.6599390708301599, "tp": 1733, "fp": 734, "fn": 1052, "denominator": 2626.0}
+  ],
+  "summary_by_variant": {
+    "base": {"n_params": 31037633, "seeds": [3407, 8407], "pq_per_seed": [0.4429155934201867, 0.44380421783308], "pq_mean": 0.44335990562663335, "pq_std": 0.0004443122064466398},
+    "plain_mhsa": {"n_params": 35238081, "seeds": [3407, 8407], "pq_per_seed": [0.4452798273794359, 0.44630376545212375], "pq_mean": 0.4457917964157798, "pq_std": 0.0005119690363439289},
+    "edge_att": {"n_params": 35240157, "seeds": [3407, 8407], "pq_per_seed": [0.4452602575619746, 0.44748563627263915], "pq_mean": 0.4463729469173069, "pq_std": 0.0011126893553322637}
+  },
+  "paired_diffs": {
+    "plain_mhsa_minus_base": {"seed3407": 0.0023642339592492, "seed8407": 0.0024995476190438, "note": "consistent sign, both positive"},
+    "edge_att_minus_base": {"seed3407": 0.0023446641417879, "seed8407": 0.0036814184395592, "note": "consistent sign, both positive"},
+    "edge_att_minus_plain_mhsa": {"seed3407": -0.0000195698174613, "seed8407": 0.0011818708205154, "note": "mixed sign, essentially zero for seed3407"}
+  },
+  "caveats": "n=2 seeds per variant. This is the third and final fold of the ablation; see the all-folds summary for the cross-fold synthesis."
+}

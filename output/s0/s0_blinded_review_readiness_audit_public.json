@@ -1,0 +1,116 @@
+{
+  "package_id": "s0-blinded-review-2026-08-24-v1",
+  "status": "ready_for_independent_review_with_sampling_caveats",
+  "private_files_read": false,
+  "selected_observations": 24,
+  "unique_observations": 24,
+  "corpus_observations": 707,
+  "year_range": [
+    2011,
+    2022
+  ],
+  "distinct_years": 9,
+  "html_model_identity_leaks": [],
+  "panel_audit": {
+    "expected": 24,
+    "decoded": 24,
+    "shape_counts": {
+      "(1100, 1650, 3)": 24
+    },
+    "pixel_std_min": 35.52330321625832,
+    "pixel_std_max": 48.237433331815886,
+    "file_bytes_min": 244094,
+    "file_bytes_max": 411423,
+    "failures": []
+  },
+  "public_distributions": {
+    "fold": {
+      "0": {
+        "selected_count": 4,
+        "selected_share": 0.16666666666666666,
+        "corpus_count": 236,
+        "corpus_share": 0.3338048090523338,
+        "representation_ratio": 0.4992937853107345
+      },
+      "1": {
+        "selected_count": 11,
+        "selected_share": 0.4583333333333333,
+        "corpus_count": 236,
+        "corpus_share": 0.3338048090523338,
+        "representation_ratio": 1.37305790960452
+      },
+      "2": {
+        "selected_count": 9,
+        "selected_share": 0.375,
+        "corpus_count": 235,
+        "corpus_share": 0.3323903818953324,
+        "representation_ratio": 1.1281914893617022
+      }
+    },
+    "site_code": {
+      "Bh": {
+        "selected_count": 6,
+        "selected_share": 0.25,
+        "corpus_count": 118,
+        "corpus_share": 0.1669024045261669,
+        "representation_ratio": 1.4978813559322035
+      },
+      "Ch": {
+        "selected_count": 3,
+        "selected_share": 0.125,
+        "corpus_count": 125,
+        "corpus_share": 0.1768033946251768,
+        "representation_ratio": 0.707
+      },
+      "Lh": {
+        "selected_count": 3,
+        "selected_share": 0.125,
+        "corpus_count": 127,
+        "corpus_share": 0.17963224893917965,
+        "representation_ratio": 0.6958661417322834
+      },
+      "Mh": {
+        "selected_count": 5,
+        "selected_share": 0.20833333333333334,
+        "corpus_count": 125,
+        "corpus_share": 0.1768033946251768,
+        "representation_ratio": 1.1783333333333335
+      },
+      "Th": {
+        "selected_count": 2,
+        "selected_share": 0.08333333333333333,
+        "corpus_count": 110,
+        "corpus_share": 0.15558698727015557,
+        "representation_ratio": 0.5356060606060606
+      },
+      "Uh": {
+        "selected_count": 5,
+        "selected_share": 0.20833333333333334,
+        "corpus_count": 102,
+        "corpus_share": 0.14427157001414428,
+        "representation_ratio": 1.4440359477124183
+      }
+    },
+    "time_block_role": {
+      "development": {
+        "selected_count": 10,
+        "selected_share": 0.4166666666666667,
+        "corpus_count": 547,
+        "corpus_share": 0.7736916548797736,
+        "representation_ratio": 0.5385435709932969
+      },
+      "locked_evaluation": {
+        "selected_count": 14,
+        "selected_share": 0.5833333333333334,
+        "corpus_count": 160,
+        "corpus_share": 0.2263083451202263,
+        "representation_ratio": 2.577604166666667
+      }
+    }
+  },
+  "warnings": [
+    "locked_evaluation is intentionally enriched; do not interpret the 24-case preference rate as a corpus prevalence estimate",
+    "one fold exceeds 45% of the review sample; report fold counts with results"
+  ],
+  "interpretation_limit": "The review set is hypothesis-enriched and supports error-mode adjudication, not population prevalence or an independent performance estimate."
+}

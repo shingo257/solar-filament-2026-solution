@@ -141,10 +141,17 @@ PQは互換性指標として必ず報告するが、S1ではPQ単独の上昇�
 
 ## 7. 直近の実行順序
 
+**現状（2026-08-31）**
+- Competition正本は V35 のまま凍結。
+- S1 GT-free full development feature は完了（`output/s1/full_development_set_context_features.csv`、4899行）。
+- S1 `ready_to_fit=false`。残blockerは S0-4 response、endpoint margins、decision policy、full development labels。
+- **次の人手作業:** `docs/history/S0_BLINDED_REVIEW_OPERATOR_GUIDE_2026-08-24.md` に従い、`output/s0/blinded_review_v1/review.html` だけを開いて24件回答。export前に `private/` を開かない。
+- labels / margin 固定 / nested OOF fit は S0-4 完了後。AIは回答を代行しない。
+
 1. **S0-1 annotation audit**: spine/chirality/metadataの利用可能性と分布を確定する。
 2. **S0-2 evaluator**: spine、接続性、boundary、split/merge、層別集計を実装してテストする。
 3. **S0-3 baseline rescore**: V35、raw YOLO、V34を再採点する。
-4. **S0-4 visual review**: 条件を隠した比較画像で、細い枝、spine、個体分離を監査する。
+4. **S0-4 visual review**: 条件を隠した比較画像で、細い枝、spine、個体分離を監査する。← **いまここ（独立人手レビュー待ち）**
 5. **S0-5 endpoint registration**: 結果を見てV35-Sciの単一主仮説とS1ゲートを固定する。
 6. その後にだけV35-Sciを学習する。Kaggle提出はCompetitionトラックのゲートで別に判断する。
 
@@ -159,8 +166,9 @@ PQは互換性指標として必ず報告するが、S1ではPQ単独の上昇�
 
 ## 9. 参照
 
-- [V35 PQ再整合報告](V35_PQ_REALIGNMENT_REPORT_2026-08-15.md)
-- [実験経緯・技術引継ぎ](SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md)
+- [V35 PQ再整合報告](docs/history/V35_PQ_REALIGNMENT_REPORT_2026-08-15.md)
+- [実験経緯・技術引継ぎ](docs/history/SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md)
+- [S0-4 盲検レビュー運用ガイド](docs/history/S0_BLINDED_REVIEW_OPERATOR_GUIDE_2026-08-24.md)
 - [技術報告書草稿](TECHNICAL_REPORT_DRAFT.md)
 - [MAGFiLO dataset paper](https://www.nature.com/articles/s41597-024-03876-y)
 - [clDice](https://openaccess.thecvf.com/content/CVPR2021/papers/Shit_clDice_-_A_Novel_Topology-Preserving_Loss_Function_for_Tubular_Structure_CVPR_2021_paper.pdf)

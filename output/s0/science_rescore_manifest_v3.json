@@ -1,0 +1,98 @@
+{
+  "schema_version": "s0-science-rescore-v3",
+  "scoring_version": "s0-science-scoring-v3",
+  "eval_size": 512,
+  "matching": "maximum-cardinality Hungarian IoU > 0.5 at eval_size; pq_512 is diagnostic, not Kaggle PQ",
+  "models": [
+    "raw",
+    "v35",
+    "v34",
+    "v42"
+  ],
+  "observations": 707,
+  "annotator_variants": 1154,
+  "elapsed_seconds": 9.173548400000072,
+  "bootstrap_repeats": 1000,
+  "cluster_unit": "file_name observation",
+  "prediction_cache": {
+    "version": "s0-science-prediction-v2",
+    "root": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\prediction_cache_512",
+    "statistics": {
+      "raw": {
+        "hits": 0,
+        "built": 0
+      },
+      "v35": {
+        "hits": 0,
+        "built": 0
+      },
+      "v34": {
+        "hits": 0,
+        "built": 0
+      },
+      "v42": {
+        "hits": 0,
+        "built": 0
+      }
+    }
+  },
+  "data_roots": {
+    "yolo_oof": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof",
+    "preprocessed_images": "G:\\マイドライブ\\solar_filament_v30\\preprocessed_v30_q96",
+    "v34_semantic": "G:\\マイドライブ\\solar_filament_v34\\prediction_cache\\oof"
+  },
+  "v34_instance_builder": {
+    "engine": "skimage.segmentation.watershed",
+    "threshold": 0.52,
+    "seed_confidence": 0.22,
+    "minimum_area_at_2048": 60,
+    "recover_unseeded_components": true,
+    "watershed_line": true
+  },
+  "strata_definitions": {
+    "area": {
+      "source": "median annotation area per annotator variant at native 2048 scale",
+      "bins": [
+        "<=1000",
+        "1000<area<=5000",
+        ">5000"
+      ]
+    },
+    "density": {
+      "source": "ground-truth instance count per annotator variant",
+      "bins": [
+        "<=5",
+        "6-10",
+        ">10"
+      ]
+    },
+    "radial_proxy": {
+      "source": "maximum normalized bbox-center image radius per annotator variant",
+      "bins": [
+        "<=0.33",
+        "0.33<radius<=0.66",
+        ">0.66"
+      ],
+      "warning": "image-center proxy; not calibrated heliographic distance"
+    }
+  },
+  "provenance_manifest": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\provenance_manifest.json",
+  "outputs": {
+    "case_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_case_metrics_v3.csv",
+      "sha256": "5524d693fca869fd89cb693bd3c8563c74a3d99b35647cefa9755077a451108a"
+    },
+    "summary_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_model_summary_v3.csv",
+      "sha256": "25ae9b3982100ea3fe4f89d355e0f6cf86091ff211afded06b1ab86f727fe941"
+    },
+    "stratum_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_stratum_summary_v3.csv",
+      "sha256": "0f48dfc3adcb8bf59e206b17453b45189afb60bd381968fc43d546fc6dff4f01"
+    },
+    "paired_delta_csv": {
+      "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\science_paired_deltas_v3.csv",
+      "sha256": "90ee5dbf3528fab21d254069c3dfcc31b3264f9394ed1a45c7c1629d1b975f43"
+    }
+  }
+}

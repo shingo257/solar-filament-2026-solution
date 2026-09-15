@@ -1,0 +1,33 @@
+{
+  "scope": "60観測、fold0のみ。WBF→refiner(現行) vs refiner→WBF(探針)",
+  "wbf_iou_threshold": 0.5,
+  "wbf_vote_threshold": 0.6,
+  "wbf_then_refine": {
+    "pq": 0.436604011844135,
+    "sq": 0.6707977346724066,
+    "rq": 0.6508728179551122,
+    "tp": 522,
+    "fp": 288,
+    "fn": 272,
+    "denominator": 802.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 90
+  },
+  "refine_then_wbf": {
+    "pq": 0.43608670616420653,
+    "sq": 0.6717412531490952,
+    "rq": 0.6491885143570537,
+    "tp": 520,
+    "fp": 288,
+    "fn": 274,
+    "denominator": 801.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15",
+    "near_miss": 90
+  },
+  "baseline_fold0_pq": 0.4393,
+  "delta_refine_first_vs_baseline": -0.003213,
+  "delta_refine_first_vs_wbf_first": -0.000517,
+  "continue_fold12": false
+}

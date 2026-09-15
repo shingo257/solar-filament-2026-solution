@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "status": "registration_blocked",
+  "registration_permitted": false,
+  "scope": {
+    "public_review_response_content_loaded": false,
+    "private_key_read": false,
+    "locked_rows_read": 0,
+    "feature_values_loaded": false,
+    "target_values_loaded": false,
+    "model_fitting_performed": false,
+    "threshold_selection_performed": false,
+    "canonical_spec_overwritten": false
+  },
+  "input_hashes": {
+    "source_spec": "2f3fef9f352fcca7f202235f69e338dce8b31167d2174fe83ca62155db950aaa",
+    "readiness": "5b4a36742cf8064cac5e00a8ac74356229670fd23a9fdd6cf788c1f3f2d41f7d",
+    "registration_payload": "3487a35d975a9a3ea19b7d0b1e598e9457148a2de3065f60c4cbebf7f0006dc9"
+  },
+  "evidence_hashes": {
+    "endpoint_registration_sha256": "e5f8d45b2f8751e1484fe94eb9ee89fe94c916451ec02cff25ab8a5cc0bcc2db"
+  },
+  "errors": [
+    "registration status must be ready_for_pre_target_registration",
+    "registered_at must be a timezone-aware ISO-8601 string",
+    "registered_by must be non-empty",
+    "rationale_document must be non-empty",
+    "final_pq_benefit_min_probability must be numeric",
+    "spine_benefit_min_probability must be numeric",
+    "count_harm_max_probability must be numeric",
+    "precision_harm_max_probability must be numeric",
+    "merge_harm_max_probability must be numeric",
+    "minimum_selection_rate must be numeric",
+    "attestation must be true: values_chosen_without_development_target_values",
+    "attestation must be true: review_response_used_only_for_qualitative_error_priorities",
+    "attestation must be true: endpoint_margins_are_primary_safety_contract",
+    "prerequisite gate not passed: complete_s0_4_response",
+    "prerequisite gate not passed: all_endpoint_margins_registered",
+    "public review response file does not exist",
+    "public review response is not complete for 24 cases",
+    "endpoint margins remain unregistered"
+  ],
+  "candidate_structure_errors": [],
+  "candidate": {
+    "path": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\s1_registered_model_spec_candidate.json",
+    "written": false,
+    "sha256": null
+  },
+  "limitations": [
+    "This transaction never edits the canonical model spec.",
+    "A generated candidate still requires explicit review and canonical promotion.",
+    "Policy registration is not evidence of model performance."
+  ]
+}

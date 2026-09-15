@@ -1,0 +1,29 @@
+# 生成物・キャッシュのうち、再生成可能な大容量バイナリはコミットしない。
+# 実験結果のJSON/CSV/txt等はコミット対象(再現性の証跡として残す)。
+
+# pseudo-labelingパイロット用の生データ(GONGアーカイブから取得、再取得可能)
+output/pseudo_label_raw/
+
+# RF-DETR実験のデータセットキャッシュ・チェックポイント(1.7GB超、Driveが正本)
+output/rfdetr/
+
+# モデルチェックポイント全般(拡張子ベース、サブディレクトリ問わず)
+*.fits
+*.fits.fz
+*.ckpt
+*.pth
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+
+# 手元検証用に作業ディレクトリへ置いたzip等
+*.zip
+
+# Kaggle CLIでダウンロードした生データ(1.6GB超、再取得可能)
+kaggle_downloads/
+
+# S0再スコアリング用の予測キャッシュ(npz、再生成可能。結果のJSON/CSVのみコミット対象)
+output/s0/prediction_cache_512/
+output/s0/s1_proposal_marginal_refined_cache/
+output/s0/v42_verifier_official_cache/

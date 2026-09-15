@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "status": "template_incomplete",
+  "source_spec_sha256": "2f3fef9f352fcca7f202235f69e338dce8b31167d2174fe83ca62155db950aaa",
+  "registered_at": null,
+  "registered_by": null,
+  "rationale_document": null,
+  "decision_thresholds": {
+    "final_pq_benefit_min_probability": null,
+    "spine_benefit_min_probability": null,
+    "count_harm_max_probability": null,
+    "precision_harm_max_probability": null,
+    "merge_harm_max_probability": null,
+    "minimum_selection_rate": null
+  },
+  "attestations": {
+    "values_chosen_without_development_target_values": null,
+    "review_response_used_only_for_qualitative_error_priorities": null,
+    "endpoint_margins_are_primary_safety_contract": null
+  },
+  "instructions": [
+    "Complete S0-4 and register every endpoint margin before changing this template status.",
+    "Write a public rationale document and set rationale_document to its path.",
+    "Choose all six numeric values before any full development target label exists.",
+    "Set every attestation to true and status to ready_for_pre_target_registration.",
+    "Run the registration transaction; do not edit the canonical model spec directly."
+  ]
+}

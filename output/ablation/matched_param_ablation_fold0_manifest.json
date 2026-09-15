@@ -1,0 +1,25 @@
+{
+  "experiment_id": "matched_param_ablation_fold0",
+  "purpose": "report/main.tex Future Work item 1 (as of the 2026-08-31 5th-review revision). Isolate whether the previously reported edge-attention refiner improvement is attributable to the edge prior specifically, or to added bottleneck attention capacity in general.",
+  "fold": 0,
+  "recipe": "Identical to build_v51_edgeattnet_refiner.py (crop 320, context 1.65, 14 epochs, LR 2e-4 cosine annealing, AMP, crop-Dice-selected best checkpoint, fold-0 held out). Only the model class and seed vary.",
+  "provenance": "Executed by the user in their own Colab session (colab-mcp bridge was disconnected for this run); output pasted back into chat verbatim and transcribed here. VERIFIED 2026-08-31 by reading the raw JSON directly from the mounted Google Drive (G:\\\\マイドライブ\\\\solar_filament_v30\\\\artifacts\\\\matched_param_ablation_fold0_manifest.json, saved alongside as matched_param_ablation_fold0_manifest_raw.json) and cross-checking against the executed Colab notebook's final cell output (Google Drive > Colab Notebooks > 'solar_filament_matched_param_ablation_colab (1).ipynb', execution_count 1-8, cell 7 has 181 outputs from the 6 training/eval runs) -- all values match exactly.",
+  "reference_baseline_pq_fold0_original_single_seed": 0.4393,
+  "reference_edgeatt_pq_fold0_original_single_seed_v51": 0.4454,
+  "builder_script": "scratch/build_matched_param_ablation.py",
+  "runs": [
+    {"variant": "base", "seed": 3407, "n_params": 31037633, "pq": 0.4420054168646913, "sq": 0.6762061793134885, "rq": 0.6536548029085343, "tp": 1708, "fp": 769, "fn": 1041, "denominator": 2613.0},
+    {"variant": "base", "seed": 8407, "n_params": 31037633, "pq": 0.4408186138858394, "sq": 0.6781225021392424, "rq": 0.6500574932924492, "tp": 1696, "fp": 773, "fn": 1053, "denominator": 2609.0},
+    {"variant": "plain_mhsa", "seed": 3407, "n_params": 35238081, "pq": 0.4404640299569296, "sq": 0.6795470733721579, "rq": 0.6481729481538168, "tp": 1694, "fp": 784, "fn": 1055, "denominator": 2613.5},
+    {"variant": "plain_mhsa", "seed": 8407, "n_params": 35238081, "pq": 0.4420533410420123, "sq": 0.6803924657322139, "rq": 0.649703462789363, "tp": 1698, "fp": 780, "fn": 1051, "denominator": 2613.5},
+    {"variant": "edge_att", "seed": 3407, "n_params": 35240157, "pq": 0.4405060282495663, "sq": 0.6766856271699687, "rq": 0.6509758897818599, "tp": 1701, "fp": 776, "fn": 1048, "denominator": 2613.0},
+    {"variant": "edge_att", "seed": 8407, "n_params": 35240157, "pq": 0.4404429673260754, "sq": 0.6788323989636713, "rq": 0.6488243165742688, "tp": 1697, "fp": 785, "fn": 1052, "denominator": 2615.5}
+  ],
+  "summary_by_variant": {
+    "base": {"n_params": 31037633, "seeds": [3407, 8407], "pq_per_seed": [0.4420054168646913, 0.4408186138858394], "pq_mean": 0.44141201537526537, "pq_std": 0.0005934014894259376, "sq_mean": 0.6771643407263655, "rq_mean": 0.6518561481004918},
+    "plain_mhsa": {"n_params": 35238081, "seeds": [3407, 8407], "pq_per_seed": [0.4404640299569296, 0.4420533410420123], "pq_mean": 0.441258685499471, "pq_std": 0.0007946555425413504, "sq_mean": 0.6799697695521859, "rq_mean": 0.6489382054715899},
+    "edge_att": {"n_params": 35240157, "seeds": [3407, 8407], "pq_per_seed": [0.4405060282495663, 0.4404429673260754], "pq_mean": 0.4404744977878209, "pq_std": 0.00003153046174544927, "sq_mean": 0.6777590130668199, "rq_mean": 0.6499001031780644}
+  },
+  "finding": "Under a matched-parameter, two-seed comparison, the edge-attention variant's mean OOF PQ (0.440474) was not higher than either the plain U-Net baseline (0.441412) or the parameter-matched no-edge-prior attention variant (0.441259) -- it was in fact the lowest of the three, despite having the tightest seed-to-seed spread. This does not reproduce the originally reported fold-0 delta of +0.0062 (plain 0.4393 -> edge-attention 0.4454) that was one basis for accepting the edge-attention refiner as a validated improvement.",
+  "caveats": "n=2 seeds per variant, fold 0 only. Not a substitute for the full bootstrap/multi-fold protocol used elsewhere in this project; treated as a strong but not yet conclusive signal pending more seeds and folds 1-2 (see report/main.tex Future Work)."
+}

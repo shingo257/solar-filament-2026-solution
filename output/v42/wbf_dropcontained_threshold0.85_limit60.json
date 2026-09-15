@@ -1,0 +1,17 @@
+{
+  "scope": "60観測、fold0のみ。WBF(iou=0.5,vote=0.6)→drop_contained閾値スイープ",
+  "drop_threshold": 0.85,
+  "pq": 0.4354715699417588,
+  "sq": 0.6712471212975086,
+  "rq": 0.64875,
+  "tp": 519,
+  "fp": 287,
+  "fn": 275,
+  "denominator": 800.0,
+  "iou_threshold": 0.5,
+  "metric_version": "official-v1-2026-08-15",
+  "near_miss": 91,
+  "baseline_fold0_pq": 0.4393,
+  "delta_vs_baseline": -0.003828,
+  "continue_fold12": false
+}

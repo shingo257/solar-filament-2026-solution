@@ -1,0 +1,192 @@
+% =============================================================================
+% COPYRIGHT AND DISCLAIMER
+% =============================================================================
+% This file is provided as a convenience template for competition participants.
+% By using it, you accept full responsibility for compliance with all applicable
+% copyright, licensing, and usage rules of the Association for Computing
+% Machinery (ACM) and of any LaTeX packages you load (including, without
+% limitation, the "acmart" document class and related ACM materials).
+%
+% Consult ACM's official publication, template, and copyright policies before
+% using this setup for any purpose other than this competition. Do not assume
+% that this template may be reused, redistributed, or submitted elsewhere
+% without independently verifying ACM's current rules.
+%
+% Use of the "acmart" class, the "sigconf" option, or ACM-style formatting in
+% this template does NOT mean that this report, this competition, its organizers,
+% or any resulting PDF is sponsored, endorsed, affiliated with, or published by
+% ACM. ACM trademarks and branding remain the property of ACM.
+%
+% Template packages live in preamble.tex.
+% Citations live in main.bib. Edit this file with your paper content.
+% =============================================================================
+
+\documentclass[sigconf]{acmart}
+\input{preamble}
+
+% Guide styling: no longer needed once the author/affiliation fields below are
+% filled in; guide mode is now off. The title is plain (black) text rather than
+% \guide{}-wrapped: acmart derives PDF metadata (pdftitle) from \title{}, and
+% wrapping it in color/italic-switching macros corrupts that metadata field.
+% A short-title form is passed via \title[short]{full} so the running header on
+% pages 2+ does not collide with the venue line (reviewer feedback, 2026-08-30).
+\guideStylefalse
+
+\begin{document}
+
+\title[Detect, Refine, Resolve]{Detect, Refine, Resolve: An Edge-Attention-Inspired Boundary Refiner for Solar Filament Instance Segmentation}
+\subtitle{A Solution to the Solar Filament Segmentation Challenge 2026} % DO NOT CHANGE
+
+\author{Shingo Hara}
+\affiliation{%
+  \institution{ER Systems, Ltd.}
+  \city{Kanagawa}
+  \country{Japan}
+}
+\email{shingo257@gmail.com}
+\renewcommand{\shortauthors}{Hara}
+
+\begin{abstract}
+    This report describes our solution to the Solar Filament Segmentation Challenge~2026, a Kaggle competition on automatic segmentation of solar filaments in GONG H-$\alpha$ observations. Our pipeline detects filament candidates with a YOLO11-seg instance detector, corrects their boundaries with a crop-level U-Net refiner, and resolves overlapping candidates into a disjoint instance set. Major design decisions were evaluated under leak-free 3-fold cross-validation with an observation-cluster bootstrap for uncertainty estimates, a protocol that let us reject five plausible improvements whose apparent single-fold gains did not survive independent-fold confirmation (itemized in Section~\ref{sec:strengths}). One further change --- augmenting the refiner's bottleneck with an EdgeAttNet-inspired~\cite{edgeattnet2025} edge-guided self-attention mechanism (Section~\ref{sec:refiner}) --- initially passed this protocol (3-fold pooled $\Delta$PQ$=+0.0028$, 95\% CI $[0.00091,0.00476]$, $n{=}707$, all folds agreeing in sign) and moved the public leaderboard score from $0.37$ to $0.39$. A follow-up matched-parameter ablation across all three folds (two seeds each; Section~\ref{sec:results-discussion}) refines this picture rather than simply reversing it: bottleneck attention capacity, with or without the edge prior, tends to help over the plain baseline (a seed-consistent positive delta in two of three folds, roughly neutral in the third), but the edge prior itself shows no consistent additional benefit over plain attention, at or below it in two of three folds. We report this refinement, not the original single-seed claim, as our main finding: our acceptance criterion could not separate a general architectural effect (added capacity) from the specific mechanism (the edge prior) we set out to validate.
+\end{abstract}
+
+\maketitle
+
+% ==================================== %
+%              INTRODUCTION            %
+% ==================================== %
+\section{Introduction}
+    This report describes our submitted solution to the Solar Filament Segmentation Challenge~2026~\cite{filament-segmentation-2026}, organized by the Earth-Space AI Research (ESAIR) Lab and scored against the MAGFiLO dataset~\cite{ahmadzadeh2024dataset}. Our approach treats the task as instance segmentation: detect each filament as a separate object, refine its boundary, and reconcile overlapping candidates into a single non-overlapping prediction set. Section~\ref{sec:methodology} describes the pipeline; Section~\ref{sec:evaluation} reports our evaluation protocol, results, and an honest account of what we tried that did \emph{not} work.
+
+% ==================================== %
+%              METHODOLOGY             %
+% ==================================== %
+\section{Methodology}\label{sec:methodology}
+
+\begin{figure*}[t]
+    \centering
+    \begin{tikzpicture}[
+        node distance=6mm,
+        box/.style={draw, rounded corners, minimum height=1.05cm, minimum width=2.5cm, align=center, font=\small, fill=gray!8},
+        arr/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[box] (raw) {H-$\alpha$\\FITS/JPEG};
+        \node[box, right=of raw] (prep) {Preprocess\\background flatten +\\CLAHE/black-hat};
+        \node[box, right=of prep] (yolo) {YOLO11-seg\\detector\\(per-fold)};
+        \node[box, right=of yolo] (refine) {Edge-attention\\U-Net refiner\\(320px crops)};
+        \node[box, right=of refine] (own) {Ownership\\resolution\\(IoU containment +\\greedy exclusivity)};
+        \node[box, right=of own, fill=gray!18] (final) {Final disjoint\\instance masks};
+        \draw[arr] (raw) -- (prep);
+        \draw[arr] (prep) -- (yolo);
+        \draw[arr] (yolo) -- node[above, font=\scriptsize]{proposals + scores} (refine);
+        \draw[arr] (refine) -- node[above, font=\scriptsize]{shrunk masks} (own);
+        \draw[arr] (own) -- (final);
+    \end{tikzpicture}
+    \caption{End-to-end inference pipeline. Training uses leak-free 3-fold cross-validation (Section~\ref{sec:cv}); the submitted model uses a single detector fold plus a refiner fine-tuned on all folds.}
+    \label{fig:pipeline}
+\end{figure*}
+
+\subsection{Preprocessing}
+    Raw GONG H-$\alpha$ observations are $2048\times2048$ single-channel intensity images. Each image is encoded into a 3-channel input so that the detector backbone can reuse standard RGB-pretrained weights while still operating on physically meaningful contrast bands: channel 1 is a percentile-clipped copy of the raw intensity; channel 2 divides the image by a large-kernel Gaussian estimate of the background (flattening limb darkening and the radial illumination gradient) followed by CLAHE; channel 3 is a black-hat morphological transform of channel 2, which isolates dark, thin, filament-scale detail. (A separate histogram-matching step is used only for the rejected pseudo-labeling experiment, not the main pipeline.)
+
+\subsection{Detection}
+    Filament candidates are generated by \textbf{YOLO11m-seg}~\cite{yolo11} (the medium-capacity variant), an anchor-free, NMS-based instance segmentation network, trained and run at $1280\times1280$ input resolution with a single foreground class. We trained one detector per cross-validation fold (Section~\ref{sec:cv}) for up to 70 epochs (early-stopping patience 14) with batch size 4 and a fold-offset random seed ($3407+\text{fold}$). Training was run with \texttt{deterministic=True} for reproducibility. Optimizer and augmentation were set explicitly rather than left at Ultralytics defaults: AdamW ($\text{lr}_0{=}7{\times}10^{-4}$, $\text{lr}_f{=}0.05$, weight decay $5{\times}10^{-4}$, 3-epoch warmup); geometric augmentation (rotation $\pm180^\circ$, translate $0.04$, scale $0.25$, horizontal/vertical flip $p{=}0.5$ each); mosaic probability $0.20$ (disabled for the final 10 epochs); hue/saturation jitter disabled (not meaningful for this derived contrast encoding) and value jitter $0.18$; mask downsample ratio 2. At inference we use confidence threshold 0.26 and NMS IoU 0.55. The complete, machine-readable training call is in \texttt{scratch/}. We chose YOLO11-seg over a Hungarian-matching DETR-style detector (RF-DETR-Seg~\cite{rfdetr2025}) after a comparison on the same data split, preprocessing, and evaluator: even at its largest supported resolution, RF-DETR-Seg's raw PQ trailed YOLO11-seg by $-0.057$. This was not a matched-hyperparameter comparison (the two differ in resolution, epoch budget, and optimizer family), so it rules out RF-DETR-Seg as a drop-in replacement under its own defaults, not the architecture family in general.
+
+\subsection{Boundary Refinement}\label{sec:refiner}
+    Raw detector masks are accurate in extent but imprecise at the pixel boundary, which is exactly where the official metric is least forgiving (Section~\ref{sec:evaluation-strategy}). We refine each candidate independently: a square crop is taken around the candidate ($1.65\times$ its bounding box, minimum side 96px, $320\times320$px after resizing), passed through a U-Net refiner, and the resulting probability map is thresholded (0.45) and intersected with the original candidate mask (\emph{shrink} refinement — the refiner may only remove pixels, not add them outside the detector's proposal).
+
+    \textbf{Training data.} Positive crops are generated one per ground-truth instance per annotator (so an image with 3 annotators contributes up to $3\times$ as many crops as a single-annotator image), centered and scaled from that instance's bounding box using the same $1.65\times$-context rule as inference; we do not mine hard-negative (empty-target) crops in this recipe. Crops are augmented with random $90^\circ$ rotations, horizontal/vertical flips, and a mild gamma jitter on the first two input channels.
+
+    \textbf{Optimization.} We minimize $0.35\cdot\text{BCE} + 0.65\cdot\text{soft-Dice} + 0.15\cdot\text{boundary-}L_1$, where the boundary term compares a morphological-gradient (dilation$-$erosion, kernel 5) map of the prediction against the same map of the target, to bias the loss toward edge accuracy. We use AdamW (weight decay $10^{-4}$), initial learning rate $2\times10^{-4}$ with cosine annealing, automatic mixed precision, and batch size chosen per run as the largest of $\{8,6,4,2\}$ that fits in GPU memory (8 in all runs reported here). Per-fold refiners train for 14 epochs with a fixed seed (3407); the checkpoint with the best validation crop-Dice (evaluated each epoch on the held-out fold, threshold 0.5) is kept. The submitted refiner is fine-tuned from the fold-0 checkpoint on all 707 images for 5 epochs at $0.35\times$ the base learning rate (Section~\ref{sec:cv}); with no held-out data at this stage, we keep the final-epoch weights rather than an epoch selected by a validation metric.
+
+    Our refiner, \texttt{MediSegEdgeAttUNet}, extends this base U-Net~\cite{ronneberger2015unet} with a single \textbf{edge-guided multi-head self-attention} (EG-MHSA) block at the bottleneck (8 heads), a mechanism \emph{inspired by} EdgeAttNet~\cite{edgeattnet2025}: a $3{\times}3$ convolution over the input crop produces a single-channel edge prior, which is projected and added to the query and key (but not the value) of a standard multi-head self-attention layer over the bottleneck features, before a residual connection and layer norm. EdgeAttNet's public code lacks a usable implementation of this module, so we could not validate ours against it, and our design deviates from the published one in ways that matter: EdgeAttNet stacks \emph{two} EG-MHSA blocks with 4 heads each and reports that the edge prior lets it \emph{drop} positional encodings and shrink to 22.7M parameters (versus 31.0M for its plain-U-Net baseline); our single-block, 8-head variant instead \emph{adds} 4.2M parameters over our plain U-Net baseline (35.2M vs.\ 31.0M), matching the parameter count of what EdgeAttNet's own ablation calls ``U-Net + MHSA, no positional encoding'' almost exactly. We therefore call it edge-attention-inspired rather than a reproduction; Section~\ref{sec:evaluation} revisits what this parameter coincidence implies for our results.
+
+\subsection{Instance Resolution}
+    Refined candidates can still overlap (two proposals covering the same physical filament, or a small proposal nested inside a larger one). We remove near-duplicates whose intersection covers $\geq\!90\%$ of the smaller candidate's area, then greedily assign remaining pixels to candidates in ascending order of area (small, precise candidates claim their pixels before large ones), discarding any candidate left with fewer than 20px. This ordering outperformed confidence-first and area-descending orderings in our ablations.
+
+\subsection{Cross-Validation and Final Model}\label{sec:cv}
+    The competition provides 707 training images, each annotated by one or more of several human experts (8{,}199 instance annotations in total, all annotators used as independent training targets). We group by unique observation filename (so leakage across the train and validation boundary of a fold is prevented by construction, independent of stratification) and partition the 707 filenames into three folds (236, 236, 235) with scikit-learn's stratified $k$-fold splitter (seed 3407), stratified on the quintile of each image's reference-annotator instance count so that sparse and dense images are balanced across folds. We train one detector and one refiner per fold, holding out that fold entirely. For the final submission we select the single detector fold with the best out-of-fold PQ, and fine-tune the refiner on \emph{all} 707 images (warm-started from a held-out-verified checkpoint, 5 epochs at $0.35\times$ the base learning rate) so the deployed refiner uses the full annotated set without invalidating our cross-validated model selection.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.92\linewidth]{figures/qualitative_comparison.png}
+    \caption{Ground truth vs.\ raw detector vs.\ plain refiner vs.\ edge-attention refiner, fold-0 OOF. \textbf{(a) Improvement case}: three filaments in one active region where the edge-attention refiner recovers substantially more of the true extent than the plain refiner, most visibly the rightmost instance (per-instance IoU $0.36\rightarrow0.59$, $0.43\rightarrow0.62$, $0.39\rightarrow0.56$ for the three filaments left to right). \textbf{(b) Failure case}: three ground-truth instances where the detector produces only one surviving candidate, which straddles two of them (a merge-type error) while the third (top) is missed entirely; all three refiner configurations inherit this candidate as-is, illustrating a detector-level recall/instance-separation failure that boundary refinement cannot fix. Both panels are from the original single-seed run; the matched-parameter ablation (Section~\ref{sec:results-discussion}) did not reproduce panel (a)'s comparison on average across seeds.}
+    \label{fig:example}
+\end{figure*}
+
+% ==================================== %
+%              EVALUATION              %
+% ==================================== %
+\section{Evaluation}\label{sec:evaluation}
+
+\subsection{Evaluation Strategy}\label{sec:evaluation-strategy}
+    The competition's official metric is Panoptic Quality (PQ), following the definition of Kirillov et al.~\cite{kirillov2019panoptic} but scored by the competition's own reference implementation~\cite{selfeval2026}, which we replicated locally against that notebook's test cases. Unlike the original PQ formulation's one-to-one Hungarian matching, the competition scorer counts \emph{every} prediction-ground-truth pair with IoU above $0.5$ as a true positive (i.e.\ a single ground-truth instance can be counted as matched by more than one prediction, and vice versa), so
+    \[
+        \mathrm{PQ} = \frac{\sum_{(p,g)\in TP}\mathrm{IoU}(p,g)}{|TP| + 0.5|FP| + 0.5|FN|}.
+    \]
+    A prediction with IoU just under 0.5 scores zero \emph{and} incurs a false-positive/false-negative penalty, so near-miss boundary quality dominates the score far more than raw detection recall. Matching is done per (annotator, image) pair and micro-averaged, not averaged per-image.
+
+    Because human annotators themselves disagree, we measured a reference-annotation agreement baseline: treating one expert's annotations as the ``prediction'' and scoring them against every other expert who independently annotated the same image, under the identical official PQ rule, gives PQ$=0.3398$ (multi-annotator images only, $n{=}296$ of 707; an earlier version of this computation trivially included self-matches, inflating the figure to $0.76$ --- corrected here after catching it in review). We do not treat this as a hard ceiling on model performance (ours scores above it; Section~\ref{sec:results-discussion}) --- it is a benchmark for labeling-task reproducibility under the same matching rule.
+
+    All model-selection decisions use the leak-free 3-fold cross-validation of Section~\ref{sec:cv}. To avoid a failure mode we caught twice during development --- a change that improves one fold but does not replicate on the other two --- we additionally compute an observation-cluster bootstrap~\cite{efron1993bootstrap} (2000 resamples, PQ as a ratio-of-sums rather than a mean-of-ratios) and only accept a change when both (a)~its sign agrees across all folds and (b)~its pooled 95\% confidence interval excludes zero. Criterion (a) alone would be weak: under a symmetric null (no true effect), the probability that three independent folds all land on the same sign by chance is $2\times0.5^3=0.25$ two-sided ($0.125$ one-sided), so fold-sign-agreement by itself is only a screening heuristic, not a significance test; requiring (b) as well is what gives the combined criterion statistical weight. We report the pooled interval below for the one change that was accepted (edge-attention refiner, which satisfies both), while rejected changes are summarized in Section~\ref{sec:strengths} without individual intervals. We also do not apply a multiple-comparisons correction across the roughly dozen distinct ideas evaluated against the same 707 OOF images over the course of this project, which inflates the effective false-positive rate above the nominal 5\% for any single interval; we flag this explicitly rather than adjust for it post hoc, since the ideas were not pre-registered.
+
+\subsection{Results}\label{sec:results-discussion}
+    Table~\ref{tab:results} summarizes our out-of-fold (OOF) results under this protocol, and the corresponding public leaderboard scores where we submitted a matching variant. Note that our OOF PQ ($0.4426$, plain refiner over all 707 images) exceeds the $0.3398$ reference-annotation agreement baseline of Section~\ref{sec:evaluation-strategy}: this is not evidence the model is more \emph{correct} than a human annotator, but it is consistent with the model, trained on the pooled labels of several annotators, converging toward a consensus-like boundary that happens to match any single held-out annotator's judgment more often than two individual annotators match each other. This deserves more scrutiny than we give it here.
+
+    \begin{table}[t]
+    \centering
+    \small
+    \begin{tabularx}{\linewidth}{@{}X r r r@{}}
+    \toprule
+    Configuration & OOF PQ & SQ / RQ & Public LB \\
+    \midrule
+    Raw detector only & $0.3937$ & $0.652$ / $0.604$ & --- \\
+    \quad + refiner + resolution & $0.4426$ & $0.678$ / $0.653$ & $0.37$ \\
+    \quad\quad + edge-attention refiner & $0.4454^{\dagger}$ & ---$^{\dagger}$ & $\mathbf{0.39}$ \\
+    \midrule
+    \multicolumn{4}{@{}l}{\emph{Ablations submitted for direct comparison:}}\\
+    3-fold ensemble (standard refiner) & --- & --- & $0.37$ \\
+    3-fold ensemble (edge-attention) & --- & --- & $0.38$ \\
+    \midrule
+    \multicolumn{4}{@{}l}{\emph{Matched-param.\ ablation, all 3 folds, 2 seeds each$^{\ddagger}$:}}\\
+    Plain U-Net (31.04M params) & $0.4418$ & $0.678$ / $0.651$ & --- \\
+    + plain MHSA, no edge prior (35.24M) & $0.4432$ & $0.681$ / $0.651$ & --- \\
+    + edge-guided MHSA (35.24M) & $0.4429$ & $0.678$ / $0.653$ & --- \\
+    \bottomrule
+    \end{tabularx}
+    \caption{PQ, SQ, RQ leak-free; first two blocks over all 707 images (raw detector: TP/FP/FN $=4765/2824/3434$; $+$refiner$+$resolution: $5082/2286/3117$; PQ$=$SQ$\times$RQ). $^{\dagger}$The single-seed $0.4454$ (baseline $0.4426$ plus $\Delta=+0.0028$, 95\% CI $[0.00091,0.00476]$) is the value originally accepted under our protocol and submitted at Public LB $0.39$; the ablation below was run afterward to check it and did not reproduce it (Section~\ref{sec:results-discussion}). $^{\ddagger}$Seeds 3407, 8407; per-seed values in \texttt{output/ablation/}. Public LB is Kaggle's public score on a subset of our 180 held-out test predictions; the private leaderboard (undisclosed until the competition ends) is the basis for final ranking.}
+    \label{tab:results}
+    \end{table}
+
+    The edge-attention refiner's original per-fold deltas against the plain U-Net refiner were $+0.0062$ (fold 0), $+0.0009$ (fold 1), $+0.0012$ (fold 2); all three agreed in sign and the pooled bootstrap excluded zero (95\% CI $[0.00091, 0.00476]$), so under our stated criterion (Section~\ref{sec:evaluation-strategy}) we accepted this change and submitted it. We now believe that acceptance attributed the effect to the wrong mechanism, as the follow-up ablation below shows.
+
+    \label{sec:matched-param-ablation}\textbf{Matched-parameter ablation.} To isolate whether the edge prior itself drives this effect, or whether added bottleneck attention capacity is enough by itself, we ran two runs (seeds 3407, 8407) on all three folds for three refiner variants: a plain U-Net baseline (31.04M params, not parameter-matched), bottleneck MHSA with no edge prior (35.24M params), and the edge-attention refiner (35.24M params, differing from the no-edge-prior version by only $\sim$2{,}100 parameters, $0.006\%$ --- these two \emph{are} matched). Per-fold mean OOF PQ (base / plain attention / edge attention): fold 0 --- $0.4414$/$0.4413$/$0.4405$; fold 1 --- $0.4405$/$0.4426$/$0.4417$; fold 2 --- $0.4434$/$0.4458$/$0.4464$. By the same fold-sign-agreement lens as Section~\ref{sec:evaluation-strategy}: plain-attention-minus-base and edge-attention-minus-base are both positive with matching seed signs in two of three folds (1, 2), roughly zero in fold 0. But edge-attention-minus-plain-attention is at or below zero in two of three folds (0, 1) and sign-inconsistent in the third --- no fold shows the edge prior clearly beating plain attention. Full results, verified against Drive's raw JSON and executed notebooks for every fold, are in \texttt{output/ablation/}.
+
+    This leaves an uncomfortable result: the change we reported as our one validated improvement, and submitted at Public LB $0.39$ (vs.\ $0.37$ for the plain refiner), does not survive a follow-up check designed specifically to test it. That gap is a single pair of submissions, so it may itself be leaderboard noise; re-introducing the 3-fold ensemble on top of it lowered the public score to $0.38$ (Table~\ref{tab:results}), consistent with ensembling not helping here.
+
+    We tested whether the $\sim\!0.06$ residual gap between OOF and public-leaderboard PQ is explained by a training/test distribution shift in observation year or GONG site code. A $\chi^2$ test over the file-name metadata found no significant difference in either dimension ($p=0.42$ for year, $p=0.94$ for site), but with only 180 test images this test has limited power against small shifts, and other confounds (image quality, annotation-protocol differences) remain untested. The residual gap is not yet explained.
+
+\subsection{Strengths and Weaknesses}\label{sec:strengths}
+    \textbf{Strengths.} Five candidates were rejected under confirmation across independent folds, bootstrap intervals, or a matched public-leaderboard comparison (weighted mask fusion, threshold retuning, refiner retraining, pseudo-labeling, 3-fold ensembling). The one change that passed our original protocol, edge-guided attention, did not survive a follow-up matched-parameter, multi-seed check spanning all three folds (Section~\ref{sec:results-discussion}): the ablation instead points to attention capacity in general, not the edge prior specifically, as the more plausible source of any real effect. We see this refinement, not the original single-mechanism claim, as our most useful finding: fold-sign-agreement plus a bootstrap CI was not strict enough to attribute the effect to the right mechanism; only a matched-parameter, multi-fold follow-up could.
+
+    \textbf{Weaknesses.} As Section~\ref{sec:results-discussion} details, our original three-fold agreement conflated two mechanisms (attention capacity and the edge prior); the ablation is still limited to two seeds per fold, so we cannot rule out that more seeds would sharpen or change fold 2's edge-vs-plain-attention sign flip specifically (Future work). We do not have direct evidence the edge prior is harmful, only that, across three folds, we lack evidence it adds value beyond plain attention capacity. Near-miss boundary errors (IoU $0.3$--$0.5$) remain a major, actionable error mode independent of this finding: 955 such pairs exist across all 707 OOF images, and correcting them all (an optimistic, non-causal upper bound) would raise OOF PQ to roughly $0.50$; hard misses with no overlap are more numerous still (2{,}138 FN, 1{,}561 FP), and Figure~\ref{fig:example}(b) shows a detector-level instance-separation failure boundary refinement cannot address. The residual OOF-to-public-leaderboard gap remains unexplained beyond two ruled-out distribution-shift confounds (Section~\ref{sec:evaluation}); detector-scaling experiments (larger backbone, multi-seed ensembling) were uniformly negative.
+
+    Two further limitations: we select the submitted detector as the single best-PQ fold, which could select the easiest split rather than the best model; and the OOF-reuse optimism-bias caveat above applies here too.
+
+    \textbf{Future work.} More seeds per fold; evaluating a plain-attention (no edge prior) refiner as a resubmission candidate, since the ablation now favors it over both the submitted refiner and the baseline.
+
+% ==================================== %
+%            ACKNOWLEDGMENT            %
+% ==================================== %
+\section{Acknowledgment}\label{sec:acknowledgment}
+    % Do not change
+    The organization of the Filament Segmentation Challenge 2026 is partially supported by the U.S. National Science Foundation (NSF) under Grant No. 2209912 and 2433781, directorate for Computer and Information Science and Engineering (CSE), and Office of Advanced Cyberinfrastructure (OAC), and Grant No. 2511630, AST Division Of Astronomical Sciences and MPS Directorate for Mathematical and Physical Sciences.
+
+    The Filament Segmentation Challenge 2026 is sponsored by the U.S. National Science Foundation (NSF) National Solar Observatory (NSO).
+
+    This work utilizes GONG data obtained by the NSO Integrated Synoptic Program, managed by the National Solar Observatory, which is operated by the Association of Universities for Research in Astronomy (AURA), Inc. under a cooperative agreement with the National Science Foundation and with contribution from the National Oceanic and Atmospheric Administration. The GONG network of instruments is hosted by the Big Bear Solar Observatory, High Altitude Observatory, Learmonth Solar Observatory, Udaipur Solar Observatory, Instituto de Astrof\'{i}sica de Canarias, and Cerro Tololo Interamerican Observatory.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main}
+
+\end{document}

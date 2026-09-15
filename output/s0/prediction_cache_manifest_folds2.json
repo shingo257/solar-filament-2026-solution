@@ -1,0 +1,35 @@
+{
+  "schema_version": "s0-science-prediction-cache-v2",
+  "cache_version": "s0-science-prediction-v2",
+  "eval_size": 512,
+  "folds": [
+    2
+  ],
+  "models": [
+    "raw",
+    "v35",
+    "v34",
+    "v42"
+  ],
+  "observations": 235,
+  "elapsed_seconds": 2744.8893828,
+  "statistics": {
+    "raw": {
+      "hits": 108,
+      "built": 127
+    },
+    "v35": {
+      "hits": 108,
+      "built": 127
+    },
+    "v34": {
+      "hits": 108,
+      "built": 127
+    },
+    "v42": {
+      "hits": 108,
+      "built": 127
+    }
+  },
+  "prediction_cache": "C:\\work\\code\\ER-FlowScan\\Solar_Filament_Segmentation\\output\\s0\\prediction_cache_512"
+}

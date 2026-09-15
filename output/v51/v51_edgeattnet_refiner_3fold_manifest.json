@@ -1,0 +1,53 @@
+{
+  "_provenance": "この成果物はGoogle Drive(solar_filament_v30/artifacts/)からの再取得ではなく、2026-08-29〜30のColabセッションで実際に印字された出力をこのセッションの記録から書き起こしたもの。数値は改変していないが、原本(Drive上のJSON)と機械的な差分検証は行っていない。監査上の限界として明記する(査読2026-08-30の指摘 #3への対応)。",
+  "experiment": "v51_edgeattnet_refiner_3fold_validation",
+  "architecture": "MediSegEdgeAttUNet (EdgeGuidedMHSA bottleneck attention, single block, 8 heads, +4.2M params vs MediSegUNet baseline; 35,240,157 vs 31,037,633 total params)",
+  "methodology": "各foldでEdgeAttNet refinerを学習(他2foldで学習/該当foldで検証)、同一YOLO候補キャッシュ(solar_filament_v34/prediction_cache/oof/yolo_fold_{0,1,2})上で標準MediSegUNet refinerとペア比較、観測クラスタ・ブートストラップ(n=2000、cluster_bootstrap_ratio)でΔのCIを算出",
+  "per_fold": {
+    "fold0": {
+      "baseline_pq": 0.439288,
+      "edgeattnet_pq": 0.445492,
+      "delta": 0.006205,
+      "ci95": [0.0020894061156552625, 0.010492012535408409],
+      "frac_positive": 0.995,
+      "n_images": 236,
+      "best_crop_dice": 0.7919429118696583
+    },
+    "fold1": {
+      "baseline_pq": 0.441498,
+      "edgeattnet_pq": 0.442425,
+      "delta": 0.000927,
+      "ci95": [-0.0022020728046876436, 0.003892382483651167],
+      "frac_positive": 0.7385,
+      "n_images": 236,
+      "best_crop_dice": 0.7922366466575894
+    },
+    "fold2": {
+      "baseline_pq": 0.44705,
+      "edgeattnet_pq": 0.448292,
+      "delta": 0.001242,
+      "ci95": [-0.0019908449224935497, 0.004331396572085797],
+      "frac_positive": 0.7725,
+      "n_images": 235,
+      "best_crop_dice": 0.7930144887210223
+    }
+  },
+  "combined_2fold_01": {
+    "point_delta": 0.003617552786135625,
+    "ci95": [0.0010728247802062468, 0.006347590093392153],
+    "frac_resamples_positive": 0.998,
+    "n_images": 472,
+    "n_resamples": 2000
+  },
+  "combined_3fold_all": {
+    "point_delta": 0.0028139600988930646,
+    "ci95": [0.0009148519402719421, 0.0047559625362328835],
+    "frac_resamples_positive": 0.998,
+    "n_images": 707,
+    "n_resamples": 2000
+  },
+  "verdict": "CONFIRMED: 3-fold全結合(n=707)で95%CIがゼロを完全に除外(frac_positive=99.8%)。fold0単独は強いが、fold1/fold2単独は不確か(frac_positive 73-77%)。全fold同符号(正)であり、pseudo-labeling否定判定と対をなす肯定的結論として採用。",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "torch_version": "2.11.0+cu128",
+  "known_gap": "各foldのTP/FP/FN/SQ/RQ分解は保存しておらず、pq/ci95/frac_positiveのみ。再取得するにはyolo_fold_{0,1,2}キャッシュに対しstandard/edge双方のrefinerで再採点しPanopticQuality.summary()のtp/fp/fnを記録する必要がある(report/main.tex Future Work参照)。"
+}

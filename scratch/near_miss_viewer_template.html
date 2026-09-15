@@ -1,0 +1,688 @@
+<title>Near-Miss Inspector</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f7f5f1;
+    --surface: #ffffff;
+    --surface-2: #eeeae2;
+    --surface-3: #e4ded2;
+    --border: #ddd6ca;
+    --text: #211d17;
+    --text-muted: #6b6355;
+    --accent: #c2410c;
+    --accent-soft: #f2dcc9;
+    --gt: #0e7490;
+    --gt-soft: #cfeaf0;
+    --pred: #c2410c;
+    --pred-soft: #f6ddc9;
+    --good: #15803d;
+    --good-soft: #d9f0e1;
+    --warn: #b45309;
+    --warn-soft: #f6e3c9;
+    --bad: #b91c1c;
+    --bad-soft: #f6d9d9;
+    --shadow: 0 1px 2px rgba(33, 29, 23, 0.06), 0 8px 24px -12px rgba(33, 29, 23, 0.18);
+    --focus: #0e7490;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0e14;
+      --surface: #12161f;
+      --surface-2: #1a1f2a;
+      --surface-3: #232937;
+      --border: #2a3140;
+      --text: #ede9e0;
+      --text-muted: #9aa0ac;
+      --accent: #f0a868;
+      --accent-soft: #3a2c1c;
+      --gt: #5eead4;
+      --gt-soft: #16333030;
+      --pred: #f0a868;
+      --pred-soft: #3a2c1c;
+      --good: #4ade80;
+      --good-soft: #133621;
+      --warn: #fbbf24;
+      --warn-soft: #3a2f10;
+      --bad: #f87171;
+      --bad-soft: #3a1616;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+      --focus: #5eead4;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0b0e14;
+    --surface: #12161f;
+    --surface-2: #1a1f2a;
+    --surface-3: #232937;
+    --border: #2a3140;
+    --text: #ede9e0;
+    --text-muted: #9aa0ac;
+    --accent: #f0a868;
+    --accent-soft: #3a2c1c;
+    --gt: #5eead4;
+    --gt-soft: #163330;
+    --pred: #f0a868;
+    --pred-soft: #3a2c1c;
+    --good: #4ade80;
+    --good-soft: #133621;
+    --warn: #fbbf24;
+    --warn-soft: #3a2f10;
+    --bad: #f87171;
+    --bad-soft: #3a1616;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    --focus: #5eead4;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  header.topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.1rem 1.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+
+  header.topbar h1 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+  }
+
+  header.topbar h1 .wavelength {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+  }
+
+  .stat-strip {
+    display: flex;
+    gap: 1.6rem;
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  .stat-strip .stat { display: flex; flex-direction: column; gap: 0.1rem; }
+  .stat-strip .stat .label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+  }
+  .stat-strip .stat .value { font-size: 1rem; font-weight: 600; }
+  .stat-strip .stat .value.good { color: var(--good); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 62px);
+  }
+
+  aside.rail {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    padding: 1.1rem 0.9rem;
+    overflow-y: auto;
+  }
+
+  .filter-group { margin-bottom: 1.1rem; }
+  .filter-group .filter-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .chip[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--surface);
+    font-weight: 600;
+  }
+  .chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .case-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .case-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+  }
+  .case-item:hover { background: var(--surface-2); }
+  .case-item[aria-current="true"] {
+    background: var(--surface-3);
+    border-color: var(--border);
+  }
+  .case-item:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+  .mini-pill {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .mini-pill.good { background: var(--good-soft); color: var(--good); }
+  .mini-pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+  main.stage {
+    padding: 1.6rem 2rem 2.5rem;
+    overflow-y: auto;
+  }
+
+  .case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .case-header .filename {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .case-header .mode-pill {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 5px;
+  }
+  .mode-pill.undercoverage { background: var(--warn-soft); color: var(--warn); }
+  .mode-pill.overcoverage { background: var(--bad-soft); color: var(--bad); }
+  .mode-pill.mixed { background: var(--surface-3); color: var(--text-muted); }
+
+  .nav-buttons { display: flex; gap: 0.5rem; }
+  .nav-buttons button {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+  }
+  .nav-buttons button:hover { background: var(--surface-2); }
+  .nav-buttons button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .nav-buttons button:disabled { opacity: 0.35; cursor: default; }
+
+  .stage-grid {
+    display: grid;
+    grid-template-columns: minmax(340px, 560px) 280px;
+    gap: 1.6rem;
+    align-items: start;
+  }
+
+  .image-frame {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    line-height: 0;
+  }
+  .image-frame img { display: block; width: 100%; height: auto; }
+  .image-frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .image-frame polygon {
+    fill: none;
+    stroke-width: 2.2;
+    vector-effect: non-scaling-stroke;
+  }
+  .image-frame polygon.gt { stroke: var(--gt); stroke-dasharray: 5 3; }
+  .image-frame polygon.shrink { stroke: var(--pred); opacity: 0.95; }
+  .image-frame polygon.free { stroke: var(--good); }
+
+  .layer-toggles {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    padding: 0.32rem 0.65rem;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    user-select: none;
+  }
+  .layer-toggle .swatch { width: 0.65rem; height: 0.65rem; border-radius: 2px; flex-shrink: 0; }
+  .layer-toggle[aria-pressed="false"] { opacity: 0.4; }
+  .layer-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .swatch.gt { background: var(--gt); }
+  .swatch.shrink { background: var(--pred); }
+  .swatch.free { background: var(--good); }
+
+  .readout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .readout .metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .readout .metric-row:last-child { border-bottom: none; }
+  .readout .metric-row .metric-label { font-size: 0.72rem; color: var(--text-muted); }
+  .readout .metric-row .metric-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .readout .metric-value.gt-text { color: var(--gt); }
+  .readout .metric-value.free-text { color: var(--good); }
+  .readout .metric-value.shrink-text { color: var(--pred); }
+
+  .verdict {
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+  .verdict.good { background: var(--good-soft); color: var(--good); }
+  .verdict.bad { background: var(--bad-soft); color: var(--bad); }
+  .verdict.neutral { background: var(--surface-2); color: var(--text-muted); }
+
+  .human-vote {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .human-vote .filter-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .vote-buttons { display: flex; gap: 0.4rem; }
+  .vote-buttons button {
+    flex: 1;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    padding: 0.45rem 0.4rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .vote-buttons button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+  .vote-buttons button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  footer.legend {
+    max-width: 560px;
+    margin-top: 1.4rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.rail { border-right: none; border-bottom: 1px solid var(--border); max-height: 220px; }
+    .stage-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<header class="topbar">
+  <h1>Near-Miss Inspector <span class="wavelength">Hα 656.3nm · fold0</span></h1>
+  <div class="stat-strip">
+    <div class="stat"><span class="label">Cases</span><span class="value" id="stat-total">–</span></div>
+    <div class="stat"><span class="label">Free variant crosses 0.5</span><span class="value good" id="stat-crossed">–</span></div>
+    <div class="stat"><span class="label">Free threshold</span><span class="value" id="stat-threshold">–</span></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+    <div class="filter-group">
+      <span class="filter-label">Coverage mode</span>
+      <div class="chip-row" id="mode-filters"></div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Free variant outcome</span>
+      <div class="chip-row" id="outcome-filters"></div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Cases (<span id="visible-count">–</span>)</span>
+      <div class="case-list" id="case-list"></div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div class="case-header">
+      <div>
+        <div class="filename mono" id="case-filename">–</div>
+        <span class="mode-pill" id="case-mode-pill">–</span>
+      </div>
+      <div class="nav-buttons">
+        <button id="btn-prev" type="button">&larr; Prev</button>
+        <button id="btn-next" type="button">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="stage-grid">
+      <div>
+        <div class="image-frame">
+          <img id="case-image" alt="Near-miss crop">
+          <svg id="overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="layer-toggles">
+          <button class="layer-toggle" id="toggle-gt" aria-pressed="true" type="button">
+            <span class="swatch gt"></span>GT (annotator)
+          </button>
+          <button class="layer-toggle" id="toggle-shrink" aria-pressed="true" type="button">
+            <span class="swatch shrink"></span>shrink@0.45 (現行)
+          </button>
+          <button class="layer-toggle" id="toggle-free" aria-pressed="true" type="button">
+            <span class="swatch free"></span>free (新variant)
+          </button>
+        </div>
+        <footer class="legend">
+          点線 = 正解(アノテータ)の輪郭。実線オレンジ = 現行baseline(shrink@0.45)。
+          実線グリーン = 交差制約なしの新variant。GTと重なるほど良い予測。
+        </footer>
+      </div>
+
+      <div class="readout">
+        <div>
+          <div class="metric-row">
+            <span class="metric-label">shrink IoU</span>
+            <span class="metric-value shrink-text mono" id="metric-shrink-iou">–</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">free IoU</span>
+            <span class="metric-value free-text mono" id="metric-free-iou">–</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Δ (free − shrink)</span>
+            <span class="metric-value mono" id="metric-delta">–</span>
+          </div>
+        </div>
+        <div class="verdict" id="verdict-box">–</div>
+        <div class="human-vote">
+          <span class="filter-label">あなたの判断(この端末にのみ保存)</span>
+          <div class="vote-buttons">
+            <button data-vote="free-better" type="button">freeの方が良い</button>
+            <button data-vote="shrink-better" type="button">shrinkの方が良い</button>
+            <button data-vote="both-bad" type="button">どちらも不十分</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script id="case-data" type="application/json">__CASE_DATA_JSON__</script>
+<script>
+(function () {
+  var data = JSON.parse(document.getElementById("case-data").textContent);
+  var cases = data.cases;
+  var state = {
+    index: 0,
+    modeFilter: "all",
+    outcomeFilter: "all",
+    layers: { gt: true, shrink: true, free: true },
+  };
+
+  var STORAGE_KEY = "near-miss-inspector-votes";
+  var votes = {};
+  try {
+    votes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch (e) { votes = {}; }
+
+  function saveVotes() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(votes)); } catch (e) {}
+  }
+
+  function caseKey(c) { return c.file_name + "|" + c.shrink_iou + "|" + c.free_iou; }
+
+  function filteredCases() {
+    return cases.filter(function (c) {
+      if (state.modeFilter !== "all" && c.coverage_mode !== state.modeFilter) return false;
+      if (state.outcomeFilter === "improved" && !c.improved) return false;
+      if (state.outcomeFilter === "crossed" && !c.crossed_threshold) return false;
+      if (state.outcomeFilter === "worse" && c.improved) return false;
+      return true;
+    });
+  }
+
+  function polygonPoints(polygons, width, height) {
+    return polygons.map(function (poly) {
+      return poly.map(function (p) {
+        return (p[0] / width * 100).toFixed(3) + "," + (p[1] / height * 100).toFixed(3);
+      }).join(" ");
+    });
+  }
+
+  function renderStats() {
+    document.getElementById("stat-total").textContent = cases.length;
+    document.getElementById("stat-crossed").textContent = cases.filter(function (c) { return c.crossed_threshold; }).length;
+    document.getElementById("stat-threshold").textContent = data.free_threshold;
+  }
+
+  function renderFilters() {
+    var modes = ["all"].concat(Array.from(new Set(cases.map(function (c) { return c.coverage_mode; }))));
+    var modeHost = document.getElementById("mode-filters");
+    modeHost.innerHTML = "";
+    modes.forEach(function (mode) {
+      var chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.textContent = mode === "all" ? "すべて" : mode;
+      chip.setAttribute("aria-pressed", String(state.modeFilter === mode));
+      chip.addEventListener("click", function () {
+        state.modeFilter = mode;
+        state.index = 0;
+        renderAll();
+      });
+      modeHost.appendChild(chip);
+    });
+
+    var outcomes = [
+      ["all", "すべて"], ["crossed", "0.5を突破"], ["improved", "改善"], ["worse", "悪化"],
+    ];
+    var outcomeHost = document.getElementById("outcome-filters");
+    outcomeHost.innerHTML = "";
+    outcomes.forEach(function (pair) {
+      var chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.textContent = pair[1];
+      chip.setAttribute("aria-pressed", String(state.outcomeFilter === pair[0]));
+      chip.addEventListener("click", function () {
+        state.outcomeFilter = pair[0];
+        state.index = 0;
+        renderAll();
+      });
+      outcomeHost.appendChild(chip);
+    });
+  }
+
+  function renderList() {
+    var list = filteredCases();
+    document.getElementById("visible-count").textContent = list.length;
+    var host = document.getElementById("case-list");
+    host.innerHTML = "";
+    list.forEach(function (c, i) {
+      var item = document.createElement("button");
+      item.type = "button";
+      item.className = "case-item";
+      item.setAttribute("aria-current", String(i === state.index));
+      var label = document.createElement("span");
+      label.textContent = c.file_name.replace(".jpeg", "");
+      item.appendChild(label);
+      var pill = document.createElement("span");
+      pill.className = "mini-pill " + (c.improved ? "good" : "bad");
+      pill.textContent = c.improved ? "+" + (c.free_iou - c.shrink_iou).toFixed(2) : (c.free_iou - c.shrink_iou).toFixed(2);
+      item.appendChild(pill);
+      item.addEventListener("click", function () {
+        state.index = i;
+        renderCase();
+        renderList();
+      });
+      host.appendChild(item);
+    });
+  }
+
+  function renderCase() {
+    var list = filteredCases();
+    if (list.length === 0) return;
+    if (state.index >= list.length) state.index = list.length - 1;
+    var c = list[state.index];
+
+    document.getElementById("case-filename").textContent = c.file_name;
+    var modePill = document.getElementById("case-mode-pill");
+    modePill.textContent = c.coverage_mode;
+    modePill.className = "mode-pill " + c.coverage_mode;
+
+    document.getElementById("case-image").src = c.image;
+
+    var svg = document.getElementById("overlay-svg");
+    svg.innerHTML = "";
+    function addLayer(polys, cls, visible) {
+      if (!visible) return;
+      polygonPoints(polys, c.width, c.height).forEach(function (points) {
+        var el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        el.setAttribute("points", points);
+        el.setAttribute("class", cls);
+        svg.appendChild(el);
+      });
+    }
+    addLayer(c.gt_polygons, "gt", state.layers.gt);
+    addLayer(c.shrink_polygons, "shrink", state.layers.shrink);
+    addLayer(c.free_polygons, "free", state.layers.free);
+
+    document.getElementById("metric-shrink-iou").textContent = c.shrink_iou.toFixed(3);
+    document.getElementById("metric-free-iou").textContent = c.free_iou.toFixed(3);
+    var delta = c.free_iou - c.shrink_iou;
+    var deltaEl = document.getElementById("metric-delta");
+    deltaEl.textContent = (delta >= 0 ? "+" : "") + delta.toFixed(3);
+    deltaEl.style.color = delta > 0 ? "var(--good)" : (delta < 0 ? "var(--bad)" : "var(--text)");
+
+    var verdict = document.getElementById("verdict-box");
+    if (c.crossed_threshold) {
+      verdict.className = "verdict good";
+      verdict.textContent = "free variantがIoU 0.5を突破し、この症例はTP化しました。";
+    } else if (c.improved) {
+      verdict.className = "verdict good";
+      verdict.textContent = "free variantの方がIoUが高いですが、まだ0.5には届いていません。";
+    } else {
+      verdict.className = "verdict bad";
+      verdict.textContent = "free variantはこの症例ではshrinkより悪化しています。";
+    }
+
+    var key = caseKey(c);
+    document.querySelectorAll(".vote-buttons button").forEach(function (btn) {
+      btn.setAttribute("aria-pressed", String(votes[key] === btn.dataset.vote));
+    });
+
+    document.getElementById("btn-prev").disabled = state.index === 0;
+    document.getElementById("btn-next").disabled = state.index >= list.length - 1;
+  }
+
+  function renderAll() {
+    renderFilters();
+    renderList();
+    renderCase();
+  }
+
+  document.getElementById("btn-prev").addEventListener("click", function () {
+    if (state.index > 0) { state.index -= 1; renderCase(); renderList(); }
+  });
+  document.getElementById("btn-next").addEventListener("click", function () {
+    var list = filteredCases();
+    if (state.index < list.length - 1) { state.index += 1; renderCase(); renderList(); }
+  });
+
+  [["toggle-gt", "gt"], ["toggle-shrink", "shrink"], ["toggle-free", "free"]].forEach(function (pair) {
+    var btn = document.getElementById(pair[0]);
+    btn.addEventListener("click", function () {
+      state.layers[pair[1]] = !state.layers[pair[1]];
+      btn.setAttribute("aria-pressed", String(state.layers[pair[1]]));
+      renderCase();
+    });
+  });
+
+  document.querySelectorAll(".vote-buttons button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var list = filteredCases();
+      var c = list[state.index];
+      var key = caseKey(c);
+      votes[key] = votes[key] === btn.dataset.vote ? undefined : btn.dataset.vote;
+      saveVotes();
+      renderCase();
+    });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") document.getElementById("btn-next").click();
+    if (e.key === "ArrowLeft") document.getElementById("btn-prev").click();
+  });
+
+  renderStats();
+  renderAll();
+})();
+</script>

@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.timing import StageTimer, _percentile  # noqa: E402
+from solar_filament.timing import StageTimer, _percentile  # noqa: E402
 
 
 def test_percentile_handles_small_samples():
