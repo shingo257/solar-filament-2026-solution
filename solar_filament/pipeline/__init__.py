@@ -1,5 +1,6 @@
 """V35 pipeline primitives: ownership, refine, RLE, OOF cache, paths."""
 
+from solar_filament.pipeline.gap_close import skeleton_gap_close
 from solar_filament.pipeline.io_images import imread_unicode, imread_unicode_with_retry
 from solar_filament.pipeline.oof_cache import load_yolo_cache, load_yolo_cache_with_retry
 from solar_filament.pipeline.ownership import apply_ownership, drop_contained_indices, greedy_disjoint
@@ -20,5 +21,6 @@ __all__ = [
     "load_yolo_cache_with_retry",
     "resolve_drive",
     "shrink_mask",
+    "skeleton_gap_close",
     "v30_root",
 ]

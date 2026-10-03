@@ -82,7 +82,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | + refiner `shrink@0.45` + 排他化（全fold, リークなし） | PQ 0.4426（標準refiner） |
 | + EdgeAttNet refiner（3-fold OOF、旧報告） | Δ+0.0028（95%CI [0.000915, 0.004756]、n=707）——**§2.1.10で精密化: attention容量一般は効くがedge prior固有の効果は3fold全て未確認** |
 | 参照アノテーション一致ベースライン（訂正済み、§2.1.7） | PQ 0.3398（複数アノテータ観測296枚限定） |
-| LB 1位クラスタ | 0.55（2026-08-30時点） |
+| LB 上位クラスタ（0.55〜0.56、38チーム） | **テストセットリーク由来と判断・追走しない（2026-09-15、§2.1.11）** |
 
 **主因は境界品質。** 確定構成適用後も near-miss（IoU 0.3〜0.5）が 920 件残り、
 それが全部 TP 化すれば PQ 約 0.50。PQ の分母は near-miss → TP の変換に対して不変
@@ -659,6 +659,104 @@ base 0.4418 < edge_att 0.4429 < plain_mhsa 0.4432(**plain_mhsaが
 全fold分`output/ablation/`に保存済み(3fold全て機械照合済み、
 `matched_param_ablation_all_folds_summary.json`に統合解析あり)。
 
+### 2.1.11 【重要】リーダーボード上位クラスタはテストセットリーク由来と判明、追走を明確に中止(2026-09-15)
+
+Public LB 0.55〜0.56に多数のチームが並ぶ異常なクラスタ(2026-09-15時点で
+上位56チーム中、0.56が3チーム・0.55が35チームと完全一致)について、Kaggle
+公式ディスカッションフォーラムを直接調査した。
+
+**検証済みの事実(JAB100氏の投稿、`discussion/728062`。Raffi Ardhi Naufal氏が
+メタデータレベルで独立に再現・確認済み):** 競技のテストセット180枚中139枚
+(77.2%)が、公開データセットMAGFiLO 1.0(正解アノテーション付き)と**バイト
+単位で完全一致**している。JAB100氏は実際に自モデル予測をMAGFiLO 1.0の正解へ
+差し替えて提出し、スコアが0.73→0.82に跳ね上がることを確認した。フォーラムの
+別の分析(未検証の推測、`discussion/737177`)では、この重複が2つのモードで
+悪用されうるとされる: (1)重複77%分は公開正解をそのまま提出・残り23%は自モデル
+予測という直接ブレンドで0.5〜0.66に着地、(2)リーク正解を学習データへ混入して
+再学習する"洗浄"で0.45〜0.55帯に着地(この場合リーダーボード再採点では検出
+不可能)。35チームの0.55完全一致クラスタと3チームの0.56クラスタは、この数値
+予測とよく整合する。
+
+**運営(Azim Ahmadzadeh氏)は複数スレッドで一貫して以下を明言している
+(直近は6日前):**
+> "our evaluation is not based on the scores shown in the leaderboard...
+> Submissions without a decent strategy will NOT be rewarded in any ways."
+> "Any PQ score of greater than 0.35 is of great value to us."
+
+評価は§1に記載の**定量70%+定性30%(パイプラインの妥当性・再現性・コード
+品質・個々の予測の判定)の合議制**であり、リーダーボードは一次フィルタに
+過ぎないと明言されている。またMAGFiLO本家データセットの学習利用は競技規約
+(Rules §2.6、既確認済み)で明確に禁止されているため、このリークを利用する
+ことは**規約違反**であり、追走してはならない。
+
+**結論・今後の方針への反映:**
+1. **0.55の壁はモデルの実力差ではなくほぼ確実にテストリーク由来と判断し、
+   これ以上追走しない。** 自チームのPublic 0.39(V52)は、リークを一切使わない
+   誠実なモデルとしては運営の物差し(0.35超で価値あり)の上で妥当な位置にある
+   (0.39〜0.40帯に他チーム十数件が集中しており、これがおそらく"正直な"ティア
+   の実態)
+2. 自チームはMAGFiLO本家の正解アノテーションを一度も学習に使っていない
+   (pseudo-labeling実験は別出典のGONG生データ+自社モデル生成ラベルのみ、
+   §2.1参照)。この点をreport/main.texに明記し、リーク問題が公になった
+   以上の信頼シグナルとして活用する
+3. 定性30%(報告書・再現性・コード品質)への投資を最優先級として継続する
+4. 競合の公開コード(GitHub、誠実なティアの技術動向)を調査し、改善レバーの
+   候補を洗い出した。**ただし着手前にコードを再確認したところ、boundary
+   loss(境界マップのL1損失)は実はV30から一貫して`refiner_loss`に含まれて
+   おり、未試行という前回の分析は誤りだったと判明(instrument-before-guessing、
+   §2.1.12参照)。** 実際に未試行なのは`EMA/SWA`・refiner入力のマルチ
+   チャンネル化・スケルトンベースのギャップ閉合の3つ(優先順位は
+   `WINNING_STRATEGY_2026-08-29.md` §6.12に記載、訂正済み)
+
+一次情報: Kaggle ディスカッション
+[728062](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/728062)・
+[737177](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/737177)。
+
+### 2.1.12 【訂正】boundary lossは既に実装済み、実装着手前の再確認で発覚(2026-09-15)
+
+§2.1.11で「未試行の改善レバー」として挙げた4項目のうち、boundary loss
+(境界重視損失)の追加に実際に着手しようとして`scratch/build_v51_edgeattnet_
+refiner.py`等の実際の学習コードを読み直したところ、`refiner_loss`関数が
+既に以下を実装していることが判明した:
+
+```python
+def boundary_map(tensor):
+    dilation = F.max_pool2d(tensor, 5, stride=1, padding=2)
+    erosion = -F.max_pool2d(-tensor, 5, stride=1, padding=2)
+    return torch.clamp(dilation - erosion, 0, 1)
+
+def refiner_loss(logits, targets):
+    region = 0.35 * F.binary_cross_entropy_with_logits(logits, targets) + 0.65 * soft_dice_loss(logits, targets)
+    edge = F.l1_loss(boundary_map(logits.sigmoid()), boundary_map(targets))
+    return region + 0.15 * edge
+```
+
+`grep`で確認したところ、この`refiner_loss`は**V30(最初の入賞狙いバージョン)
+からV51・matched-parameter ablationまで一言一句変わらず使われ続けている。**
+つまりbase/plain_mhsa/edge_attのmatched-parameter ablation(§2.1.10)は
+すべてこの境界損失込みで学習されており、「boundary lossを足せば伸びるか」
+という前回の分析の前提そのものが誤りだった。
+
+**教訓([[feedback-instrument-before-guessing]]の実践例、今回は実装コードの
+事前確認という形で):** 前回の分析は`solar_filament/models/mediseg_
+models.py`の`CombinedLoss`(BCE+Diceのみ、実際には現行パイプラインでは
+未使用の旧クラス)だけを見て「境界損失なし」と判断してしまい、実際に学習
+ループで使われている`refiner_loss`(notebook builderスクリプト内に
+埋め込まれた文字列コード)を確認していなかった。**実装に着手する前に
+「本当に未試行か」を実コードで確認する**という、このプロジェクトが繰り返し
+実践してきた規律を、今回は分析側で一度踏み外し、実装直前の確認で自己修正
+できた。
+
+**再整理した優先順位(WINNING_STRATEGY_2026-08-29.md §6.12を訂正済み):**
+1. EMA/SWA(重み平均) — 確認済みで未試行、低コスト
+2. refiner入力のマルチチャンネル化(距離変換・binary seed) — 確認済みで
+   未試行(現状は3chの色画像crop部分ですきりの入力)
+3. スケルトンベースのギャップ閉合 — 確認済みで未試行
+4. (副次)既存boundary lossの強化 — 「初導入」ではなく「現行の粗い
+   morphological-gradient定式化(重み0.15固定)を、距離変換ベースの
+   より精密なboundary loss(例: Kervadecらのdistance-transform boundary
+   loss)へ置き換える」という、新規軸ではなく改良軸として位置づけ直す
+
 ### 2.2 科学・実運用上の位置づけ
 
 V35は、公式PQに整合した**競技用基準モデル**である。全fold OOFの改善は確認済みだが、
@@ -850,3 +948,5 @@ HANDOVER §14 の要約。いずれも実測で裏付けられた失敗経路。
 - overlap のある CSV をそのまま提出する
 - 公開ノートブックの申告スコアを、同一条件の再現なしに性能根拠として扱う
   （申告 0.69 は LB 1位 0.48 を上回るため、この LB の値ではありえない。V33 の実測は 0.33）
+- **LB 0.55〜0.56 クラスタを追走する。** テストセット77.2%がMAGFiLO 1.0と重複する
+  リーク由来と判断済み（§2.1.11）。MAGFiLO本家データセットの学習利用は規約違反

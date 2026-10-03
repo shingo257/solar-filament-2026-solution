@@ -585,6 +585,65 @@ agreement分析を含む新パラグラフ)・§3.3 Strengths/Weaknesses(「prot
 
 詳細はREADME.md §2.1.10参照。
 
+### 6.12 【重要】リーダーボードリーク判明・追走中止、競合コード調査に基づく新優先順位(2026-09-15)
+
+Kaggle公式ディスカッションフォーラムを実ブラウザで調査した結果、Public LB
+0.55〜0.56に38チームが並ぶ異常なクラスタが、テストセット180枚中77.2%が
+公開MAGFiLO 1.0(正解アノテーション付き)とバイト単位で完全一致するという
+検証済みのデータリーク(`discussion/728062`、JAB100氏の投稿、独立に再現
+確認済み)に由来すると判明した。運営も複数スレッドで「リーダーボードでは
+なく定量70%+定性30%の合議制で評価する」「0.35超で十分価値がある」と
+明言しており、MAGFiLO本家の学習利用は規約違反でもある。**結論: 0.55の壁は
+追走しない。詳細はREADME.md §2.1.11参照。**
+
+この調査と並行して、GitHub上の公開ソリューション(誠実なティアの技術動向)
+を調査し、自チームが一度も試していない改善レバーを特定した:
+
+| リポジトリ | 手法 |
+|---|---|
+| `gopi470/VisionX` | YOLO11+CLAHE連結成分(recall強化)→4chクロップ(raw+CLAHE+binary seed+距離変換)→smp.Unet refiner(BCE+Dice+**boundary loss**、**EMA/SWA**、hard-negative mining)→6-passTTA+**スケルトンベースのギャップ閉合** |
+| `srivatsav-kannan/solar-seg` | コンパクトU-Net単体、Public LB 0.31(「誠実な」下限の参考点) |
+
+**【2026-09-15、実装着手直前に訂正】以下の優先順位1(boundary loss)は
+誤りだった。** 実装に入る前に`scratch/build_v51_edgeattnet_refiner.py`等の
+実コードを再確認したところ、`refiner_loss`関数が既にregion loss(BCE+Dice)
+とboundary loss(境界マップのL1損失、重み0.15)の合成になっており、
+**V30から一言一句変わらず全refiner学習(matched-parameter ablation含む)で
+使われ続けていた。** 前回の分析は`mediseg_models.py`の`CombinedLoss`
+(実際には未使用の旧クラス)だけを見て「境界損失なし」と誤判定していた。
+詳細はREADME.md §2.1.12。優先順位を以下の通り訂正する。
+
+**新しい優先順位(既に複数fold検証で否定済みのレバー——検出器解像度/
+augmentation/モデルサイズ強化、マスクレベルWBF/multi-seedアンサンブル、
+RF-DETRとのクロスアーキテクチャアンサンブル、refiner再学習V46/V47、
+pseudo-labeling、edge prior固有効果、TTA、watershed、~~boundary loss~~
+(既に実装済み)は再挑戦しない):**
+
+1. **EMA/SWA(重み平均)の追加(優先度: 最高、低コスト)** — 実コード確認済みで
+   genuinely未試行。refiner学習に安価に追加でき、経験的に無コストに近い
+   改善が出ることが多い。
+2. **refiner入力のマルチチャンネル化(優先度: 高)** — 実コード確認済みで
+   genuinely未試行(現状`InstanceCropDataset`は3ch色画像cropのみ)。距離変換
+   マップ・binary seedチャンネルの追加。VisionXの設計そのもの。
+3. **スケルトンベースのギャップ閉合(優先度: 中)** — 実コード確認済みで
+   genuinely未試行。watershed(過剰結合の分離)とは逆方向。fragmentationした
+   細い構造の再接続に特化した後処理。
+4. **(副次・優先度低)既存boundary lossの定式化を強化** — 「初導入」では
+   なく「現行の粗いmorphological-gradient定式化(重み0.15固定)を、距離変換
+   ベースのより精密なboundary loss(例: Kervadecらのdistance-transform
+   boundary loss)へ置き換える」という改良軸として位置づけ直す。
+5. **PQのIoU>0.5断崖を意識した閾値較正(優先度: 中)** — 現行の
+   drop_contained/refiner閾値探索はすべて経験的グリッドサーチ。
+6. **密集シーンへの学習サンプリング重み付け(優先度: 中)** — 診断済みの
+   主要失敗モード(密集シーンでの検出漏れ)への、解像度/augmentation/
+   モデルサイズ強化とは異なる軸。
+7. **SAM2をpromptable refinerとして使う(優先度: 低・大きな賭け)** —
+   YOLO検出をbox/pointプロンプト化。過去のアーキテクチャ差し替え
+   (RF-DETR・EdgeAttNet)はいずれも失敗しているため期待値は不確実。
+
+2026-09-15、ユーザーの指示によりドキュメント更新後、上記1〜3(EMA/SWA→
+refinerマルチチャンネル化→スケルトンギャップ閉合)を優先度順に着手する。
+
 ### 6.5 優先順位の再整理(2026-08-30時点)
 
 1. **primer.html・learn-architecture.html等の公開Artifactの訂正**
@@ -595,3 +654,93 @@ agreement分析を含む新パラグラフ)・§3.3 Strengths/Weaknesses(「prot
 4. §5に挙げた未調査項目(OOF-Publicギャップの真因、自己評価notebook精読) — 
    低優先度のまま
 5. 閾値再チューニング(§6.3) — 完了・現状維持で決着、これ以上追わない
+
+### 6.13 §6.12優先度1〜3のパイロット準備完了、Colab実行待ち(2026-09-15)
+
+fold0パイロット3本のnotebook・実装をローカルで検証済み(構文チェック・
+ユニットテスト・CPUスモークテスト)、Colab実行のみ残っている状態。
+
+| 優先度 | 内容 | builder script | notebook | ローカル検証 |
+|---|---|---|---|---|
+| 1 | EMA(重み平均) | `build_v54_colab_ema_pilot.py` | `solar_filament_v54_ema_pilot_fold0_colab.ipynb` | ast全セル・EMA+refiner_lossのCPUスモークテスト |
+| 2 | refinerマルチチャンネル化 | `build_v55_colab_multichannel_refiner_pilot.py` | `solar_filament_v55_multichannel_refiner_pilot_fold0_colab.ipynb` | ast全セル・3ch/5ch両方のCPUスモークテスト(学習・推論) |
+| 3 | スケルトンギャップ閉合 | `build_v56_colab_gap_closure_probe.py`(--fold 0/1/2対応) | `solar_filament_v56_gap_closure_probe_fold{0,1,2}_colab.ipynb` | `tests/test_gap_close.py`7件全パス(202件中) |
+
+優先度3は学習不要(既存の標準refinerチェックポイントを再利用した推論のみ)
+のため、fold0〜2を1回のColabセッションで通しても10〜20分×3程度で済む見込み。
+優先度1・2はfold0のみ先に実行し(各1〜1.5時間)、有望な結果が出た場合のみ
+fold1・fold2へ展開する(単一foldのbestを一般化しない、という本プロジェクト
+一貫の規律に従う)。
+
+### 6.14 優先度3(スケルトンギャップ閉合)fold0・fold1実行結果: 不採用(2026-09-27)
+
+Colab実行完了(fold0: 236画像を18.5分、fold1: 236画像を19.5分、いずれも推論のみ)。
+
+**fragmentation診断**: proposalの13〜15%が複数連結成分に分断していた
+(fold0: 1722 proposal中13.3%、最大9成分。fold1: 1673 proposal中15.1%、最大8成分)。
+分断は確かに存在する。
+
+**max_gapスイープ結果(OOF PQ)**:
+
+| fold | baseline(§6.11実測) | 0.0(現行再現) | 4.0 | 8.0 | 16.0 | sweep内最大Δ |
+|---|---|---|---|---|---|---|
+| 0 | 0.4393 | 0.4357 | 0.4357 | 0.4357 | 0.4361 | +0.0004 |
+| 1 | 0.4415 | 0.4401 | 0.4401 | 0.4401 | 0.4401 | ≈0.0000 |
+
+- **ギャップ閉合の効果は実質ゼロ。** 分断が13〜15%あるにもかかわらず、
+  `max_gap` を16pxまで広げてもPQは±0.0004以内。分断proposalの多くは
+  FP側の断片か、IoU≥0.5のTP判定を左右するほどの画素変化を生じないと解釈。
+  fn≈1000が依然として最大のロス源であり、fragmentationは主失敗ではなかった。
+- 独立2foldで効果ゼロが一致したため、**優先度3は不採用で確定**。
+  fold2は結果追記の余地を残すが、採否を変える必要性はない。
+- **再現ギャップの記録**: `max_gap=0.0`(現行のまま)でもbaselineより
+  fold0 −0.0036 / fold1 −0.0014と系統的に低い。probe側の再実装
+  (推論〜採点パス)とmatched-parameter ablation本筋の間に小さな差分
+  (非決定性を含む)があると考えられる。同一probe内のsweep比較には影響しないが、
+  baselineとの絶対値比較には注意。
+
+**notebook保守の教訓**: Colab実行中に2件のバグを修正済み
+(1: cell2の`shutil`未import。2: `from __future__ import annotations`を含む
+gap_close.pyをセルにverbatim埋め込むと、対話実行では`annotations`名が
+`_Feature`オブジェクトに上書きされる — 今後.pyをセル埋め込みする際は
+同名のモジュールレベル変数との衝突に注意)。修正は`annotations`→
+`annotations_by_image`のリネームで対応、モジュール本体は不変。
+
+残る改善レバーは優先度1(EMA, v54)と優先度2(マルチチャンネル化, v55)。
+fold0パイロット(各1〜1.5時間)の実行結果待ち。
+
+### 6.15 優先度1・2のfold0パイロット実行結果(2026-09-27)
+
+Colab実行完了(各4本学習、fold0のみ)。
+
+| pilot | 構成 | seed別PQ | 2seed平均 | vs参照値(0.4414) | 判定 |
+|---|---|---|---|---|---|
+| v55 multichannel | baseline(3ch) | 0.4420 / 0.4408 | 0.4414 | ±0.0000 | — |
+| | multichannel(5ch=色+seed mask+距離変換) | 0.4218 / 0.4198 | 0.4208 | **−0.0206** | **不採用確定** |
+| v54 EMA | baseline | 0.4413 / 0.4418 | 0.4416 | +0.0002 | — |
+| | ema(decay=0.999) | 0.4421 / 0.4420 | 0.4421 | **+0.0005** | 要fold1/2確認 |
+
+- **v55(マルチチャンネル化)は明確な悪化で不採用。** Δ−0.0206はseed間変動
+  (σ≈0.001)を桁で上回り、両seedで符号一致。seedマスク+距離変換の追加chは
+  refiner学習を阻害した(train/inferenceのseed生成差異が原因の可能性、
+  V46の設計判断参照)。fold1/2への展開は行わない。
+  **【手法上の注記(2026-10-02、PR #181 の Codex review 指摘)】** v55 builderは
+  検証Datasetでも`augment=False`のまま共有RNG(`_seed_rng`)から`perturb_seed`を
+  呼ぶため、5ch構成ではepochごとに検証入力(seedマスク・距離変換)が変わり、
+  `crop_dice`によるbest epoch選択にノイズが入っていた。影響は5ch構成の
+  checkpoint選択のみ(3ch baselineは先頭3chのみ使用で影響なし、最終の
+  OOF PQ評価はYOLO proposalを入力とする決定的な経路)。Δ−0.0206はこの選択
+  ノイズで説明できる幅を大きく超えるため不採用の判断は維持するが、将来
+  多チャンネル入力を再検討する場合は検証proposalを固定(事前計算または
+  index由来の決定的RNG)すること。記録との整合のため builder 自体は変更しない。
+- **v54(EMA)は微小ながら正。** Δ+0.0005、2/2seedで正の一致。ただしプロジェクト
+  一貫の「意味ある改善」の目安+0.005を大きく下回る。EMA本来の期待効果である
+  seed間分散の縮小は観測された(pstdev 0.00023→0.00002)。fold1・fold2の
+  notebookを生成済み(`--fold 1/2`対応をbuilderに追加)——符号一致が独立
+  2foldで確認できれば採用検討、ただし効果量が実務閾値に遠く及ばないため
+  優先度は低い。
+  **(2026-10-02追記)** fold1・fold2を1回のColabセッションで直列に回す統合版
+  `solar_filament_v54_ema_pilot_fold1_2_colab.ipynb`を追加(`--folds 1 2`)。
+  中身は単独fold版と同一で、途中再開(Driveのpartial JSONから完了済みrunを
+  飛ばす)・ピークVRAM/所要時間のmanifest記録・fold0を含む全foldの採否判定
+  セルだけを足した。見込み3〜3.5時間。
