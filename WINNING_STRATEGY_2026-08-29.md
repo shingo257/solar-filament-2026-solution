@@ -522,8 +522,8 @@ seed間ノイズ(std 6-8e-4)より小さく、「3fold全て符号一致」と�
 追加seed確認や差し戻し検討ではなくこの選択肢)。** Abstract・Table 1・§3.2 Results・
 §3.3 Strengths/Weaknesses/Future workを全面改訂し、「唯一検証を生き残った改善」という
 主張を撤回して、この反転自体を主要な知見として報告する構成に変更。tectonicで再コンパイル・
-overfull hbox解消・page1-4に本文収納を再確認済み。詳細はメモリ
-`project-solar-filament-v35-plan.md`の該当エントリ参照。
+overfull hbox解消・page1-4に本文収納を再確認済み。詳細は
+README.md §2.1.9参照。
 
 **未確定のまま残ること:** ablation自体n=2・fold0限定なので断定はできない。提出モデル
 (現在Public 0.39のedge-attention refiner)をplain refinerへ差し戻すかは未決定。
@@ -539,7 +539,7 @@ seed間で一致しないと判明、「attention hurts」ではなく「証拠�
 own false positive」という不正確な表現を修正、(4) notebook実行証跡
 (execution count 0)・manifestのチャット転記という監査可能性の欠如を
 本文に明記、(5) Figure 2キャプションに「旧単一seed runのもの、平均では
-再現せず」の注記を追加。詳細はメモリ`project-solar-filament-v35-plan.md`
+再現せず」の注記を追加。詳細はREADME.md §2.1.9
 参照。20箇所以上の再トリムを経てtectonicで本文4ページに再収納。
 
 ### 6.11 【完了・確定】Gドライブ直接検証+3fold matched-parameter ablation完走(2026-08-31)
@@ -583,7 +583,7 @@ agreement分析を含む新パラグラフ)・§3.3 Strengths/Weaknesses(「prot
 再提出候補として検討」という新しい実務提言を追加)を改訂。tectonicで
 再コンパイル・overfull hbox解消・page1-4本文収納を再確認。
 
-詳細はメモリ`project-solar-filament-v35-plan.md`参照。
+詳細はREADME.md §2.1.10参照。
 
 ### 6.5 優先順位の再整理(2026-08-30時点)
 

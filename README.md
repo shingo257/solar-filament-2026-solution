@@ -13,9 +13,8 @@ Filaments** への取り組み。GONG の H-Alpha 全面画像（2048×2048）�
   （公式Overleafテンプレート準拠、著者情報記入済み、**4回の外部査読を反映**、
   tectonicでローカルコンパイル済み・成功、[`report/main.pdf`](report/main.pdf)、
   **本文が実際に4ページへ収まり**page5はAcknowledgment/Referencesのみ。
-  提出前に要ユーザー判断: `report/`・`output/v51-v53`・関連notebookは
-  git未追跡（commit要）、requirements.txtは`>=`指定のまま（正式runの
-  `pip freeze`が必要）。査読対応の詳細は
+  `report/`・`output/v51-v53`・関連notebookはcommit済み。提出前の残作業:
+  requirements.txtは`>=`指定のまま（正式runの`pip freeze`が必要）。査読対応の詳細は
   `WINNING_STRATEGY_2026-08-29.md` §6.6-§6.7 参照）
 - パイプライン全体を示す単一notebook: [`solar_filament_master_pipeline_colab.ipynb`](solar_filament_master_pipeline_colab.ipynb)
   （前処理→YOLO 3-fold学習→EdgeAttNet refiner学習→V52提出物生成→RLE検証、

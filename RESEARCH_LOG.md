@@ -50,7 +50,7 @@
 **注意: 上記はすべてsemantic (pixel-level) IoU/Dice指標であり、我々が
 使うPQ(instance-level、IoU>0.5の崖、annotator×image単位のmicro集計)
 とは定義が異なる。論文化する際は指標の違いを明示し、直接比較しないこと。**
-(プロジェクト内の一貫した注意点。[[project-solar-filament-official-metric]])
+(プロジェクト内の一貫した注意点。README.md §1参照)
 
 BigDataCup「Solar Filament Segmentation」自体は2026年が初開催で、過去大会・
 優勝手法は存在しない(2026-08-29確認)。
