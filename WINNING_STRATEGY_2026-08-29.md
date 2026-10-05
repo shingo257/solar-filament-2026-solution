@@ -744,3 +744,75 @@ Colab実行完了(各4本学習、fold0のみ)。
   中身は単独fold版と同一で、途中再開(Driveのpartial JSONから完了済みrunを
   飛ばす)・ピークVRAM/所要時間のmanifest記録・fold0を含む全foldの採否判定
   セルだけを足した。見込み3〜3.5時間。
+
+### 6.16 優先度6(密集シーンへの学習サンプリング重み付け)fold0パイロット実行・不採用(2026-10-05)
+
+§6.12の残レバーのうち優先度6を実装。診断済みの最大ロス源は密集シーン
+(gt_count_mean 10-21)での検出漏れ(hard FN 2138件、hard FP 1561件を37%
+上回る、2026-08-16診断)であり、これはproposal自体が存在しないGTへの
+失敗なのでrefinerではなく**検出器(YOLO)側のレバー**として実装した。
+
+| 項目 | 内容 |
+|---|---|
+| builder | `scratch/build_v57_colab_dense_oversample_pilot.py`(--fold 0/1/2) |
+| notebook | `solar_filament_v57_dense_oversample_fold{N}_colab.ipynb` |
+| ヘルパー | `solar_filament/pipeline/dense_oversample.py`(`dense_cut_value`/`dense_replication_counts`)、`tests/test_dense_oversample.py` 8件パス |
+| 設計 | V30のYOLO学習と完全同一のレシピで、`baseline` vs `dense2x`(trainサンプルの非crowd GT数がfold内75分位点以上なら複製して出現頻度2倍) × seed(3407,8407) = 4本 |
+| 評価 | raw PQ(生YOLO proposals→ownership)と refined PQ(既存標準refinerを使い回した確定構成)の2段 + dense/sparseスライス別FN |
+| 工数 | YOLO 70epoch×imgsz1280を4本直列 — A100で数時間〜半日規模。manifestをDriveへ逐次追記するので中断再開可 |
+| ローカル検証 | builder全コードセルのastパース通過(fold0生成確認)、ヘルパーの単体テスト8件 |
+
+採否はプロジェクト規律通り: 2seedで符号一致すればfold1・2へ独立確認を広げる。
+denseスライスのFNが減らない場合はメカニズム不成立として不採用。
+
+**fold0実行結果(2026-10-05、Colabで全4本完走・manifest
+`artifacts/v57_dense_oversample_fold0_manifest.json`):**
+
+| run | raw PQ | refined PQ | TP | FP | FN | FN(dense) | FN(sparse) |
+|---|---|---|---|---|---|---|---|
+| baseline s3407 | 0.3865 | 0.4259 | 1664 | 841 | 1085 | 532 | 553 |
+| baseline s8407 | 0.3889 | 0.4281 | 1646 | 782 | 1103 | 553 | 550 |
+| dense2x s3407 | 0.3803 | 0.4245 | 1760 | 1070 | 989 | 483 | 506 |
+| dense2x s8407 | 0.3787 | 0.4197 | 1673 | 928 | 1076 | 534 | 542 |
+
+paired Δ(dense2x − baseline): seed3407 Δraw **−0.0062** / Δrefined **−0.0014** /
+ΔFN(dense) **−49**; seed8407 Δraw **−0.0102** / Δrefined **−0.0085** /
+ΔFN(dense) **−19**。
+
+**判定: 不採用(fold0パイロットで終了、fold1・2には展開しない)。**
+
+- **メカニズムは作動したがネットで負**: dense FNは2seedとも減少(−49/−19、
+  TP +96/+27)と仮説通り密集シーンの検出リコールは上がった。しかし同時に
+  FPが +229/+146 と爆増し、PQの分母増(TP+0.5(FP+FN))が回収分を完全に
+  上回った。「密集画像を2倍見せる→密集シーンで過剰提案する」という
+  副作用がFN改善を食い潰す形。メカニズム不成立(FNが減らない)ではなく、
+  FN改善のコストが効果を超えることが確定した。
+- **方法論上の注意**: 今回のrun内baselineのrefined PQ(0.426-0.428)は
+  歴史的fold0参照値(0.4393)より0.011-0.015低い。検出器を新規に学習
+  し直すとproposal分布が変わり、同じpretrained refinerを通しても絶対値が
+  ずれる(検出器seed差はrefiner学習のseed差 σ≈0.001 よりはるかに大きい
+  別ノイズ源)。評価はnotebook設計通りrun内paired比較のみを信用する。
+- **残る含意**: dense FNを減らす手段自体は存在するが、増えた提案の品質を
+  制御しないとPQでは損になる。検出器リコールを上げるだけではこの
+  パイプラインでは報われない。次に試すなら「提案品質側」のレバー
+  (優先度5: IoU>0.5断崖に対応した閾値・conf較正、または低品質提案の
+  除外機構)が筋。oversampling系の亜種(extra回数・閾値変更)も同じ
+  FP副作用を持つため推奨しない。
+
+
+**2026-10-05 回収・再開契約補修:** 元 PR #239 の既存 fold0 manifest を Drive から
+読取りで照合した。SHA256 は
+`84f254f835f706631b229fc3a059f17adc033bc2a99b5e29292bb13c6f46b7ef`。
+上記4runの数値と一致し、不採用判断と提出正本は維持する。補修版での GPU 学習・
+Colab 実行・独立性能受入は未実施。元 manifest は入力/重み指紋と GPU/VRAM 計測を
+含まないため、補修版の再開入力には使わず、歴史的な実行記録として保持する。
+
+dataset・checkpoint・manifest の再開時は、注釈・fold・前処理画像・refiner・初期 YOLO 重み・生成コード
+の SHA256 と実験設定を照合し、不一致や指紋欠落で停止する。完了結果の再利用では
+checkpoint 本体の SHA256 も照合する。初期 YOLO は実際に解決した checkpoint パスの
+SHA256 を固定し、未完了 arm の load 前にも照合する。新規実行時の manifest は GPU 名・PyTorch の
+ピーク割当 VRAM・所要時間・UTC 完了時刻を記録する。計測は今回の実行範囲に限定し、
+新規学習＋評価・途中学習の再開＋評価・完了 checkpoint の評価のみを区別する。
+過去の中断セッションの学習時間/GPU/VRAM は未取得と明示する。Colab compute units は runtime API
+から取得できないため null と理由を残し、セッション UI で別途記録する。
+これは競技用探索 pilot の保守であり、S1 登録契約と blocked gate は変更しない。

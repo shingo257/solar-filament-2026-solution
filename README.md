@@ -757,6 +757,13 @@ models.py`の`CombinedLoss`(BCE+Diceのみ、実際には現行パイプライ�
    より精密なboundary loss(例: Kervadecらのdistance-transform boundary
    loss)へ置き換える」という、新規軸ではなく改良軸として位置づけ直す
 
+
+**(2026-10-05、V57 記録回収)** 密集シーン oversampling の既存 fold0 pilot は
+2seed とも paired refined PQ が悪化し、不採用。既存 Drive manifest の4runを
+読取りで照合した（詳細・SHA256 は WINNING_STRATEGY §6.16）。回収版は入力・重みの
+指紋による再開契約と CPU テストを補修し、GPU 実行・独立受入は未実施。
+fold1/2 の追加実験・採用・提出構成の変更は行わず、S1 blocked gate は維持する。
+
 ### 2.2 科学・実運用上の位置づけ
 
 V35は、公式PQに整合した**競技用基準モデル**である。全fold OOFの改善は確認済みだが、
