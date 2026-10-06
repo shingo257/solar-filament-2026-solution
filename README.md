@@ -974,3 +974,11 @@ HANDOVER §14 の要約。いずれも実測で裏付けられた失敗経路。
 境界項のみを距離変換の離散近似に置き換える試験で、CPU の数値・入力契約・notebook 同期を検証した。
 入力・検出器・実際の初期状態と完了 checkpoint の指紋を記録し、旧 v54 baseline は既定で再利用しない。
 過去の GPU 結果を新しい受入証拠として採用せず、学習・独立 fold 評価は別途必要。
+
+
+### v60 copy-paste pilot の CPU 回収版
+
+`scratch/build_v60_copypaste_pilot.py --fold {0,1,2}` で notebook を生成する。
+同じ dataset・seed・訓練レシピで `copy_paste=0` と `0.2` だけを変える試験。
+入力と実 checkpoint の契約を確認し、旧 v57 baseline は再利用しない。この v60 契約で実行済みの baseline 記録だけを明示 opt-in で取り込める。
+CPU 契約検証は GPU 訓練・独立 OOF 受入を代替しない。
