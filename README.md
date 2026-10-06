@@ -38,6 +38,15 @@ Filaments** への取り組み。GONG の H-Alpha 全面画像（2048×2048）�
   全3fold分の生JSON・実行済みnotebookをGドライブと機械照合し`output/ablation/`
   に保存済み。ビルダーは`scratch/build_matched_param_ablation.py --fold {0,1,2}`）
 
+- v58 提案 confidence 掃引（学習なし）:
+  [`fold0`](solar_filament_v58_conf_sweep_fold0_colab.ipynb)・
+  [`fold1`](solar_filament_v58_conf_sweep_fold1_colab.ipynb)・
+  [`fold2`](solar_filament_v58_conf_sweep_fold2_colab.ipynb)。
+  `scratch/build_v58_conf_sweep_probe.py --fold {0,1,2}` で再生成する。
+  CPU 契約のみ検証済み。入力・重み・評価処理の SHA256 が変わった manifest は
+  再利用せず保持する。欠損 checkpoint は部分実行として記録し、探索結果の採用には
+  別途 GPU 検証と未使用 fold での確認が必要。
+
 ---
 
 ## 1. 評価指標 — 先に読むこと
