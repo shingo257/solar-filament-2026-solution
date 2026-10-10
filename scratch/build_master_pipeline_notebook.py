@@ -67,6 +67,11 @@ cells = [
 される(ゼロから全部再学習する必要はない)。GPU必須。A100を推奨するが
 T4でも動く(学習時間が伸びるのみ)。詳細な設計根拠・実験の経緯は
 リポジトリの`README.md`・`report/main.tex`を参照。
+
+fold分割は既存の `artifacts/grouped_folds.csv` と、外部で凍結した同ファイルの
+SHA256を `CFG.GROUPED_FOLDS_SHA256` に設定して読み込む。未設定・不整合なら
+前処理前に停止し、新しい分割は生成しない。ハッシュの一致は公式正本や
+時間・観測所を跨ぐ独立性の証明ではない。
 """
     ),
     markdown("## (A) セットアップ・データ読み込み・fold分割"),
@@ -85,7 +90,6 @@ import torch
 import torch.nn.functional as F
 from google.colab import drive
 from pycocotools import mask as mask_utils
-from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
 from ultralytics import YOLO
@@ -95,6 +99,7 @@ drive.mount("/content/drive")
 class CFG:
     SEED = 3407
     N_FOLDS = 3
+    GROUPED_FOLDS_SHA256 = ""  # 外部で凍結した grouped_folds.csv の SHA256 が必須
     DRIVE_ROOT = Path("/content/drive/MyDrive/solar_filament_v30")
     DATA_CACHE = DRIVE_ROOT / "competition_data"
     ARTIFACT_ROOT = DRIVE_ROOT / "artifacts"
@@ -135,7 +140,53 @@ print({"GPU": torch.cuda.get_device_name(0)})
 """
     ),
     code(
-        """# COCO注釈読み込み、前処理画像展開、3-fold層化分割(観測あたりGT個体数で層化)
+        """# COCO注釈読み込み、凍結済みfold検証、前処理画像展開
+
+def load_frozen_folds(path, train_files, n_folds, expected_sha256):
+    import csv
+    import hashlib
+    import io
+    import re
+
+    if type(n_folds) is not int or n_folds < 2:
+        raise ValueError("n_folds must be an integer >= 2")
+    if (not isinstance(train_files, list) or not train_files
+            or any(not isinstance(name, str) or not name or name in (".", "..")
+                   or name.strip() != name or any(c in name for c in "/\\\\:")
+                   or any(ord(c) < 32 or ord(c) == 127 for c in name) for name in train_files)
+            or len(set(train_files)) != len(train_files)):
+        raise ValueError("Expected observations must be unique safe basenames")
+    if not isinstance(expected_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
+        raise ValueError("Provide the externally frozen grouped_folds.csv SHA256")
+    payload = Path(path).read_bytes()
+    actual_sha256 = hashlib.sha256(payload).hexdigest()
+    if actual_sha256 != expected_sha256:
+        raise ValueError("Frozen fold CSV SHA256 differs")
+    reader = csv.DictReader(io.StringIO(payload.decode("utf-8-sig"), newline=""), strict=True)
+    fields = reader.fieldnames
+    if (not fields or len(fields) != len(set(fields))
+            or not {"file_name", "fold"}.issubset(fields)):
+        raise ValueError("Fold CSV needs unique headers including file_name and fold")
+    expected, fold_of_file = set(train_files), {}
+    try:
+        for row in reader:
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError("Malformed fold CSV row")
+            name, value = row["file_name"], row["fold"]
+            if name not in expected or name in fold_of_file:
+                raise ValueError("Duplicate or unexpected fold observation")
+            if not re.fullmatch(r"0|[1-9][0-9]*", value):
+                raise ValueError("Fold must be an exact nonnegative integer")
+            fold = int(value)
+            if fold >= n_folds:
+                raise ValueError("Fold is outside configured range")
+            fold_of_file[name] = fold
+    except csv.Error as error:
+        raise ValueError("Malformed fold CSV") from error
+    if set(fold_of_file) != expected or set(fold_of_file.values()) != set(range(n_folds)):
+        raise ValueError("Fold CSV must cover every observation and every configured fold")
+    return fold_of_file, actual_sha256
+
 def find_dataset_root(base):
     matches = list(Path(base).rglob("MAGFiLO_1.0_Annotations_kaggle2026_train.json"))
     if not matches:
@@ -147,6 +198,11 @@ TRAIN_JSON = next(DATA_ROOT.rglob("MAGFiLO_1.0_Annotations_kaggle2026_train.json
 with open(TRAIN_JSON, encoding="utf-8") as handle:
     coco = json.load(handle)
 
+image_ids = [item["id"] for item in coco["images"]]
+if (any(not (type(image_id) is int or
+             (isinstance(image_id, str) and image_id.strip())) for image_id in image_ids)
+        or len(set(image_ids)) != len(image_ids)):
+    raise ValueError("COCO image IDs must be unique integers or nonempty strings; labeler filenames may repeat")
 images = {item["id"]: item for item in coco["images"]}
 annotations = defaultdict(list)
 for ann in coco["annotations"]:
@@ -156,30 +212,15 @@ for image_id, info in images.items():
     file_to_ids[info["file_name"]].append(image_id)
 train_files = sorted(file_to_ids)
 
+grouped_folds_path = CFG.ARTIFACT_ROOT / "grouped_folds.csv"
+fold_of_file, frozen_fold_sha256 = load_frozen_folds(
+    grouped_folds_path, train_files, CFG.N_FOLDS, CFG.GROUPED_FOLDS_SHA256)
+print({"frozen_fold_csv": str(grouped_folds_path), "sha256": frozen_fold_sha256})
+
 for name in tqdm(train_files, desc="前処理画像をローカルへ"):
     local = CFG.PREPROC_DIR / name
     if not local.exists():
         shutil.copy2(CFG.PREPROC_CACHE / name, local)
-
-grouped_folds_path = CFG.ARTIFACT_ROOT / "grouped_folds.csv"
-if grouped_folds_path.exists():
-    fold_frame = pd.read_csv(grouped_folds_path)
-    fold_of_file = dict(zip(fold_frame["file_name"], fold_frame["fold"].astype(int)))
-    print("既存のgrouped_folds.csvを再利用(再現性のため、新規生成はしない)")
-else:
-    # 主催者提供のreference GTを1個代表として層化(observation単位の個体数で層別)
-    file_to_reference_id = {name: file_to_ids[name][0] for name in train_files}
-    reference_counts = [len(annotations[file_to_reference_id[name]]) for name in train_files]
-    strata = pd.cut(reference_counts, bins=[-1, 3, 7, 15, 1000], labels=False)
-    splitter = StratifiedKFold(n_splits=CFG.N_FOLDS, shuffle=True, random_state=CFG.SEED)
-    fold_of_file = {}
-    for fold, (_, valid_idx) in enumerate(splitter.split(train_files, strata)):
-        for idx in valid_idx:
-            fold_of_file[train_files[idx]] = fold
-    fold_frame = pd.DataFrame({"file_name": train_files,
-                                "fold": [fold_of_file[n] for n in train_files]})
-    fold_frame.to_csv(grouped_folds_path, index=False)
-    print("grouped_folds.csvを新規生成(seed固定のため決定的)")
 
 print({"観測": len(train_files),
        "fold別": {f: sum(v == f for v in fold_of_file.values()) for f in (0, 1, 2)},
