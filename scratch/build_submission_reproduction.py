@@ -57,6 +57,15 @@ refiner 学習 → test 推論 → `submission.csv` 生成まで一通り通り�
 - EdgeAttNet風 refiner(crop 320px, context 1.65, threshold 0.45)
 - 包含率0.90でのdrop → 面積昇順 ownership(排他化)→ min_area 20
 - fold2 単一モデル(OOF PQ最良、アンサンブルより計算1/3で同等以上)
+
+## 選択した2つの提出の再現
+
+最終選択は `prod`(上記構成)と `plain_mhsa_f2`(refiner を ablation の
+plain-MHSA fold2 重みに差し替えた構成、アーキテクチャ差による private ヘッジ)。
+`prod` は本 notebook をそのまま実行すれば再現できる。
+`plain_mhsa_f2` は setup セルの `CFG.SUBMISSION_VARIANT` を `"plain_mhsa_f2"`
+に変更して再実行する(重み dataset の `ablation_plain_mhsa_seed8407_fold2.pt`
+を使用、出力は `submission_plain_mhsa_f2.csv`)。
 """
 
 SETUP_CELL = """\
@@ -117,6 +126,10 @@ class CFG:
     REFINER_LR = 2e-4
     REFINER_BATCH_CANDIDATES = (8, 6, 4, 2)
     # --- 確定後処理(README.md「現在地」節、V52提出構成) ---
+    # "prod"(既定: EdgeAtt all-data refiner) / "plain_mhsa_f2"(第2提出:
+    # ablation plain-MHSA fold2 refiner、重み dataset の
+    # ablation_plain_mhsa_seed8407_fold2.pt が必要)
+    SUBMISSION_VARIANT = "prod"
     SUBMISSION_CONF = 0.26
     REFINER_THRESHOLD = 0.45
     DROP_THRESHOLD = 0.90
@@ -244,9 +257,12 @@ freeze_path.write_text(
     encoding="utf-8")
 print(f"pip freeze -> {freeze_path}")
 
+refiner_label, refiner_path = (
+    ("refiner_all_data", ALLDATA_CKPT) if CFG.SUBMISSION_VARIANT == "prod"
+    else ("refiner_" + CFG.SUBMISSION_VARIANT, plain_ckpt))
 for label, path in [
     ("yolo_fold2", yolo_weight_paths.get(CFG.SINGLE_FOLD)),
-    ("refiner_all_data", ALLDATA_CKPT),
+    (refiner_label, refiner_path),
 ]:
     if path and Path(path).exists():
         digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -334,7 +350,27 @@ else:
     src12 = "".join(cells[12]["source"])
     anchor12 = 'OUTPUT_PATH = Path("/content/submission.csv")'
     assert anchor12 in src12, "cell12 output anchor mismatch"
-    src12 = src12.replace(anchor12, 'OUTPUT_PATH = WORK_ROOT / "submission.csv"')
+    src12 = src12.replace(anchor12,
+        '''OUTPUT_PATH = (WORK_ROOT / "submission.csv"
+               if CFG.SUBMISSION_VARIANT == "prod"
+               else WORK_ROOT / f"submission_{CFG.SUBMISSION_VARIANT}.csv")''')
+    # refiner を提出バリアントに応じて解決(prod=all-data EdgeAtt、
+    # plain_mhsa_f2=添付 dataset/Drive の ablation plain-MHSA fold2 重み)
+    old_refiner = """refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
+refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)"""
+    assert old_refiner in src12, "cell12 refiner anchor mismatch"
+    src12 = src12.replace(old_refiner, """if CFG.SUBMISSION_VARIANT == "plain_mhsa_f2":
+    plain_ckpt = resolve_pretrained(
+        ["*plain_mhsa*fold2*.pt", "*plain_mhsa*.pt"])
+    if plain_ckpt is None:
+        raise FileNotFoundError(
+            "plain_mhsa_f2 の refiner 重みが見つかりません。"
+            "重み dataset をアタッチするか Drive artifacts に配置してください")
+    refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
+    refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
+else:
+    refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
+    refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)""")
     old_test_copy = """for file_name in tqdm(test_files, desc="test画像をローカルへ"):
     local = CFG.PREPROC_DIR / file_name
     if not local.exists():
@@ -343,6 +379,15 @@ else:
     assert old_test_copy in src12, "cell12 test copy anchor mismatch"
     src12 = src12.replace(old_test_copy, """for file_name in tqdm(test_files, desc="test画像をローカルへ"):
     prepare_preprocessed(file_name, TEST_DIR)""")
+    # master由来の artifact copy は prod 名固定なので variant で分離する
+    # (2本目の実行が第1提出の成果物を上書きしないように)
+    old_artifact_copy = 'shutil.copy2(OUTPUT_PATH, CFG.ARTIFACT_ROOT / "submission_master_pipeline.csv")'
+    assert old_artifact_copy in src12, "cell12 artifact copy anchor mismatch"
+    src12 = src12.replace(old_artifact_copy,
+        '''shutil.copy2(OUTPUT_PATH, CFG.ARTIFACT_ROOT /
+               (f"submission_master_pipeline_{CFG.SUBMISSION_VARIANT}.csv"
+                if CFG.SUBMISSION_VARIANT != "prod"
+                else "submission_master_pipeline.csv"))''')
     # 計算効率(ルーブリック明記項目): 画像あたり推論wall-clockを計測して記録
     old_loop = """for file_name in tqdm(test_files, desc="test推論"):
     image_path = CFG.PREPROC_DIR / file_name

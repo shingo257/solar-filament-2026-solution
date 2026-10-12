@@ -1,0 +1,9 @@
+{
+  "mode": "prod",
+  "refiner": "edgeatt_all",
+  "test_images": 1,
+  "total_wall_s": 14.0,
+  "s_per_image": 13.962,
+  "device": "cpu",
+  "threads": 14
+}

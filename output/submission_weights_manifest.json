@@ -1,0 +1,53 @@
+{
+  "weights": [
+    {
+      "label": "yolo_fold0_best",
+      "file_name": "best.pt",
+      "size_bytes": 45316918,
+      "sha256": "ab8810916e34a755cc0d7a705dbb7ade60338ae247f8baac02adfe64026c0d35"
+    },
+    {
+      "label": "yolo_fold1_best",
+      "file_name": "best.pt",
+      "size_bytes": 45316918,
+      "sha256": "44ba9381a575d166dac26fb5237516e9597164d7b186db99715e4330e97f2cc8"
+    },
+    {
+      "label": "yolo_fold2_best",
+      "file_name": "best.pt",
+      "size_bytes": 45316918,
+      "sha256": "40ec31fd2c6aa8e32c952e64be453f4351ace339d31ef747b4f28624eafe7e8c"
+    },
+    {
+      "label": "refiner_fold0",
+      "file_name": "mediseg_edgeattnet_refiner_fold0_resume.pt",
+      "size_bytes": 564101827,
+      "sha256": "caa8b27bbdaa888019a599d001b2d4dee844dbfee90186a18f8e0db95ce8b264"
+    },
+    {
+      "label": "refiner_fold1",
+      "file_name": "mediseg_edgeattnet_refiner_fold1_resume.pt",
+      "size_bytes": 564101827,
+      "sha256": "4992aa17d44ebe007d19454354f697828c8c488de15df1d3d595318ec98228f8"
+    },
+    {
+      "label": "refiner_fold2",
+      "file_name": "mediseg_edgeattnet_refiner_fold2_resume.pt",
+      "size_bytes": 564101827,
+      "sha256": "b1c0f3536056e72b9e600439fda6bfb174dd78409ddde112a0eae083567de303"
+    },
+    {
+      "label": "refiner_all_data",
+      "file_name": "mediseg_edgeattnet_refiner_all_data_resume.pt",
+      "size_bytes": 141079441,
+      "sha256": "e9f0e8dd7ff104d922177e82b63755d9b025c22b8f45bf9aff3d7ea9aa406fe2"
+    },
+    {
+      "label": "refiner_plain_mhsa_fold2_s8407",
+      "file_name": "ablation_plain_mhsa_seed8407_fold2.pt",
+      "size_bytes": 282089497,
+      "sha256": "b5f331e150bad237a095372df5ff6d0df41ce20a3224efedbbcb86029a9c4748"
+    }
+  ],
+  "missing": []
+}

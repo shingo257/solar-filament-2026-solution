@@ -10,6 +10,13 @@
 #   fold1/2 refiner 学習 (2026-08-15, Colab T4): torch 2.11.0+cu128, Python 3.12
 #   ローカル診断 (2026-08-15, Windows CPU):      torch 2.11.0+cpu, numpy 2.4.2, scipy 1.17.0
 #   V30 本体 (2026-08-14, Colab):                 unknown — pip freeze を保存していなかった
+#
+# ★ 本番提出CSV(LB 0.39)を生成した環境の完全 freeze:
+#   `pip-freeze-prod-2026-10-11.txt` (Windows CPU, torch 2.11.0+cpu,
+#   ultralytics 8.4.120, numpy 2.4.2, pandas 3.0.0, opencv 4.13.0.92,
+#   scikit-learn 1.8.0, pycocotools 2.0.11, Python 3.12.10)
+#   Colab GPU 再現(2026-10-11, A100)はこの環境と同一コードで 1172/1172
+#   filament 一致(IoU>0.5)を確認済み — GPU版は torch+cuXXX に読み替えること。
 
 # --- Core PyTorch & Vision ---
 torch>=2.0.0

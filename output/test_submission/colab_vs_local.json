@@ -1,0 +1,16 @@
+{
+  "a": "G:\\マイドライブ\\solar_filament_v30\\artifacts\\repro_prod_colab\\submission_prod.csv",
+  "b": "output\\test_submission\\submission_prod.csv",
+  "images": 178,
+  "filaments_a": 1172,
+  "filaments_b": 1172,
+  "b_matched_at_iou0.5": 1172,
+  "match_rate_b": 1.0,
+  "best_iou_per_a": {
+    "mean": 1.0,
+    "p50": 1.0,
+    "frac_iou_1.0": 0.9991,
+    "frac_ge_0.9": 1.0
+  },
+  "images_full_overlap": 8
+}

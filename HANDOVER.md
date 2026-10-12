@@ -116,12 +116,18 @@ pip freeze + SHA256記録・`submission_efficiency.json`出力。
    `shingo257/solar-filament-2026-weights` (private→公開化は提出時に切替)。
    yolo_fold{0,1,2}_best.pt + refiner_all_data.pt + a1 scorer 3点 + manifest。
    fold 別 refiner checkpoint は容量の関係で未同梱(Kaggle/Colab 側で再学習可)。
+   **v2 (2026-10-12)**: `ablation_plain_mhsa_seed8407_fold2.pt` を追加 —
+   主催者要件「選択した両方の提出を再現できること」で第2提出
+   (plain_mhsa_f2)の再現に必須のため。
 2. ~~再現実行~~ → **完了(2026-10-11, Colab GPU 版)**:
    `solar_filament_prod_repro_colab.ipynb`(3セル直列構成)が A100 で完走、
    `artifacts/repro_prod_colab/` に submission_prod.csv + efficiency。
    ローカル prod CSV と filament 一致率100%(IoU>0.5)・99.91% IoU=1.0。
    **本番 notebook の完全版再現は未実施 — 提出に使うなら Kaggle 側での
    実行が残る**(kernel パッケージ `output/kaggle_kernel/` 準備済み)。
+   notebook は `CFG.SUBMISSION_VARIANT="plain_mhsa_f2"` で第2提出も
+   再現できるよう拡張済み(2026-10-12、未実行 — F3 のクリーン環境
+   通し実行で prod/variant 両経路を検証すること)。
 3. **Overleaf で `report/main.tex` ビルド** → 4ページに収まるか確認。
    A1 LB反転+v82棄却を追記済み(2文追加、ページ影響は微小の見込み)。
 4. `requirements.txt` 凍結(最終推論環境の pip freeze)。

@@ -92,6 +92,43 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | + EdgeAttNet refiner（3-fold OOF、旧報告） | Δ+0.0028（95%CI [0.000915, 0.004756]、n=707）——**§2.1.10で精密化: attention容量一般は効くがedge prior固有の効果は3fold全て未確認** |
 | 参照アノテーション一致ベースライン（訂正済み、§2.1.7） | PQ 0.3398（複数アノテータ観測296枚限定） |
 | LB 上位クラスタ（0.55〜0.56、38チーム） | **テストセットリーク由来と判断・追走しない（2026-09-15、§2.1.11）** |
+| Public LB の採点対象 | **testの約50%（≈90枚）**（LBページ明記、2026-10-09確認）。2桁表示では0.01未満の差を識別できないため提出間比較はOOFのみ |
+| 誠実ティアの最前線（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr`、学習スコアラー+厳密DPの決定層）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
+| **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）＋ plain_mhsa_f2（fold-2 YOLO + plain-MHSA refiner、edge prior なし）、いずれも Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却）のため確定。2本目は refiner アーキテクチャ差による private 分散ヘッジ |
+
+### 最終提出の再現（最短経路）
+
+学習済み重みからの**推論のみ**の再現。前処理・学習を含む全段の公式再現は
+§5.0 の `solar_filament_submission_reproduction.ipynb` を参照。
+**選択した2提出（prod + plain_mhsa_f2）はいずれも再現可能**（主催者要件）。
+
+```bash
+# test 180枚 → submission_prod.csv（ローカルCPU ~50分 / Colab GPU ~4分）
+# --drive で solar_filament_v30 ルートを指定可（既定は Drive 自動検出）
+python scratch/run_test_submission.py --mode prod --device cuda  # --device省略時はCPU
+
+# 第2提出（plain_mhsa_f2）の再現
+python scratch/run_test_submission.py --mode prod --refiner plain_mhsa_f2 --device cuda
+
+# Drive 無しでも可: Kaggle dataset をダウンロードして --weights-dir に渡す
+# （test画像のみ Drive から読む。2026-10-12 に両バリアントで疎通確認済み）
+python scratch/run_test_submission.py --mode prod \
+    --refiner plain_mhsa_f2 --weights-dir <dataset_dir> --device cuda
+```
+
+- **重み**: Kaggle dataset `shingo257/solar-filament-2026-weights`
+  （`yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
+  `ablation_plain_mhsa_seed8407_fold2.pt`（第2提出用）+ `a1_scorer_*`、
+  sha256 manifest 同梱）。ローカルでは Drive `solar_filament_v30/artifacts/` の
+  実績パスを既定参照
+- **Colab 再現 notebook**: [`solar_filament_prod_repro_colab.ipynb`](solar_filament_prod_repro_colab.ipynb)
+  （3セル直列・Drive経由・A100で223秒）。2026-10-11 実行済み、ローカル生成CSVと
+  **1172/1172 filament が IoU>0.5 で一致（99.91% IoU=1.0）**
+- **提出履歴**: prod 0.39 → A1 scorer 0.37（OOF→LB反転）→ plain_mhsa_f2 **0.39**、
+  edgeatt_f2 **0.39**（ablation 重み流用の refiner バリアント、学習コスト0）。
+  **最終選択の推奨**: prod + plain_mhsa_f2（アーキテクチャ差で private ヘッジ最大）。
+  `output/submission_log/log.json`
+- **推論環境 freeze**: `pip-freeze-prod-2026-10-11.txt`（torch 2.11.0、ultralytics 8.4.120）
 
 **主因は境界品質。** 確定構成適用後も near-miss（IoU 0.3〜0.5）が 920 件残り、
 それが全部 TP 化すれば PQ 約 0.50。PQ の分母は near-miss → TP の変換に対して不変
@@ -924,6 +961,13 @@ ipynb の JSON を手編集するより再現性が高い。
 Colab(Google Drive)の両方で動作し、学習済み重みを添付 dataset /
 Drive artifacts から解決する(無ければフル再学習)。末尾セルで
 `pip freeze` と重み SHA256 を記録する。
+推論のみの短い経路は上記「最終提出の再現（最短経路）」を参照。
+
+第2提出(`plain_mhsa_f2`)も同じ notebook で再現できる:
+setup セルの `CFG.SUBMISSION_VARIANT` を `"plain_mhsa_f2"` に変更して
+再実行すれば、添付 dataset の `ablation_plain_mhsa_seed8407_fold2.pt` を
+解決して `submission_plain_mhsa_f2.csv` を生成する(主催者の
+「選択した両方の提出を再現できること」要件への対応、2026-10-12)。
 
 生成元は `scratch/build_submission_reproduction.py`。
 以下の §5.1-5.4 は開発履歴・負の結果の再現用で、提出の再現には不要。

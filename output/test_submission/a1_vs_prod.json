@@ -1,0 +1,16 @@
+{
+  "a": "output\\test_submission\\submission_a1.csv",
+  "b": "output\\test_submission\\submission_prod.csv",
+  "images": 178,
+  "filaments_a": 1174,
+  "filaments_b": 1172,
+  "b_matched_at_iou0.5": 1071,
+  "match_rate_b": 0.9138,
+  "best_iou_per_a": {
+    "mean": 0.9064,
+    "p50": 1.0,
+    "frac_iou_1.0": 0.868,
+    "frac_ge_0.9": 0.8714
+  },
+  "images_full_overlap": 7
+}

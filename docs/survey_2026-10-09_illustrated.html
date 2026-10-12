@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>太陽フィラメント切り抜きコンペ — ライバル調査の図解レポート(2026-10-09)</title>
+<meta name="description" content="Kaggle Solar Filament Segmentation 2026 の競合・ルール・Biohub上位解法の再調査を、高校生でも読める図解中心でまとめた調査ノート。WINNING_STRATEGY §6.23 の図解版。">
+<style>
+  :root {
+    --bg: #faf6ee;
+    --bg-elevated: #ffffff;
+    --bg-inset: #f2ead9;
+    --ink: #241f16;
+    --ink-dim: #6f6553;
+    --border: #e1d5ba;
+    --border-strong: #d8cba8;
+    --accent: #c1501f;
+    --accent-dim: #d97a3f;
+    --accent-soft: #f6e3d5;
+    --navy: #26476d;
+    --navy-dim: #5a7492;
+    --navy-soft: #dde6ef;
+    --good: #3c7a4d;
+    --good-bg: #e6f1e8;
+    --bad: #ad3a2e;
+    --bad-bg: #f7e6e2;
+    --code-bg: #efe6d2;
+    --sun: #f2c96b;
+    --sun-edge: #d9a441;
+    --shadow: 0 1px 2px rgba(36,31,22,0.05), 0 10px 28px rgba(36,31,22,0.07);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, "Segoe UI", sans-serif;
+    line-height: 1.75;
+    font-size: 16px;
+  }
+  .page { max-width: 960px; margin: 0 auto; padding: 40px 28px 80px; }
+
+  .kicker {
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 10px; font-weight: 600;
+  }
+  h1 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+    font-weight: 700; font-size: 34px; line-height: 1.3; margin: 0 0 12px;
+  }
+  .lede { font-size: 16.5px; color: var(--ink-dim); margin: 0 0 8px; }
+  .meta { font-size: 13px; color: var(--ink-dim); margin: 0 0 28px; }
+  .meta code { font-size: 12.5px; }
+
+  nav.toc {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 24px; margin: 24px 0 8px; box-shadow: var(--shadow);
+  }
+  nav.toc .toc-title {
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: 8px;
+  }
+  nav.toc ol { margin: 0; padding-left: 24px; columns: 2; column-gap: 40px; }
+  nav.toc li { margin-bottom: 4px; font-size: 14.5px; break-inside: avoid; }
+  nav.toc a { color: var(--navy); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  @media (max-width: 720px) { nav.toc ol { columns: 1; } }
+
+  section { margin: 56px 0; scroll-margin-top: 16px; }
+  h2 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+    font-weight: 700; font-size: 25px; margin: 0 0 6px;
+    padding-top: 12px; border-top: 3px solid var(--accent);
+  }
+  h2 .h2-num { color: var(--accent); font-weight: 700; margin-right: 10px; font-size: 20px; }
+  h3 { font-size: 17px; margin: 26px 0 8px; color: var(--navy); }
+  p { margin: 0 0 14px; }
+  strong { font-weight: 700; }
+  .term { color: var(--navy); font-weight: 600; }
+
+  figure.fig {
+    margin: 20px 0 16px; padding: 14px 14px 8px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow);
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  figure.fig svg { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 12.5px; color: var(--ink-dim); padding: 6px 4px 4px; }
+
+  .point {
+    background: var(--accent-soft); border: 1px solid var(--accent-dim);
+    border-left: 5px solid var(--accent); border-radius: 8px;
+    padding: 12px 18px; margin: 16px 0 0; font-size: 15px;
+    page-break-inside: avoid;
+  }
+  .point::before {
+    content: "ポイント"; display: block; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; color: var(--accent); margin-bottom: 2px;
+  }
+
+  .formula {
+    background: var(--code-bg); border-radius: 8px; padding: 14px 20px;
+    margin: 14px 0; font-size: 16px; overflow-x: auto;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  .formula small { font-family: inherit; color: var(--ink-dim); font-size: 13px; }
+
+  .quote-box {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-left: 4px solid var(--navy); border-radius: 8px;
+    padding: 10px 18px; margin: 10px 0; font-size: 14.5px;
+  }
+  .quote-box .who { font-size: 12px; color: var(--ink-dim); }
+
+  table { border-collapse: collapse; margin: 16px 0; font-size: 14px; width: 100%; }
+  .table-wrap { overflow-x: auto; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--ink-dim); border-bottom: 2px solid var(--border-strong); white-space: nowrap;
+  }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ok  { color: var(--good); font-weight: 700; }
+  .mid { color: var(--accent-dim); font-weight: 700; }
+  .no  { color: var(--bad); font-weight: 700; }
+  tr.grp td { background: var(--bg-inset); font-weight: 700; color: var(--navy); }
+
+  .faq-item { margin: 16px 0; page-break-inside: avoid; }
+  .faq-q { font-weight: 700; color: var(--navy); margin: 0 0 4px; }
+  .faq-q::before { content: "Q."; color: var(--accent); margin-right: 8px; }
+  .faq-a { margin: 0 0 0 26px; font-size: 15px; }
+
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--ink-dim); }
+
+  /* ---- SVG 内の共通クラス ---- */
+  svg text { font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif; }
+  .f14 { font-size: 14px; } .f15 { font-size: 15px; } .f16 { font-size: 16px; }
+  .f18 { font-size: 18px; } .f20 { font-size: 20px; } .f22 { font-size: 22px; }
+  .b { font-weight: 700; }
+  .tx  { fill: var(--ink); }      .txd { fill: var(--ink-dim); }
+  .txw { fill: #ffffff; }         .txa { fill: var(--accent); }
+  .txg { fill: var(--good); }     .txb { fill: var(--bad); }
+  .txn { fill: var(--navy); }     .txnd { fill: var(--navy-dim); }
+  .wbox { fill: #ffffff; stroke: var(--border-strong); stroke-width: 1.5; }
+  .inset { fill: var(--bg-inset); stroke: var(--border-strong); stroke-width: 1.5; }
+  .goodbox { fill: var(--good-bg); stroke: var(--good); stroke-width: 1.5; }
+  .badbox { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.5; }
+  .navybox { fill: var(--navy); }
+  .navysoft { fill: var(--navy-soft); stroke: var(--navy-dim); stroke-width: 1.5; }
+  .accentbox { fill: var(--accent); }
+  .accentsoft { fill: var(--accent-soft); stroke: var(--accent-dim); stroke-width: 1.5; }
+  .fil { fill: #2b2419; }
+  .sun { fill: var(--sun); stroke: var(--sun-edge); stroke-width: 2; }
+  .lnk { stroke: var(--ink-dim); stroke-width: 2; fill: none; }
+  .lnkd { stroke: var(--ink-dim); stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+  .lnka { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .grid { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 4; }
+  .axis { stroke: var(--ink-dim); stroke-width: 1.5; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <p class="kicker">Survey Illustrated Note · 2026-10-09</p>
+  <h1>太陽フィラメント切り抜きコンペ<br>ライバル調査の図解レポート</h1>
+  <p class="lede">
+    Kaggle「Solar Filament Segmentation 2026」について、公開ディスカッション・上位notebook・
+    別コンペ(Biohub 細胞追跡)の優勝解法を調べ直した結果を、図を主役にしてまとめたもの。
+    正本は <code>WINNING_STRATEGY_2026-08-29.md</code> §6.23 で、このページはその「やさしい版」。
+  </p>
+  <p class="meta">読み方: 専門用語は出てきた場所で一行説明を入れてある。数値はすべて一次情報の写しで、盛っていない。</p>
+
+  <nav class="toc">
+    <div class="toc-title">目次</div>
+    <ol>
+      <li><a href="#s1">このコンペは何をするのか</a></li>
+      <li><a href="#s2">点数の付け方(PQ)</a></li>
+      <li><a href="#s3">いまのリーダーボードの真実</a></li>
+      <li><a href="#s4">ルールで許されること / ダメなこと</a></li>
+      <li><a href="#s5">私たちのパイプライン(現状)</a></li>
+      <li><a href="#s6">最前線: tushhaaarrrr 氏の設計</a></li>
+      <li><a href="#s7">なぜ「どれを出すか」が点数を決めるのか</a></li>
+      <li><a href="#s8">私たちとの違い(対応表)</a></li>
+      <li><a href="#s9">Biohub(細胞追跡)から借りられるもの</a></li>
+      <li><a href="#s10">これからの優先順位</a></li>
+      <li><a href="#s11">「惜しい」はなぜ損なのか(手計算)</a></li>
+      <li><a href="#s12">人間同士でも 0.34 — 正解のぶれ</a></li>
+      <li><a href="#s13">足切りを下げると何が起きるか</a></li>
+      <li><a href="#s14">期待IoUスコアラーの作り方</a></li>
+      <li><a href="#s15">試して効かなかったこと一覧</a></li>
+      <li><a href="#s16">検証の作法(3-fold OOF)</a></li>
+      <li><a href="#s17">用語集</a></li>
+      <li><a href="#s18">FAQ</a></li>
+      <li><a href="#s19">出典</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ==================== 1 ==================== -->
+<section id="s1">
+  <h2><span class="h2-num">1</span>このコンペは何をするのか</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 340" role="img" aria-label="太陽の円盤とフィラメントの切り抜き図">
+      <defs>
+        <clipPath id="sunClip1"><circle cx="170" cy="160" r="118"/></clipPath>
+        <marker id="arr1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- 太陽円盤 -->
+      <circle class="sun" cx="170" cy="160" r="118"/>
+      <g clip-path="url(#sunClip1)">
+        <ellipse class="fil" cx="150" cy="112" rx="52" ry="11" transform="rotate(-16 150 112)"/>
+        <ellipse class="fil" cx="200" cy="182" rx="46" ry="10" transform="rotate(18 200 182)"/>
+        <ellipse class="fil" cx="118" cy="206" rx="34" ry="9"  transform="rotate(38 118 206)"/>
+        <ellipse class="fil" cx="222" cy="90"  rx="26" ry="7"  transform="rotate(-30 222 90)"/>
+      </g>
+      <text class="f15 b tx" x="170" y="300" text-anchor="middle">H-Alpha 全面画像(2048×2048ピクセル)</text>
+      <text class="f14 txd" x="170" y="322" text-anchor="middle">学習 707枚 / テスト 180枚</text>
+      <text class="f14 txd" x="170" y="34" text-anchor="middle">太陽を赤い光(H-Alpha)で撮った1枚。暗い筋がフィラメント</text>
+      <!-- 切り抜き矢印 -->
+      <line class="lnk" x1="252" y1="106" x2="388" y2="66"  marker-end="url(#arr1)"/>
+      <line class="lnk" x1="286" y1="170" x2="388" y2="160" marker-end="url(#arr1)"/>
+      <line class="lnk" x1="230" y1="236" x2="388" y2="252" marker-end="url(#arr1)"/>
+      <!-- 個別マスク -->
+      <rect class="wbox" x="400" y="36"  width="330" height="66" rx="9"/>
+      <ellipse class="fil" cx="452" cy="69" rx="46" ry="9" transform="rotate(-8 452 69)"/>
+      <text class="f14 tx" x="512" y="74">フィラメント① のマスク</text>
+      <rect class="wbox" x="400" y="132" width="330" height="66" rx="9"/>
+      <ellipse class="fil" cx="452" cy="165" rx="40" ry="9" transform="rotate(14 452 165)"/>
+      <text class="f14 tx" x="512" y="170">フィラメント② のマスク</text>
+      <rect class="wbox" x="400" y="228" width="330" height="66" rx="9"/>
+      <ellipse class="fil" cx="452" cy="261" rx="30" ry="8" transform="rotate(30 452 261)"/>
+      <text class="f14 tx" x="512" y="266">フィラメント③ のマスク</text>
+      <text class="f15 b txn" x="565" y="22" text-anchor="middle">「1本ずつ別々」に切り抜く(インスタンス)</text>
+      <text class="f14 txd" x="565" y="318" text-anchor="middle">同じ画像内でマスクどうしは1画素も重なってはいけない</text>
+    </svg>
+    <figcaption>図1. 太陽の画像から、暗い筋状の「フィラメント」を1本ずつ別マスクとして切り出す仕事。</figcaption>
+  </figure>
+
+  <p>
+    太陽を H-Alpha(太陽観測で使う赤い光)で撮った 2048×2048 の画像が、学習用に 707 枚・
+    テスト用に 180 枚ある。やることは「どこかにフィラメントがある」を見つけることではなく、
+    <span class="term">インスタンスセグメンテーション</span>
+    (1本1本を区別して、形そのものを塗り絵のように切り抜くこと)。
+    全部まとめて「フィラメントっぽい領域」を出す方式は過去に試して惨敗済み(Public 0.19)で、
+    「個体単位で出す」のがこのコンペの勝負どころ。
+  </p>
+  <p class="point">出すのは「フィラメント1本ごとの塗り絵」。本数も形も両方正解しないと点が来ない。</p>
+</section>
+
+<!-- ==================== 2 ==================== -->
+<section id="s2">
+  <h2><span class="h2-num">2</span>点数の付け方(PQ)</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 300" role="img" aria-label="IoUの重なりと0.5の崖">
+      <defs>
+        <marker id="arr2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#241f16"/>
+        </marker>
+      </defs>
+      <!-- 左: ベン図風 IoU -->
+      <text class="f15 b tx" x="175" y="28" text-anchor="middle">図A: 形の重なり(IoU)を測る</text>
+      <ellipse class="navysoft" cx="140" cy="150" rx="95" ry="60"/>
+      <ellipse class="accentsoft" cx="230" cy="150" rx="95" ry="60"/>
+      <text class="f14 txn" x="95"  y="120" text-anchor="middle">正解</text>
+      <text class="f14 txn" x="95"  y="138" text-anchor="middle">(GT)</text>
+      <text class="f14 txa" x="288" y="120" text-anchor="middle">予測</text>
+      <text class="f14 tx" x="185" y="154" text-anchor="middle">重なり</text>
+      <text class="f14 txd" x="175" y="252" text-anchor="middle">IoU = 重なった面積 ÷ 2つ合わせた面積</text>
+      <text class="f14 txd" x="175" y="272" text-anchor="middle">0=全然ズレ 〜 1=完全一致</text>
+      <!-- 右: 崖グラフ -->
+      <text class="f15 b tx" x="565" y="28" text-anchor="middle">図B: IoU 0.5 の「崖」</text>
+      <rect x="400" y="50" width="150" height="190" fill="#f7e6e2"/>
+      <rect x="550" y="50" width="190" height="190" fill="#e6f1e8"/>
+      <line class="axis" x1="400" y1="240" x2="740" y2="240" marker-end="url(#arr2)"/>
+      <line class="axis" x1="400" y1="240" x2="400" y2="50"/>
+      <line class="grid" x1="550" y1="240" x2="550" y2="50"/>
+      <text class="f14 txd" x="400" y="258" text-anchor="middle">0</text>
+      <text class="f14 b txb" x="550" y="258" text-anchor="middle">0.5</text>
+      <text class="f14 txd" x="740" y="258" text-anchor="middle">IoU 1.0</text>
+      <!-- 貢献カーブ: 0.5未満はマイナス、超えるとIoU分 -->
+      <line x1="410" y1="216" x2="550" y2="216" stroke="#ad3a2e" stroke-width="3" fill="none"/>
+      <line x1="550" y1="216" x2="550" y2="160" stroke="#ad3a2e" stroke-width="3" fill="none" stroke-dasharray="4 3"/>
+      <line x1="550" y1="160" x2="730" y2="70" stroke="#3c7a4d" stroke-width="3" fill="none"/>
+      <text class="f14 b txb" x="475" y="120" text-anchor="middle">0.5以下</text>
+      <text class="f14 txb" x="475" y="140" text-anchor="middle">→ 0点どころか</text>
+      <text class="f14 txb" x="475" y="160" text-anchor="middle">空振り+見逃しで</text>
+      <text class="f14 txb" x="475" y="180" text-anchor="middle">二重減点</text>
+      <text class="f14 b txg" x="650" y="200" text-anchor="middle">0.5超 → 当たり!</text>
+      <text class="f14 txg" x="650" y="220" text-anchor="middle">IoUの分だけ加点</text>
+      <text class="f14 txd" x="565" y="288" text-anchor="middle">「惜しい(IoU 0.3〜0.5)」は無得点ではなく損失になる</text>
+    </svg>
+    <figcaption>図2-A. 予測と正解の重なり具合(IoU)が0.5を超えて初めて「当たり」。崖を落ちると二重に減点。</figcaption>
+  </figure>
+
+  <div class="formula">
+    PQ = Σ IoU(当たったペア) ÷ ( 当たり数 + 0.5 × 空振り数 + 0.5 × 見逃し数 )<br>
+    <small>分子 = 当たったものの形の正確さの合計。分母 = 当たり + 外れの半分 + 見逃しの半分。</small>
+  </div>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 260" role="img" aria-label="複数アノテータ別採点の図">
+      <defs>
+        <marker id="arr3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <rect class="inset" x="20" y="90" width="160" height="80" rx="9"/>
+      <circle class="sun" cx="60" cy="130" r="30"/>
+      <ellipse class="fil" cx="62" cy="128" rx="18" ry="4.5" transform="rotate(-20 62 128)"/>
+      <text class="f14 tx" x="120" y="125">同じ画像+</text>
+      <text class="f14 tx" x="120" y="145">予測1セット</text>
+      <line class="lnk" x1="182" y1="110" x2="248" y2="48"  marker-end="url(#arr3)"/>
+      <line class="lnk" x1="182" y1="130" x2="248" y2="130" marker-end="url(#arr3)"/>
+      <line class="lnk" x1="182" y1="150" x2="248" y2="212" marker-end="url(#arr3)"/>
+      <!-- アノテータ3人 -->
+      <rect class="wbox" x="252" y="20" width="230" height="64" rx="9"/>
+      <ellipse class="fil" cx="300" cy="52" rx="42" ry="7" transform="rotate(-16 300 52)"/>
+      <text class="f14 txn" x="352" y="48">アノテータAの正解</text>
+      <text class="f14 txd" x="352" y="66">別々に採点 → TP/FP/FN</text>
+      <rect class="wbox" x="252" y="98" width="230" height="64" rx="9"/>
+      <ellipse class="fil" cx="300" cy="130" rx="42" ry="9" transform="rotate(-10 300 130)"/>
+      <text class="f14 txn" x="352" y="126">アノテータBの正解</text>
+      <text class="f14 txd" x="352" y="144">少し太い→同じ予測でも結果が変わる</text>
+      <rect class="wbox" x="252" y="176" width="230" height="64" rx="9"/>
+      <ellipse class="fil" cx="300" cy="204" rx="38" ry="7" transform="rotate(-24 300 204)"/>
+      <ellipse class="fil" cx="330" cy="216" rx="16" ry="5" transform="rotate(10 330 216)"/>
+      <text class="f14 txn" x="352" y="200">アノテータCの正解</text>
+      <text class="f14 txd" x="352" y="218">本数の数え方まで違う</text>
+      <line class="lnk" x1="484" y1="52"  x2="560" y2="110" marker-end="url(#arr3)"/>
+      <line class="lnk" x1="484" y1="130" x2="560" y2="130" marker-end="url(#arr3)"/>
+      <line class="lnk" x1="484" y1="208" x2="560" y2="150" marker-end="url(#arr3)"/>
+      <rect class="accentsoft" x="562" y="92" width="180" height="76" rx="9"/>
+      <text class="f14 b txa" x="652" y="122" text-anchor="middle">全員分を合算して</text>
+      <text class="f14 b txa" x="652" y="142" text-anchor="middle">PQを計算</text>
+      <text class="f14 txd" x="652" y="160" text-anchor="middle">(平均ではない)</text>
+      <text class="f14 txd" x="380" y="252" text-anchor="middle">正解を描いた人(=アノテータ)ごとに別採点。同じ予測が何度も採点される</text>
+    </svg>
+    <figcaption>図2-B. 採点の単位は(アノテータ, 画像)。人によって輪郭も本数も違う正解と、別々に突き合わされる。</figcaption>
+  </figure>
+
+  <p>
+    このコンペの点数は <span class="term">PQ</span>(パノプティック品質:当てた個数と形の正確さを
+    まとめた点数)。いちばん大事な仕様は <strong>IoU(重なり具合)が 0.5 を超えないと「当たり」に
+    ならない</strong>こと。しかも外すと、出した予測は「空振り(FP)」・残った正解は「見逃し(FN)」として
+    分母を両方から膨らませるので、<strong>惜しい予測ほど損</strong>。さらに正解は人(アノテータ)ごとに
+    複数版あり、同じ提出がそれぞれと別々に採点されて合算される。
+  </p>
+  <p class="point">「出せば当たるかも」ではなく「出して外すと減る」— 出す/出さないの判断自体が得点源。</p>
+</section>
+
+<!-- ==================== 3 ==================== -->
+<section id="s3">
+  <h2><span class="h2-num">3</span>いまのリーダーボードの真実</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 330" role="img" aria-label="リーダーボード棒グラフ: リーク系クラスタと正直ティア">
+      <defs>
+        <pattern id="hatchLeak" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width="7" height="7" fill="#d9d2c0"/>
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#a89a80" stroke-width="2"/>
+        </pattern>
+        <marker id="arr4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- 吹き出し -->
+      <rect class="wbox" x="46" y="14" width="430" height="56" rx="10" stroke="#c1501f"/>
+      <text class="f14 b tx" x="261" y="37" text-anchor="middle">テスト180枚の約77%が公開データと同一</text>
+      <text class="f14 txd" x="261" y="57" text-anchor="middle">= 「答えを写した」提出が上位を占拠(1位は108回提出)</text>
+      <!-- 軸 -->
+      <line class="axis" x1="60" y1="270" x2="740" y2="270"/>
+      <line class="axis" x1="60" y1="270" x2="60" y2="80"/>
+      <line class="grid" x1="60" y1="210" x2="740" y2="210"/><text class="f14 txd" x="30" y="215">0.2</text>
+      <line class="grid" x1="60" y1="150" x2="740" y2="150"/><text class="f14 txd" x="30" y="155">0.4</text>
+      <line class="grid" x1="60" y1="90"  x2="740" y2="90" /><text class="f14 txd" x="30" y="95">0.6</text>
+      <!-- 灰色棒: 0.63,0.62,0.61,0.60,0.59,0.58,0.57,0.56,0.55 -->
+      <g>
+        <rect x="80"  y="81"  width="40" height="189" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="130" y="84"  width="40" height="186" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="180" y="87"  width="40" height="183" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="230" y="90"  width="40" height="180" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="280" y="93"  width="40" height="177" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="330" y="96"  width="40" height="174" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="380" y="99"  width="40" height="171" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="430" y="102" width="40" height="168" fill="url(#hatchLeak)" stroke="#a89a80"/>
+        <rect x="480" y="105" width="40" height="165" fill="url(#hatchLeak)" stroke="#a89a80"/>
+      </g>
+      <text class="f14 txd" x="100" y="78" text-anchor="middle">0.63</text>
+      <text class="f14 txd" x="500" y="98" text-anchor="middle">0.55</text>
+      <text class="f14 b txd" x="300" y="292" text-anchor="middle">リーク由来クラスタ ≈35チーム(0.63 / 0.62 / 0.61 … 0.55)</text>
+      <!-- 正直ティア -->
+      <rect x="590" y="150" width="40" height="120" fill="#26476d"/>
+      <rect x="660" y="153" width="40" height="117" fill="#c1501f"/>
+      <text class="f14 b txw" x="610" y="170" text-anchor="middle">0.40</text>
+      <text class="f14 b txw" x="680" y="173" text-anchor="middle">0.39</text>
+      <text class="f14 txn" x="610" y="292" text-anchor="middle">tushhaaarrrr</text>
+      <text class="f14 txa" x="680" y="292" text-anchor="middle">私たち</text>
+      <text class="f14 b tx" x="645" y="312" text-anchor="middle">正直ティア最前線</text>
+      <text class="f14 txd" x="400" y="322" text-anchor="middle">Public LB の表示は小数2桁。0.39 と 0.40 の差はほぼ誤差の中</text>
+    </svg>
+    <figcaption>図3-A. 上位クラスタ(灰色・斜線)はリーク由来と判断。実力勝負の先頭は 0.40 あたり。</figcaption>
+  </figure>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 170" role="img" aria-label="テスト180枚のうちPublic採点は半分">
+      <rect class="inset" x="60" y="36" width="320" height="52" rx="6"/>
+      <rect class="wbox"  x="380" y="36" width="320" height="52" rx="6"/>
+      <text class="f15 b txn" x="220" y="62" text-anchor="middle">Public 採点 = 約90枚</text>
+      <text class="f14 txd" x="220" y="80" text-anchor="middle">提出するたび見える点数(約50%)</text>
+      <text class="f15 b tx" x="540" y="62" text-anchor="middle">Private = 残り約90枚</text>
+      <text class="f14 txd" x="540" y="80" text-anchor="middle">終了後に採点される本番</text>
+      <text class="f14 b tx" x="60" y="24">テスト 180枚</text>
+      <line class="axis" x1="380" y1="30" x2="380" y2="94"/>
+      <text class="f14 txd" x="380" y="120" text-anchor="middle">表示は小数2桁 → 0.01未満の差は原理的に見分けられない</text>
+      <text class="f14 txd" x="380" y="140" text-anchor="middle">リサンプリング誤差だけで sd≈0.012 → 提出間の比較は OOF(手元採点)で行う</text>
+    </svg>
+    <figcaption>図3-B. Public LB が採点しているのはテストの半分だけ。順位表の小差に一喜一憂しない。</figcaption>
+  </figure>
+
+  <p>
+    リーダーボード上位(0.55〜0.63)は、テスト画像の約77%が公開済みデータセットと同一であることに由来する
+    <span class="term">リーク</span>(答えが漏れている状態)と判断されており、追いかけても意味がない。
+    運営も動いていて、直近のコメントは次の3つ:
+  </p>
+  <div class="quote-box">「PQ 0.35超の全提出を精査する」<div class="who">— 運営(Azim 氏)、discussion より</div></div>
+  <div class="quote-box">「fake は容易に弾ける」「0.41 は非常に真剣に受け止める」<div class="who">— 同上</div></div>
+  <div class="quote-box">「LB のクリーンアップは行う(詳細は未公表)」<div class="who">— 同上</div></div>
+
+  <p class="point">上位スコアは答え写し由来。本当の勝負ラインは Public 0.40 付近で、私たち 0.39 は並走圏。</p>
+</section>
+
+<!-- ==================== 4 ==================== -->
+<section id="s4">
+  <h2><span class="h2-num">4</span>ルールで許されること / ダメなこと</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 300" role="img" aria-label="ルール表: 禁止と許可">
+      <rect class="badbox" x="20" y="14" width="350" height="42" rx="8"/>
+      <text class="f16 b txb" x="195" y="41" text-anchor="middle">× 禁止(裁定済み)</text>
+      <rect class="wbox" x="20" y="66" width="350" height="88" rx="8"/>
+      <circle cx="46" cy="92" r="12" fill="#ad3a2e"/>
+        <text class="f16 b txw" x="46" y="97" text-anchor="middle">×</text>
+      <text class="f14 tx" x="66" y="88">外部の正解データを使う</text>
+      <text class="f14 txd" x="66" y="108">(SWEFil / MAGFiLO 本家など)</text>
+      <text class="f14 txd" x="66" y="128">→ リークの元なので当然アウト</text>
+      <rect class="wbox" x="20" y="164" width="350" height="88" rx="8"/>
+      <circle cx="46" cy="190" r="12" fill="#ad3a2e"/>
+        <text class="f16 b txw" x="46" y="195" text-anchor="middle">×</text>
+      <text class="f14 tx" x="66" y="186">推論時に前後時刻のフレームを見る</text>
+      <text class="f14 txd" x="66" y="206">(テスト画像の「となりの時間」の</text>
+      <text class="f14 txd" x="66" y="226"> 写真をカンニングするのは禁止)</text>
+
+      <rect class="goodbox" x="390" y="14" width="350" height="42" rx="8"/>
+      <text class="f16 b txg" x="565" y="41" text-anchor="middle">○ 許可(条件つき)</text>
+      <rect class="wbox" x="390" y="66" width="350" height="58" rx="8"/>
+      <circle cx="416" cy="92" r="12" fill="#3c7a4d"/>
+        <text class="f16 b txw" x="416" y="97" text-anchor="middle">○</text>
+      <text class="f14 tx" x="436" y="88">ラベルなし GONG 時系列(追加の太陽写真)</text>
+      <text class="f14 txd" x="436" y="108">※ 訓練にだけ使える。推論時は禁止</text>
+      <rect class="wbox" x="390" y="134" width="350" height="58" rx="8"/>
+      <circle cx="416" cy="160" r="12" fill="#3c7a4d"/>
+        <text class="f16 b txw" x="416" y="165" text-anchor="middle">○</text>
+      <text class="f14 tx" x="436" y="156">同時刻の磁場図を補助損失に使う</text>
+      <text class="f14 txd" x="436" y="176">(訓練の副タスクとして。本採用は未定)</text>
+      <rect class="wbox" x="390" y="202" width="350" height="58" rx="8"/>
+      <circle cx="416" cy="228" r="12" fill="#3c7a4d"/>
+        <text class="f16 b txw" x="416" y="233" text-anchor="middle">○</text>
+      <text class="f14 tx" x="436" y="224">白黒1chを3chに複製してCNNに入れる</text>
+      <text class="f14 txd" x="436" y="244">(現行パイプラインもこれ)</text>
+      <text class="f14 b txg" x="565" y="286" text-anchor="middle">→ 私たちの現行構成はすべてルール適合</text>
+    </svg>
+    <figcaption>図4. 公式裁定(2026-10-09時点)。「訓練にだけ使える」のと「推論にも使える」のは別物。</figcaption>
+  </figure>
+
+  <p>
+    新しく出た裁定で線引きがはっきりした。外部の正解データ(人手で塗ったフィラメント集)は禁止、
+    推論時に時間前後の画像を参照するのも禁止。いっぽう<strong>訓練フェーズ限定</strong>なら、
+    正解のない追加の太陽写真(GONG アーカイブ)や、同時刻の磁場図を副タスクに使うこと、
+    白黒画像を3枚重ねにする前処理は、全部OKと明言された。
+  </p>
+  <p class="point">私たちの今のやり方は全部セーフ。外部データ系の権利は「訓練限定」という条件付きで残っている。</p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="h2-num">5</span>私たちのパイプライン(現状)</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 260" role="img" aria-label="現行パイプラインフロー図">
+      <defs>
+        <marker id="arr5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- row1 -->
+      <rect class="inset" x="10"  y="30" width="220" height="64" rx="9"/>
+      <text class="f15 b tx" x="120" y="56" text-anchor="middle">H-Alpha 画像</text>
+      <text class="f14 txd" x="120" y="76" text-anchor="middle">2048×2048</text>
+      <line class="lnk" x1="232" y1="62" x2="258" y2="62" marker-end="url(#arr5)"/>
+      <rect class="inset" x="260" y="30" width="220" height="64" rx="9"/>
+      <text class="f15 b tx" x="370" y="56" text-anchor="middle">前処理</text>
+      <text class="f14 txd" x="370" y="76" text-anchor="middle">明るさムラ補正+コントラスト</text>
+      <line class="lnk" x1="482" y1="62" x2="508" y2="62" marker-end="url(#arr5)"/>
+      <rect class="navysoft" x="510" y="30" width="240" height="64" rx="9"/>
+      <text class="f15 b txn" x="630" y="56" text-anchor="middle">YOLO11m で候補を探す</text>
+      <text class="f14 txd" x="630" y="76" text-anchor="middle">conf 0.26 で一律に足切り</text>
+      <line class="lnk" x1="630" y1="96" x2="630" y2="150" marker-end="url(#arr5)"/>
+      <!-- row2 (snake) -->
+      <rect class="navysoft" x="510" y="152" width="240" height="64" rx="9"/>
+      <text class="f15 b txn" x="630" y="178" text-anchor="middle">U-Net refiner で形を整える</text>
+      <text class="f14 txd" x="630" y="198" text-anchor="middle">shrink = 候補の内側を削るだけ</text>
+      <line class="lnk" x1="508" y1="184" x2="482" y2="184" marker-end="url(#arr5)"/>
+      <rect class="inset" x="260" y="152" width="220" height="64" rx="9"/>
+      <text class="f15 b tx" x="370" y="178" text-anchor="middle">排他化</text>
+      <text class="f14 txd" x="370" y="198" text-anchor="middle">画素の重なりを禁止</text>
+      <line class="lnk" x1="258" y1="184" x2="232" y2="184" marker-end="url(#arr5)"/>
+      <rect class="accentsoft" x="10" y="152" width="220" height="64" rx="9"/>
+      <text class="f15 b txa" x="120" y="178" text-anchor="middle">提出 CSV</text>
+      <text class="f14 txd" x="120" y="198" text-anchor="middle">圧縮RLE形式</text>
+      <text class="f15 b tx" x="380" y="244" text-anchor="middle">手元採点(OOF) 0.4432 / Public LB 0.39</text>
+    </svg>
+    <figcaption>図5. 現行構成: YOLO が候補を出し、refiner が形を整え、重なりを消して提出する流れ。</figcaption>
+  </figure>
+
+  <p>
+    流れはシンプル。YOLO11m(物体検出AI)が「フィラメントっぽい塊」を見つけ、
+    U-Net refiner(形を整える小さいAI)が各候補をキレイにする。refiner は
+    <strong>shrink(削るだけ・伸ばせない)</strong>が一番良かった — つまり YOLO の候補は
+    最初から大きめに覆っている。最後に、同じ画像内でマスクが1画素も重ならないよう
+    排他化して提出する。
+    <span class="term">OOF</span>(学習に使っていないデータでの手元採点)は 0.4432。
+  </p>
+  <p class="point">「候補を見つける→形を整える→重なり消し」の3段。弱点は conf 0.26 という手動の足切り。</p>
+</section>
+
+<!-- ==================== 6 ==================== -->
+<section id="s6">
+  <h2><span class="h2-num">6</span>最前線: tushhaaarrrr 氏の設計</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 270" role="img" aria-label="tushhaaarrrr氏のパイプラインフロー図">
+      <defs>
+        <marker id="arr6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <rect class="inset" x="10"  y="30" width="200" height="64" rx="9"/>
+      <text class="f15 b tx" x="110" y="56" text-anchor="middle">画像</text>
+      <text class="f14 txd" x="110" y="76" text-anchor="middle">2048px のまま</text>
+      <line class="lnk" x1="212" y1="62" x2="238" y2="62" marker-end="url(#arr6)"/>
+      <rect class="navysoft" x="240" y="30" width="240" height="64" rx="9"/>
+      <text class="f15 b txn" x="360" y="52" text-anchor="middle">確率マップ p(x)</text>
+      <text class="f14 txd" x="360" y="70" text-anchor="middle">「アノテータが塗る確率」を</text>
+      <text class="f14 txd" x="360" y="86" text-anchor="middle">校正を壊さない損失で学習</text>
+      <line class="lnk" x1="482" y1="62" x2="508" y2="62" marker-end="url(#arr6)"/>
+      <rect class="navysoft" x="510" y="30" width="240" height="64" rx="9"/>
+      <text class="f15 b txn" x="630" y="52" text-anchor="middle">15段階の閾値</text>
+      <text class="f14 txd" x="630" y="70" text-anchor="middle">入れ子の領域ツリー</text>
+      <text class="f14 txd" x="630" y="86" text-anchor="middle">(component tree)で候補化</text>
+      <line class="lnk" x1="630" y1="96" x2="630" y2="150" marker-end="url(#arr6)"/>
+      <rect class="accentsoft" x="510" y="152" width="240" height="74" rx="9"/>
+      <text class="f15 b txa" x="630" y="176" text-anchor="middle">各候補に期待IoU û を予測</text>
+      <text class="f14 txd" x="630" y="196" text-anchor="middle">û=ĥ·m̂(当たる確率×形の良さ)</text>
+      <text class="f14 txd" x="630" y="214" text-anchor="middle">GBDT(LightGBM)で56記述子</text>
+      <line class="lnk" x1="508" y1="189" x2="482" y2="189" marker-end="url(#arr6)"/>
+      <rect class="accentsoft" x="240" y="152" width="240" height="74" rx="9"/>
+      <text class="f15 b txa" x="360" y="176" text-anchor="middle">û > τ(=PQ/2≈0.26)で選択</text>
+      <text class="f14 txd" x="360" y="196" text-anchor="middle">木のDP(動的計画法)で厳密解</text>
+      <text class="f14 txd" x="360" y="214" text-anchor="middle">固定閾値比 +0.06</text>
+      <line class="lnk" x1="238" y1="189" x2="212" y2="189" marker-end="url(#arr6)"/>
+      <rect class="inset" x="10" y="152" width="200" height="74" rx="9"/>
+      <text class="f15 b tx" x="110" y="176" text-anchor="middle">回転正規化クロップで</text>
+      <text class="f15 b tx" x="110" y="196" text-anchor="middle">再セグメント→提出</text>
+      <text class="f14 txd" x="110" y="216" text-anchor="middle">384×128、長軸を水平に</text>
+      <text class="f15 b tx" x="380" y="254" text-anchor="middle">OOF 0.4597(703枚) / Public 0.40</text>
+    </svg>
+    <figcaption>図6-A. tushhaaarrrr 氏(filseg v4)の流れ。差が出るのは「確率→候補→選択」という決定層。</figcaption>
+  </figure>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 320" role="img" aria-label="入れ子ツリーの図">
+      <defs>
+        <marker id="arr6b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <text class="f14 txd" x="40" y="30">閾値を上げるほど、領域が細かく分裂していく</text>
+      <!-- root -->
+      <rect class="wbox" x="280" y="46" width="200" height="72" rx="9"/>
+      <ellipse class="fil" cx="380" cy="72" rx="80" ry="15"/>
+      <text class="f14 tx" x="380" y="108" text-anchor="middle">閾値 低: 全部つながった1領域</text>
+      <line class="lnk" x1="330" y1="118" x2="200" y2="156" marker-end="url(#arr6b)"/>
+      <line class="lnk" x1="430" y1="118" x2="560" y2="156" marker-end="url(#arr6b)"/>
+      <!-- mid nodes -->
+      <rect class="wbox" x="80" y="158" width="240" height="66" rx="9"/>
+      <ellipse class="fil" cx="200" cy="180" rx="90" ry="13"/>
+      <text class="f14 tx" x="200" y="214" text-anchor="middle">中: こっちは分かれない=1個体</text>
+      <rect class="wbox" x="440" y="158" width="240" height="66" rx="9"/>
+      <ellipse class="fil" cx="535" cy="180" rx="50" ry="13"/>
+      <ellipse class="fil" cx="615" cy="184" rx="42" ry="12"/>
+      <text class="f14 tx" x="560" y="214" text-anchor="middle">中: まだくっついて見える</text>
+      <line class="lnk" x1="520" y1="224" x2="470" y2="250" marker-end="url(#arr6b)"/>
+      <line class="lnk" x1="610" y1="224" x2="660" y2="250" marker-end="url(#arr6b)"/>
+      <!-- leaves -->
+      <rect class="goodbox" x="390" y="252" width="150" height="54" rx="9"/>
+      <ellipse class="fil" cx="465" cy="270" rx="50" ry="10"/>
+      <text class="f14 txg" x="465" y="298" text-anchor="middle">高: 個体B1</text>
+      <rect class="goodbox" x="580" y="252" width="150" height="54" rx="9"/>
+      <ellipse class="fil" cx="655" cy="272" rx="44" ry="10"/>
+      <text class="f14 txg" x="655" y="298" text-anchor="middle">高: 個体B2</text>
+      <text class="f14 txd" x="150" y="250" text-anchor="middle">選ぶ=木から</text>
+      <text class="f14 txd" x="150" y="270" text-anchor="middle">重ならないノードの</text>
+      <text class="f14 txd" x="150" y="290" text-anchor="middle">組合せ(antichain)</text>
+    </svg>
+    <figcaption>図6-B. 確率マップを15段階の閾値で切ると、領域は木状に分裂する。「どの高さで切るか」をDPで最適化。</figcaption>
+  </figure>
+
+  <p>
+    彼の設計の核心は、モデルを巨大化することではなく<strong>「どの候補を提出に入れるか」の決定層</strong>。
+    まず「ランダムなアノテータがその画素を塗る確率」を素直に学習させ
+    (ごまかしの効く損失は全部不採用)、15段階の閾値でできる入れ子ツリー上の全候補に、
+    <span class="term">期待IoU</span> û(「当たる確率」×「当たった時の形の良さ」の掛け算)を
+    勾配ブースティング(弱い木をたくさん足す機械学習)で予測。
+    最後に「û が τ を超える候補だけ」を木の最適化で選ぶ。
+  </p>
+  <p class="point">スコア差の源泉はモデルではなく決定層。「候補に値段を付けて、損しないものだけ出す」が勝ち筋。</p>
+</section>
+
+<!-- ==================== 7 ==================== -->
+<section id="s7">
+  <h2><span class="h2-num">7</span>なぜ「どれを出すか」の判断が点数を決めるのか</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 330" role="img" aria-label="損益分岐の天秤">
+      <defs>
+        <marker id="arr7" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- 支柱 -->
+      <line class="axis" x1="380" y1="120" x2="380" y2="216"/>
+      <polygon points="352,250 408,250 380,214" fill="#241f16"/>
+      <text class="f14 txd" x="380" y="272" text-anchor="middle">損益分岐</text>
+      <!-- 天秤の梁(左が重い=利益が勝つ図) -->
+      <line x1="185" y1="152" x2="575" y2="108" stroke="#241f16" stroke-width="6" fill="none"/>
+      <!-- 左皿: 利益 -->
+      <line class="lnk" x1="185" y1="152" x2="160" y2="196"/>
+      <line class="lnk" x1="185" y1="152" x2="210" y2="196"/>
+      <path d="M150,196 Q185,236 220,196 Z" fill="#26476d"/>
+      <text class="f15 b txn" x="185" y="100" text-anchor="middle">出す利益</text>
+      <text class="f14 txn" x="185" y="120" text-anchor="middle">本物に当たれば +IoU</text>
+      <text class="f14 b txw" x="185" y="214" text-anchor="middle">期待値 p×u</text>
+      <!-- 右皿: コスト -->
+      <line class="lnk" x1="575" y1="108" x2="550" y2="152"/>
+      <line class="lnk" x1="575" y1="108" x2="600" y2="152"/>
+      <path d="M540,152 Q575,192 610,152 Z" fill="#ad3a2e"/>
+      <text class="f15 b txb" x="575" y="60" text-anchor="middle">出すコスト</text>
+      <text class="f14 txb" x="575" y="80" text-anchor="middle">外れると分母を+0.5(FP側)</text>
+      <text class="f14 b txw" x="575" y="170" text-anchor="middle">0.5×PQ</text>
+      <!-- 左: 補足 -->
+      <text class="f14 txd" x="80" y="60">p = 当たる確率</text>
+      <text class="f14 txd" x="80" y="80">u = 当たった時のIoU</text>
+      <!-- 判定式 -->
+      <rect class="accentsoft" x="230" y="288" width="300" height="36" rx="8"/>
+      <text class="f15 b txa" x="380" y="312" text-anchor="middle">p × u &gt; 0.5 × PQ なら出せ</text>
+      <line class="lnkd" x1="530" y1="306" x2="600" y2="306"/>
+      <text class="f14 txd" x="640" y="292" text-anchor="middle">û&gt;τ で選ぶのは</text>
+      <text class="f14 txd" x="640" y="310" text-anchor="middle">これと同じこと</text>
+      <text class="f14 txd" x="60" y="312">τ = PQ/2 ≈ 0.26</text>
+    </svg>
+    <figcaption>図7. 候補を1つ出すことの損益分岐。「儲けの期待値」が「外れた時の罰金」を上回るものだけ出す。</figcaption>
+  </figure>
+
+  <p>
+    §2 で見た通り、外れた候補は「0点」ではなく分母を増やす罰金。だから候補を1つ出す行為には
+    「当たったら IoU 分だけ得」「外れたら 0.5×PQ だけ損」という期待値の天秤がある。
+    README §1 に最初から書かれている損益分岐 <code>p·u &gt; 0.5·PQ</code> と、
+    tushhaaarrrr 氏の「û &gt; τ(τ=PQ/2≈0.26)で選択」は<strong>同じことを言っている</strong>。
+    違いは、彼がこの計算を全候補に機械学習で回しているのに対し、私たちは conf 0.26 の
+    固定足切りで済ませていること。
+  </p>
+  <p class="point">「全部出す」は愚策。「損しないものだけ出す」を自動化した側が勝つ — それが τ=PQ/2 の意味。</p>
+</section>
+
+<!-- ==================== 8 ==================== -->
+<section id="s8">
+  <h2><span class="h2-num">8</span>私たちとの違い(対応表)</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 340" role="img" aria-label="現行構成とtushhaaarrrr氏の対応表">
+      <rect class="inset" x="20"  y="14" width="350" height="40" rx="8"/>
+      <text class="f15 b tx" x="195" y="40" text-anchor="middle">私たち(現状)</text>
+      <rect class="accentsoft" x="390" y="14" width="350" height="40" rx="8"/>
+      <text class="f15 b txa" x="565" y="40" text-anchor="middle">tushhaaarrrr 氏</text>
+      <!-- row1 -->
+      <rect class="wbox" x="20" y="64" width="350" height="76" rx="8"/>
+      <text class="f14 b tx" x="36" y="90">① 出す/出さないの決め方</text>
+      <text class="f14 txd" x="36" y="112">YOLO の conf を 0.26 で固定足切り</text>
+      <text class="f14 txd" x="36" y="130">(全候補に同じ関所)</text>
+      <rect class="goodbox" x="390" y="64" width="350" height="76" rx="8"/>
+      <text class="f14 b tx" x="406" y="90">① 出す/出さないの決め方</text>
+      <text class="f14 txd" x="406" y="112">候補ごとに期待IoU û を学習予測</text>
+      <text class="f14 txd" x="406" y="130">→ グローバル τ≈0.26 で選択(固定比+0.06)</text>
+      <!-- row2 -->
+      <rect class="wbox" x="20" y="150" width="350" height="76" rx="8"/>
+      <text class="f14 b tx" x="36" y="176">② 複数モデルのまとめ方</text>
+      <text class="f14 txd" x="36" y="198">mask 投票アンサンブル</text>
+      <text class="f14 txd" x="36" y="216">(形が出てから多数決 → 過去に失敗)</text>
+      <rect class="goodbox" x="390" y="150" width="350" height="76" rx="8"/>
+      <text class="f14 b tx" x="406" y="176">② 複数モデルのまとめ方</text>
+      <text class="f14 txd" x="406" y="198">確率マップを先に平均してから決める</text>
+      <text class="f14 txd" x="406" y="216">(fold平均 + 反転TTA)</text>
+      <!-- row3 -->
+      <rect class="wbox" x="20" y="236" width="350" height="76" rx="8"/>
+      <text class="f14 b tx" x="36" y="262">③ 形を整える時の切り出し</text>
+      <text class="f14 txd" x="36" y="284">正方形 320px クロップ</text>
+      <text class="f14 txd" x="36" y="302">(フィラメントが斜めに入る)</text>
+      <rect class="goodbox" x="390" y="236" width="350" height="76" rx="8"/>
+      <text class="f14 b tx" x="406" y="262">③ 形を整える時の切り出し</text>
+      <text class="f14 txd" x="406" y="284">長軸を水平に回転して 384×128</text>
+      <text class="f14 txd" x="406" y="302">(+ 隣の個体も別チャンネルで見せる)</text>
+    </svg>
+    <figcaption>図8. どこもモデルの種類ではなく、「決定・統合・切り出し」の作り方の差。</figcaption>
+  </figure>
+
+  <p>
+    一番大きい差は①。こちらは「YOLO の自信 0.26 以上」を全画像共通の関所にしているが、
+    向こうは候補ごとに「これを出したら期待してよい点数(û)」を推定して、PQから決まる
+    一つの関所 τ で選ぶ。③の回転正規化クロップは、細長いフィラメントを
+    「いつも横向き」に揃えてから整える工夫。
+  </p>
+  <p>
+    <strong>なお過去の失敗との違い:</strong> 私たちは V42 で候補採点器(verifier)を一度作って
+    不採用にしたことがあるが、あれは <em>refiner 前</em>の代理目標を当てにしていたので
+    最終PQに結びつかなかった。今回の案は <em>refiner 後</em>の「最終的に当たる度合い
+    (期待IoU)」を直接予測する点が違う — まさに失敗の原因を取り除いた形。
+  </p>
+  <p class="point">「候補採点器」は二度目の挑戦だが、今回は失敗した V42 と違い「最終形の良さ」を直接狙う設計。</p>
+</section>
+
+<!-- ==================== 9 ==================== -->
+<section id="s9">
+  <h2><span class="h2-num">9</span>Biohub(細胞追跡)から借りられるもの</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 340" role="img" aria-label="Biohub1位と太陽フィラメントの対応図">
+      <defs>
+        <marker id="arr9" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <text class="f15 b txn" x="30" y="34">Biohub 1位: 細胞の追跡(検出→分裂予測→連結)</text>
+      <!-- Biohub row -->
+      <rect class="navysoft" x="20"  y="48" width="160" height="76" rx="9"/>
+      <text class="f14 b txn" x="100" y="72" text-anchor="middle">検出</text>
+      <text class="f14 txd" x="100" y="92" text-anchor="middle">3D U-Net 3.1M</text>
+      <text class="f14 txd" x="100" y="110" text-anchor="middle">MAE事前学習+微調整</text>
+      <line class="lnk" x1="182" y1="86" x2="206" y2="86" marker-end="url(#arr9)"/>
+      <rect class="navysoft" x="208" y="48" width="170" height="76" rx="9"/>
+      <text class="f14 b txn" x="293" y="68" text-anchor="middle">"Soon Net"</text>
+      <text class="f14 txd" x="293" y="88" text-anchor="middle">分裂しそう/直後/通常を</text>
+      <text class="f14 txd" x="293" y="106" text-anchor="middle">分類 236K+508K</text>
+      <line class="lnk" x1="380" y1="86" x2="404" y2="86" marker-end="url(#arr9)"/>
+      <rect class="navysoft" x="406" y="48" width="170" height="76" rx="9"/>
+      <text class="f14 b txn" x="491" y="72" text-anchor="middle">Linker</text>
+      <text class="f14 txd" x="491" y="92" text-anchor="middle">Transformerで</text>
+      <text class="f14 txd" x="491" y="110" text-anchor="middle">細胞同士を連結</text>
+      <line class="lnk" x1="578" y1="86" x2="602" y2="86" marker-end="url(#arr9)"/>
+      <rect class="navysoft" x="604" y="48" width="140" height="76" rx="9"/>
+      <text class="f14 b txn" x="674" y="76" text-anchor="middle">greedy decode</text>
+      <text class="f14 txd" x="674" y="96" text-anchor="middle">目先の最善を</text>
+      <text class="f14 txd" x="674" y="114" text-anchor="middle">順に繋ぐ</text>
+      <!-- dotted correspondences -->
+      <line class="lnkd" x1="100" y1="126" x2="100" y2="196"/>
+      <line class="lnkd" x1="293" y1="126" x2="293" y2="196"/>
+      <line class="lnkd" x1="491" y1="126" x2="491" y2="196"/>
+      <line class="lnkd" x1="674" y1="126" x2="674" y2="196"/>
+      <text class="f15 b txa" x="30" y="190">太陽フィラメント側の対応(私たちがやるべき形)</text>
+      <!-- solar row -->
+      <rect class="accentsoft" x="20"  y="200" width="160" height="76" rx="9"/>
+      <text class="f14 b txa" x="100" y="224" text-anchor="middle">候補を出す</text>
+      <text class="f14 txd" x="100" y="244" text-anchor="middle">YOLO + refiner</text>
+      <text class="f14 txd" x="100" y="262" text-anchor="middle">(既にある)</text>
+      <line class="lnk" x1="182" y1="238" x2="206" y2="238" marker-end="url(#arr9)"/>
+      <rect class="accentsoft" x="208" y="200" width="170" height="76" rx="9"/>
+      <text class="f14 b txa" x="293" y="224" text-anchor="middle">候補に点数を付ける</text>
+      <text class="f14 txd" x="293" y="244" text-anchor="middle">期待IoUスコアラー</text>
+      <text class="f14 txd" x="293" y="262" text-anchor="middle">(=Soon Net相当)</text>
+      <line class="lnk" x1="380" y1="238" x2="404" y2="238" marker-end="url(#arr9)"/>
+      <rect class="accentsoft" x="406" y="200" width="170" height="76" rx="9"/>
+      <text class="f14 b txa" x="491" y="224" text-anchor="middle">どれを出すか選ぶ</text>
+      <text class="f14 txd" x="491" y="244" text-anchor="middle">û&gt;τ + 木のDP</text>
+      <text class="f14 txd" x="491" y="262" text-anchor="middle">(=Linker相当)</text>
+      <line class="lnk" x1="578" y1="238" x2="602" y2="238" marker-end="url(#arr9)"/>
+      <rect class="accentsoft" x="604" y="200" width="140" height="76" rx="9"/>
+      <text class="f14 b txa" x="674" y="228" text-anchor="middle">重なり消し</text>
+      <text class="f14 txd" x="674" y="248" text-anchor="middle">排他化</text>
+      <text class="f14 txd" x="674" y="266" text-anchor="middle">(既にある)</text>
+      <text class="f14 txd" x="380" y="308" text-anchor="middle">構造は同じ: 「小さい校正済みモデルを段々に並べて、最後はルールで決める」が上位の型</text>
+      <text class="f14 txd" x="380" y="328" text-anchor="middle">Biohub 1位 Public 0.976 / Private 0.977 — 過剰適合なしで通した設計</text>
+    </svg>
+    <figcaption>図9. Biohub 1位の3段構成と、私たちのパイプラインの対応。借りられるのは「校正された小モデル+厳密な選択」の型。</figcaption>
+  </figure>
+
+  <p>
+    Biohub(細胞追跡コンペ、2026-09 終了)の1位は、巨大モデルではなく
+    <strong>小さいモデルを段々に並べる設計</strong>だった: 検出は 3.1M の U-Net
+    (事前学習→手描き1,800細胞で微調整→自分で作った擬似正解で再学習)、
+    "Soon Net" は各細胞の3フレームから「分裂しそうか」を分類する軽量CNN+Transformer
+    (2周目は OOF で誤分類した難しい例 2,492 件を 1:1 で混ぜて再学習)、
+    連結は Transformer + 欲張り法。3位は検出ヒートマップを複数モデルで<strong>確率平均</strong>し、
+    不確かな背景(候補周囲6µm)を損失から除外。12位は再学習せず「計測済みの修復段」を積んで
+    Private でほぼ持ちこたえた(ただし検証が in-sample で約0.03 楽観だったと自己申告)。
+  </p>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Biohub側(順位)</th><th>やっていたこと</th><th>太陽への対応</th><th>評価</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1位</td><td>校正された小モデル群 + greedy decode</td><td>校正スコアラー + 厳密な選択(§6と同じ原理)</td><td class="ok">◎ 最有力</td></tr>
+      <tr><td>1位</td><td>2周目に OOF の誤分類(hard negative)を1:1混入</td><td>スコアラーが誤採択する候補をOOFで掘って再学習</td><td class="ok">◎(上記に同梱)</td></tr>
+      <tr><td>1位</td><td>EMA + 強いデータ拡張</td><td>v54 EMA pilot(fold1/2待ち)</td><td class="mid">○ 継続</td></tr>
+      <tr><td>1位</td><td>MAE事前学習(ラベルなし)</td><td>ラベルなしGONGは許可済み、ただし効果は不明</td><td class="mid">△ 低</td></tr>
+      <tr><td>3位</td><td>検出ヒートマップをfold平均+flip TTAで確率平均</td><td>refiner確率マップを3fold+flipで平均(未試行)</td><td class="ok">○ 中・安価</td></tr>
+      <tr><td>3位</td><td>疎い正解では不確かな背景を損失から除外</td><td>「塗られてない≠負例」— soft annotator-mean目標が対応物</td><td class="ok">○ 中</td></tr>
+      <tr><td>3位</td><td>public/privateの分布差をprobingで把握し選抜はOOF固定</td><td>Public≈90枚、選抜はOOFのみ(私たちの既存方針)</td><td class="ok">○ 確認済</td></tr>
+      <tr><td>1位/3位</td><td>高信頼 pseudo-label(自分で作った擬似正解)</td><td>V49で不採用確定済み</td><td class="no">× 不採用</td></tr>
+      <tr><td>12位</td><td>各段を計測済み・fail-safeな修復ステージとして積む</td><td>本プロジェクトの規律と同じ</td><td class="ok">○ 確認済</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="point">勝ちパターンは分野をまたいで同じ: 小さく校正された判定器を並べ、最後は厳密な選択ルールで締める。</p>
+</section>
+
+<!-- ==================== 10 ==================== -->
+<section id="s10">
+  <h2><span class="h2-num">10</span>これからの優先順位</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 330" role="img" aria-label="優先順位ロードマップの4段階段">
+      <defs>
+        <marker id="arr10" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- step1 -->
+      <rect class="accentsoft" x="16"  y="200" width="168" height="104" rx="9"/>
+      <circle cx="40" cy="222" r="13" fill="#c1501f"/><text class="f15 b txw" x="40" y="227" text-anchor="middle">1</text>
+      <text class="f14 b tx" x="58" y="227">期待IoUスコアラー</text>
+      <text class="f14 tx" x="30" y="250">+ τ=PQ/2 で選択</text>
+      <text class="f14 txd" x="30" y="272">資源: CPUのみ・既存</text>
+      <text class="f14 txd" x="30" y="290">cacheで完結</text>
+      <!-- step2 -->
+      <rect class="wbox" x="200" y="160" width="168" height="144" rx="9"/>
+      <circle cx="224" cy="182" r="13" fill="#26476d"/><text class="f15 b txw" x="224" y="187" text-anchor="middle">2</text>
+      <text class="f14 b tx" x="242" y="187">refiner確率平均</text>
+      <text class="f14 tx" x="214" y="210">+ flip TTA</text>
+      <text class="f14 txd" x="214" y="234">資源: 推論のみ</text>
+      <text class="f14 txd" x="214" y="252">(3fold+左右反転)</text>
+      <text class="f14 txd" x="214" y="274">mask投票とは別物</text>
+      <!-- step3 -->
+      <rect class="wbox" x="384" y="120" width="168" height="184" rx="9"/>
+      <circle cx="408" cy="142" r="13" fill="#26476d"/><text class="f15 b txw" x="408" y="147" text-anchor="middle">3</text>
+      <text class="f14 b tx" x="426" y="147">回転正規化</text>
+      <text class="f14 b tx" x="426" y="166">クロップ</text>
+      <text class="f14 txd" x="398" y="192">資源: refinerの</text>
+      <text class="f14 txd" x="398" y="210">再学習(GPU)</text>
+      <text class="f14 txd" x="398" y="234">過去に多ch化で</text>
+      <text class="f14 txd" x="398" y="252">失敗歴あり →</text>
+      <text class="f14 txd" x="398" y="270">proposal固定で</text>
+      <!-- step4 -->
+      <rect class="wbox" x="568" y="80" width="176" height="224" rx="9"/>
+      <circle cx="592" cy="102" r="13" fill="#3c7a4d"/><text class="f15 b txw" x="592" y="107" text-anchor="middle">4</text>
+      <text class="f14 b tx" x="610" y="107">報告書・README</text>
+      <text class="f14 b tx" x="610" y="126">に反映</text>
+      <text class="f14 txd" x="582" y="152">資源: 執筆のみ</text>
+      <text class="f14 txd" x="582" y="174">定性30%の採点</text>
+      <text class="f14 txd" x="582" y="192">対象。Public≈</text>
+      <text class="f14 txd" x="582" y="210">90枚・外部GT禁止</text>
+      <text class="f14 txd" x="582" y="228">適合などを記録</text>
+      <!-- 登る矢印 -->
+      <line class="lnka" x1="186" y1="240" x2="198" y2="240" marker-end="url(#arr10)"/>
+      <line class="lnka" x1="370" y1="200" x2="382" y2="200" marker-end="url(#arr10)"/>
+      <line class="lnka" x1="554" y1="160" x2="566" y2="160" marker-end="url(#arr10)"/>
+      <text class="f14 txd" x="380" y="324" text-anchor="middle">各段の採否は同じ判定基準: 3fold 符号一致 + bootstrap 95%CI が0を跨がないこと</text>
+    </svg>
+    <figcaption>図10. やる順番。1番はGPUすら要らない既存キャッシュ上の実験で、ここが最大のレバー。</figcaption>
+  </figure>
+
+  <p>
+    優先度1は「期待IoUスコアラー + τ選択」で、YOLO の足切りを緩めて(conf 0.10程度)候補を増やし、
+    refiner 後の候補ごとに「出したら期待できる点数」を学習予測して τ で選ぶ。
+    既存の OOF キャッシュに候補が残っているので<strong>GPU不要・CPUだけで検証できる</strong>のが大きい。
+    過去の失敗(V42)と違い、目標は「最終的に当たる度合い」そのもの。2番目の確率平均は推論だけで済む
+    安い改善候補。3番目は再学習が要るので後回し、4番目は締切(11/15)に向けた提出物の整備。
+  </p>
+  <p class="point">まずやるのは「スコアラー」— GPU不要・既存データで試せて、tushhaaarrrr 氏の +0.06 の源泉と同じ原理(私たちの構成でどれだけ効くかは未測定)。</p>
+  <p style="text-align:right"><a href="#s14">→ 設計の詳細は §14「期待IoUスコアラーの作り方」へ</a></p>
+</section>
+
+<!-- ==================== 11 手計算PQ ==================== -->
+<section id="s11">
+  <h2><span class="h2-num">11</span>「惜しい」はなぜ損なのか — 手計算で体感する PQ</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 330" role="img" aria-label="PQ手計算の3ケース">
+      <defs>
+        <pattern id="hatchFn" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#e8e0cd"/>
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#a89a80" stroke-width="1.6"/>
+        </pattern>
+      </defs>
+      <!-- 凡例 -->
+      <rect x="30" y="14" width="16" height="16" fill="#3c7a4d"/><text class="f14 tx" x="52" y="27">当たった正解(TP)</text>
+      <rect x="200" y="14" width="16" height="16" fill="url(#hatchFn)" stroke="#a89a80"/><text class="f14 tx" x="222" y="27">見逃した正解(FN)</text>
+      <rect x="370" y="14" width="16" height="16" fill="#ad3a2e"/><text class="f14 tx" x="392" y="27">空振りの予測(FP)</text>
+      <!-- ===== ケースA ===== -->
+      <text class="f15 b tx" x="130" y="62" text-anchor="middle">A: 素直な提出</text>
+      <text class="f14 txd" x="15" y="84">正解 10本:</text>
+      <g>
+        <rect x="15" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="35" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="55" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="75" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="95" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="115" y="92" width="18" height="18" fill="#3c7a4d"/>
+        <rect x="135" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="155" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="175" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="195" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/>
+      </g>
+      <text class="f14 txd" x="15" y="138">出した予測:</text>
+      <g>
+        <rect x="15" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="35" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="55" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="75" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="95" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="115" y="146" width="18" height="18" fill="#3c7a4d"/>
+        <rect x="135" y="146" width="18" height="18" fill="#ad3a2e"/><rect x="155" y="146" width="18" height="18" fill="#ad3a2e"/>
+      </g>
+      <text class="f14 tx" x="15" y="196">PQ = 4.2 ÷ (6 + 1 + 2)</text>
+      <text class="f22 b tx" x="15" y="232">= 0.467</text>
+      <!-- ===== ケースB ===== -->
+      <text class="f15 b tx" x="380" y="62" text-anchor="middle">B: 「惜しい(IoU 0.4)」を1本追加</text>
+      <text class="f14 txd" x="265" y="84">正解 10本:</text>
+      <g>
+        <rect x="265" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="285" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="305" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="325" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="345" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="365" y="92" width="18" height="18" fill="#3c7a4d"/>
+        <rect x="385" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="405" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="425" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="445" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/>
+      </g>
+      <text class="f14 txd" x="265" y="138">出した予測:</text>
+      <g>
+        <rect x="265" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="285" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="305" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="325" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="345" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="365" y="146" width="18" height="18" fill="#3c7a4d"/>
+        <rect x="385" y="146" width="18" height="18" fill="#ad3a2e"/><rect x="405" y="146" width="18" height="18" fill="#ad3a2e"/><rect x="425" y="146" width="18" height="18" fill="#ad3a2e"/>
+        <rect x="425" y="146" width="18" height="18" fill="none" stroke="#c1501f" stroke-width="3"/>
+      </g>
+      <text class="f14 tx" x="265" y="196">PQ = 4.2 ÷ (6 + 1.5 + 2)</text>
+      <text class="f22 b txb" x="265" y="232">= 0.442</text>
+      <text class="f14 txb" x="335" y="230">追加の1本で −0.025</text>
+      <!-- ===== ケースC ===== -->
+      <text class="f15 b tx" x="630" y="62" text-anchor="middle">C: その形が IoU 0.55 なら</text>
+      <text class="f14 txd" x="515" y="84">正解 10本:</text>
+      <g>
+        <rect x="515" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="535" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="555" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="575" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="595" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="615" y="92" width="18" height="18" fill="#3c7a4d"/><rect x="635" y="92" width="18" height="18" fill="#3c7a4d"/>
+        <rect x="655" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="675" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/><rect x="695" y="92" width="18" height="18" fill="url(#hatchFn)" stroke="#a89a80"/>
+      </g>
+      <text class="f14 txd" x="515" y="138">出した予測:</text>
+      <g>
+        <rect x="515" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="535" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="555" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="575" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="595" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="615" y="146" width="18" height="18" fill="#3c7a4d"/><rect x="635" y="146" width="18" height="18" fill="#3c7a4d"/>
+        <rect x="655" y="146" width="18" height="18" fill="#ad3a2e"/><rect x="675" y="146" width="18" height="18" fill="#ad3a2e"/>
+        <rect x="635" y="146" width="18" height="18" fill="none" stroke="#3c7a4d" stroke-width="3"/>
+      </g>
+      <text class="f14 tx" x="515" y="196">PQ = 4.75 ÷ (7 + 1 + 1.5)</text>
+      <text class="f22 b txg" x="515" y="232">= 0.500</text>
+      <text class="f14 txg" x="585" y="230">当たり化で +0.033</text>
+      <text class="f14 txd" x="380" y="290" text-anchor="middle">BとCは分母が同じ(9.5) — 「惜しい」を「当たり」に変えると、そのまま分子に乗る</text>
+      <text class="f14 txd" x="380" y="312" text-anchor="middle">near-miss → TP の変換は TP+1・FP−0.5・FN−0.5 で分母不変(= 改善がそのまま加点)</text>
+    </svg>
+    <figcaption>図11. GT 10本の画像で手計算。惜しい候補(IoU 0.4)を足すと PQ 0.467→0.442 に悪化、形を良くして 0.55 にすると 0.500 に上がる。</figcaption>
+  </figure>
+
+  <p>
+    分子に入るのは「当たったペアの IoU の合計」だけ。だから IoU 0.4 の惜しい候補を足しても
+    分子は1円も増えず、分母だけ「空振り+0.5・見逃し+0.5」で膨らむ(ケースB)。
+    同じ候補でも形を 0.55 まで良くすれば当たりに昇格して分子+分母の両方に効く(ケースC)。
+    私たちのデータでは「惜しい」候補(near-miss、IoU 0.3〜0.5)が 920 件残っていて、
+    これが全部当たりに変われば PQ は約 0.50 まで届く計算 — README §2 の見通しそのもの。
+  </p>
+  <p class="point">出すか出さないかの前に「形を0.5の崖の上に乗せられるか」が勝負。惜しいまま出すのは最悪手。</p>
+</section>
+
+<!-- ==================== 12 正解のぶれ ==================== -->
+<section id="s12">
+  <h2><span class="h2-num">12</span>人間同士でも 0.34 — 「正解」がぶれる問題</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 310" role="img" aria-label="アノテータ同士のずれと真ん中予測">
+      <text class="f15 b tx" x="190" y="30" text-anchor="middle">AさんとBさんの描き方の差</text>
+      <!-- 左: 2本のリボン -->
+      <path d="M85,118 Q195,102 305,126" stroke="#26476d" stroke-width="26" fill="none" stroke-linecap="round" opacity="0.55"/>
+      <path d="M85,146 Q195,130 305,152" stroke="#c1501f" stroke-width="26" fill="none" stroke-linecap="round" opacity="0.5" stroke-dasharray="14 8"/>
+      <text class="f14 txn" x="95" y="100">Aさんの線(実線)</text>
+      <text class="f14 txa" x="95" y="180">Bさんの線(破線)</text>
+      <!-- 幅の寸法 -->
+      <line x1="330" y1="113" x2="330" y2="139" stroke="#241f16" stroke-width="1.4"/>
+      <polygon points="330,108 326,116 334,116" fill="#241f16"/>
+      <polygon points="330,144 326,136 334,136" fill="#241f16"/>
+      <text class="f14 tx" x="340" y="130">幅 w ≈ 11.1px</text>
+      <!-- ずれの寸法 -->
+      <line x1="355" y1="126" x2="355" y2="152" stroke="#241f16" stroke-width="1.4"/>
+      <polygon points="355,121 351,129 359,129" fill="#241f16"/>
+      <polygon points="355,157 351,149 359,149" fill="#241f16"/>
+      <text class="f14 tx" x="365" y="143">ずれ d ≈ 2.7px</text>
+      <text class="f14 txd" x="190" y="220" text-anchor="middle">幅11pxの細いリボンで輪郭が2.7pxずれるだけで</text>
+      <text class="f14 txd" x="190" y="240" text-anchor="middle">IoU ≈ (11.1−2.7)/(11.1+2.7) ≈ 0.61(実測の中央値 0.58)</text>
+      <text class="f14 b tx" x="190" y="272" text-anchor="middle">人間同士の採点: PQ 0.3398(296枚)</text>
+      <text class="f14 txd" x="190" y="292" text-anchor="middle">= 「正解」そのものが人によってぶれている</text>
+      <!-- 右: 真ん中予測 -->
+      <text class="f15 b tx" x="600" y="30" text-anchor="middle">真ん中を狙った予測なら</text>
+      <path d="M495,116 Q600,102 715,124" stroke="#5a7492" stroke-width="26" fill="none" stroke-linecap="round" opacity="0.3"/>
+      <path d="M495,144 Q600,130 715,150" stroke="#d97a3f" stroke-width="26" fill="none" stroke-linecap="round" opacity="0.3"/>
+      <path d="M495,130 Q600,116 715,137" stroke="#3c7a4d" stroke-width="20" fill="none" stroke-linecap="round" opacity="0.95"/>
+      <text class="f14 txg" x="505" y="105">予測(緑)= 二人の真ん中</text>
+      <text class="f14 tx" x="600" y="196" text-anchor="middle">各人とのずれは d/√2 に縮む</text>
+      <text class="f14 b txg" x="600" y="218" text-anchor="middle">→ IoU ≈ 0.71(A vs B 同士の 0.61 より高い!)</text>
+      <text class="f14 txd" x="600" y="248" text-anchor="middle">みんなの「平均的な描き方」を学べば、</text>
+      <text class="f14 txd" x="600" y="268" text-anchor="middle">どの個人の正解よりも全員に近い位置に出せる</text>
+      <text class="f14 txd" x="600" y="292" text-anchor="middle">(tushhaaarrrr 氏 notebook §1 の議論)</text>
+    </svg>
+    <figcaption>図12. 「正解」は1つではない。人と人を採点しても PQ≈0.34。だが分布の真ん中を予測する機械は、どの個人よりも全員に近い。</figcaption>
+  </figure>
+
+  <p>
+    衝撃の事実: アノテータ A さんの描画を B さんの正解として採点すると、PQ は
+    <strong>0.3398</strong>(複数アノテータ観測296枚。tushhaaarrrr 氏も別の598ペアで 0.340 と同じ値)。
+    細いリボンは数ピクセルの輪郭のずれで IoU が大きく削られるから、人間同士でもこの点数にしか
+    ならない。逆に言えば、複数人の正解の「平均」を学んだ機械は、個々の人間より高く出せる —
+    だから tushhaaarrrr 氏の「アノテータが塗る確率をそのまま学ぶ
+    (soft annotator-mean)」という目標は理にかなっている。
+  </p>
+  <p class="point">正解がぶれるコンペでは「誰か一人の描き方」を真似るより「みんなの真ん中」を学ぶ方が得。0.44 は人間並みを既に超えている。</p>
+</section>
+
+<!-- ==================== 13 conf掃引 ==================== -->
+<section id="s13">
+  <h2><span class="h2-num">13</span>検出器の足切りを下げると何が起きるか — 実測</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 350" role="img" aria-label="conf掃引の折れ線グラフ">
+      <defs>
+        <marker id="arr13" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- 吹き出し -->
+      <rect class="wbox" x="330" y="14" width="410" height="60" rx="10" stroke="#c1501f"/>
+      <text class="f14 b tx" x="535" y="36" text-anchor="middle">別角度の実測(juanmirod 氏): 足切り 0.35→0.10 で</text>
+      <text class="f14 tx" x="535" y="55" text-anchor="middle">「正解の中心が候補に入る率」68.6%→90.9% —</text>
+      <text class="f14 txd" x="535" y="70" text-anchor="middle">ただし低confの箱はほぼゴミで refiner では弾けない</text>
+      <!-- 軸 -->
+      <line class="axis" x1="90" y1="280" x2="680" y2="280"/>
+      <line class="axis" x1="90" y1="280" x2="90" y2="90"/>
+      <line class="grid" x1="90" y1="220" x2="680" y2="220"/><text class="f14 txd" x="50" y="225">2000</text>
+      <line class="grid" x1="90" y1="160" x2="680" y2="160"/><text class="f14 txd" x="50" y="165">4000</text>
+      <line class="grid" x1="90" y1="100" x2="680" y2="100"/><text class="f14 txd" x="50" y="105">6000</text>
+      <text class="f14 txd" x="30" y="95">個体数</text>
+      <!-- x ticks -->
+      <text class="f14 txd" x="130" y="300" text-anchor="middle">0.08</text>
+      <text class="f14 txd" x="290" y="300" text-anchor="middle">0.12</text>
+      <text class="f14 txd" x="450" y="300" text-anchor="middle">0.16</text>
+      <text class="f14 txd" x="610" y="300" text-anchor="middle">0.20</text>
+      <text class="f14 tx" x="385" y="326" text-anchor="middle">YOLO の足切り conf →(右ほど厳しい)</text>
+      <text class="f14 txa" x="710" y="300" text-anchor="middle">現行 0.26</text>
+      <text class="f14 txa" x="710" y="316" text-anchor="middle">(さらに右)</text>
+      <!-- FN グレー -->
+      <polyline points="130,197 290,193 450,189 610,184" stroke="#8a7d63" stroke-width="3" fill="none"/>
+      <circle cx="130" cy="197" r="4" fill="#8a7d63"/><circle cx="290" cy="193" r="4" fill="#8a7d63"/><circle cx="450" cy="189" r="4" fill="#8a7d63"/><circle cx="610" cy="184" r="4" fill="#8a7d63"/>
+      <!-- FP 赤 -->
+      <polyline points="130,89 290,127 450,153 610,172" stroke="#ad3a2e" stroke-width="3" fill="none"/>
+      <circle cx="130" cy="89" r="4" fill="#ad3a2e"/><circle cx="290" cy="127" r="4" fill="#ad3a2e"/><circle cx="450" cy="153" r="4" fill="#ad3a2e"/><circle cx="610" cy="172" r="4" fill="#ad3a2e"/>
+      <!-- TP 緑 -->
+      <polyline points="130,117 290,121 450,125 610,130" stroke="#3c7a4d" stroke-width="3" fill="none"/>
+      <circle cx="130" cy="117" r="4" fill="#3c7a4d"/><circle cx="290" cy="121" r="4" fill="#3c7a4d"/><circle cx="450" cy="125" r="4" fill="#3c7a4d"/><circle cx="610" cy="130" r="4" fill="#3c7a4d"/>
+      <!-- 端ラベル -->
+      <text class="f14 b txb" x="140" y="82">FP 6370</text>
+      <text class="f14 b txg" x="140" y="110">TP 5420</text>
+      <text class="f14 txd" x="140" y="192">FN 2779</text>
+      <text class="f14 b txb" x="618" y="160">FP 3600</text>
+      <text class="f14 b txg" x="618" y="122">TP 5017</text>
+      <text class="f14 txd" x="618" y="200">FN 3182</text>
+      <!-- 凡例 -->
+      <line x1="110" y1="330" x2="140" y2="330" stroke="#3c7a4d" stroke-width="3"/><text class="f14 tx" x="146" y="334">当たり(TP)</text>
+      <line x1="250" y1="330" x2="280" y2="330" stroke="#ad3a2e" stroke-width="3"/><text class="f14 tx" x="286" y="334">空振り(FP)</text>
+      <line x1="390" y1="330" x2="420" y2="330" stroke="#8a7d63" stroke-width="3"/><text class="f14 tx" x="426" y="334">見逃し(FN)</text>
+    </svg>
+    <figcaption>図13. 生YOLO・全fold OOF の実測(output/v35/pq_conf_sweep.csv)。足切りを下げると TP は微増だが FP(ゴミ候補)が激増する。</figcaption>
+  </figure>
+
+  <p>
+    現行の足切り conf 0.26 より下にも、本物の候補はまだ残っている(TP 5017@0.20 → 5420@0.08)。
+    ところが足切りを下げると、空振り(FP)がそれ以上に爆発する — 0.08 では FP 6370 件。
+    juanmirod 氏の別視点の計測でも同じ構図: 足切りを緩めれば正解の9割に候補は届くのに、
+    混ざる大量のゴミを見分ける仕組みがない。
+    つまり<strong>「候補はもうある。選別器がない」</strong>— これがスコアラー案の前提。
+  </p>
+  <p class="point">「もっと候補を出せば当たりも増えるがゴミも増える」→ だから候補ごとの良し悪しを見る仕組みが要る。</p>
+</section>
+
+<!-- ==================== 14 スコアラー設計 ==================== -->
+<section id="s14">
+  <h2><span class="h2-num">14</span>期待IoUスコアラーをどう作るか(設計図)</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 480" role="img" aria-label="期待IoUスコアラーのデータフロー">
+      <defs>
+        <marker id="arr14" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6f6553"/>
+        </marker>
+      </defs>
+      <!-- ①〜⑧ -->
+      <g>
+        <rect class="inset" x="10" y="20" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="43" r="13" fill="#26476d"/><text class="f15 b txw" x="34" y="48" text-anchor="middle">1</text>
+        <text class="f14 b tx" x="56" y="39">OOFキャッシュを開く</text>
+        <text class="f14 txd" x="56" y="57">3fold分のYOLO候補(conf 0.08まで保持)+確率</text>
+        <line class="lnk" x1="225" y1="66" x2="225" y2="78" marker-end="url(#arr14)"/>
+        <rect class="inset" x="10" y="80" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="103" r="13" fill="#26476d"/><text class="f15 b txw" x="34" y="108" text-anchor="middle">2</text>
+        <text class="f14 b tx" x="56" y="99">各候補に refiner を適用(shrink)</text>
+        <text class="f14 txd" x="56" y="117">提出時と同じ「形を整えた後」の状態にする</text>
+        <line class="lnk" x1="225" y1="126" x2="225" y2="138" marker-end="url(#arr14)"/>
+        <rect class="accentsoft" x="10" y="140" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="163" r="13" fill="#c1501f"/><text class="f15 b txw" x="34" y="168" text-anchor="middle">3</text>
+        <text class="f14 b tx" x="56" y="159">教師 u を記録から直接計算</text>
+        <text class="f14 txd" x="56" y="177">u = 各人GTとのIoUの平均(0.5超のみ)=期待される良さ</text>
+        <line class="lnk" x1="225" y1="186" x2="225" y2="198" marker-end="url(#arr14)"/>
+        <rect class="inset" x="10" y="200" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="223" r="13" fill="#26476d"/><text class="f15 b txw" x="34" y="228" text-anchor="middle">4</text>
+        <text class="f14 b tx" x="56" y="219">記述子を作る(8種)</text>
+        <text class="f14 txd" x="56" y="237">conf・面積・伸長度・確率統計・shrink比・位置・近傍・重なり</text>
+        <line class="lnk" x1="225" y1="246" x2="225" y2="258" marker-end="url(#arr14)"/>
+        <rect class="accentsoft" x="10" y="260" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="283" r="13" fill="#c1501f"/><text class="f15 b txw" x="34" y="288" text-anchor="middle">5</text>
+        <text class="f14 b tx" x="56" y="279">LightGBM hurdle を cross-fit</text>
+        <text class="f14 txd" x="56" y="297">ĥ(当たる確率)×m̂(当たった時のIoU)。別foldで学習</text>
+        <line class="lnk" x1="225" y1="306" x2="225" y2="318" marker-end="url(#arr14)"/>
+        <rect class="accentsoft" x="10" y="320" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="343" r="13" fill="#c1501f"/><text class="f15 b txw" x="34" y="348" text-anchor="middle">6</text>
+        <text class="f14 b tx" x="56" y="339">û = ĥ·m̂ &gt; τ(=PQ/2) で選択</text>
+        <text class="f14 txd" x="56" y="357">グローバル τ 一つ(画像別・個体別の閾値は効かず)</text>
+        <line class="lnk" x1="225" y1="366" x2="225" y2="378" marker-end="url(#arr14)"/>
+        <rect class="inset" x="10" y="380" width="430" height="46" rx="8"/>
+        <circle cx="34" cy="403" r="13" fill="#26476d"/><text class="f15 b txw" x="34" y="408" text-anchor="middle">7</text>
+        <text class="f14 b tx" x="56" y="399">既存の排他化(重なり禁止)</text>
+        <text class="f14 txd" x="56" y="417">選択後のマスクを提出と同じ手順で整理</text>
+        <line class="lnk" x1="225" y1="426" x2="225" y2="438" marker-end="url(#arr14)"/>
+        <rect class="inset" x="10" y="440" width="430" height="32" rx="8"/>
+        <circle cx="34" cy="456" r="13" fill="#26476d"/><text class="f15 b txw" x="34" y="461" text-anchor="middle">8</text>
+        <text class="f14 b tx" x="56" y="461">公式PQで3fold採点 → 採用ゲートへ</text>
+      </g>
+      <!-- ゲート -->
+      <line class="lnkd" x1="442" y1="456" x2="500" y2="340" marker-end="url(#arr14)"/>
+      <rect class="goodbox" x="500" y="230" width="240" height="104" rx="10"/>
+      <text class="f15 b txg" x="620" y="256" text-anchor="middle">採用ゲート(判定基準)</text>
+      <text class="f14 tx" x="620" y="280" text-anchor="middle">3fold で改善の符号が一致</text>
+      <text class="f14 tx" x="620" y="300" text-anchor="middle">かつ bootstrap 95%CI が</text>
+      <text class="f14 tx" x="620" y="320" text-anchor="middle">0 を跨がない → 採用</text>
+      <text class="f14 txd" x="620" y="366" text-anchor="middle">全部CPU・既存データだけで回る。</text>
+      <text class="f14 txd" x="620" y="386" text-anchor="middle">ダメでも「負の結果」として残す</text>
+      <text class="f14 txd" x="620" y="406" text-anchor="middle">(このプロジェクトの規律)</text>
+    </svg>
+    <figcaption>図14. スコアラー開発のデータフロー。③の教師は人の正解ではなく「記録から計算した期待される良さ」を使う。</figcaption>
+  </figure>
+
+  <h3>昔の失敗(V42)との違い</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>項目</th><th>V42 verifier(2026-08、不採用)</th><th>今回の設計</th></tr></thead>
+    <tbody>
+      <tr><td>何を当てるか(目標)</td><td>refiner <strong>前</strong>の代理目標 → 最終PQに結びつかず</td><td class="ok">refiner <strong>後</strong>の「期待IoU」= 最終形そのもの</td></tr>
+      <tr><td>モデル</td><td>11特徴の logistic 回帰</td><td class="ok">LightGBM hurdle(当たるか×形の良さの2段)</td></tr>
+      <tr><td>候補の範囲</td><td>conf 0.26 で足切り済みの候補のみ</td><td class="ok">足切りを緩めて候補を拡大(0.08〜0.10まで保持済)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>tushhaaarrrr 氏の notebook で実測済みの知見も最初から採り入れる:</p>
+  <ul>
+    <li><strong>hurdle(2段)は直接回帰より有利</strong> — 「当たるか」と「形の良さ」を分けて予測する。</li>
+    <li><strong>ニューラルネットの critic は −0.009 で効かなかった</strong> — 最初からGBDTで行き、NNは試さない。</li>
+    <li><strong>個体ごとの閾値は効かず、グローバル τ 一つで十分</strong> — 変に凝らず定数で切る。</li>
+  </ul>
+  <p class="point">「refiner 後・期待IoU・GBDT・候補拡大」— V42 の失敗要因を全部潰した形が、今回のスコアラー。</p>
+</section>
+
+<!-- ==================== 15 失敗一覧 ==================== -->
+<section id="s15">
+  <h2><span class="h2-num">15</span>試して効かなかったこと一覧(3者分)</h2>
+
+  <p>
+    図ではなく表で。私たち・最前線の tushhaaarrrr 氏・同型構成の juanmirod 氏、
+    3者が独立に試して潰れた施策を並べる(×=悪化/不採用、△=効果なし・微小)。
+  </p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>施策</th><th>実測</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="3">私たち(README §2・WINNING_STRATEGY §6)</td></tr>
+      <tr><td class="no">×</td><td>推論解像度を1536に上げる</td><td class="num">−0.01</td></tr>
+      <tr><td class="no">×</td><td>モデル大型化(yolo11l)</td><td class="num">基準未達</td></tr>
+      <tr><td class="no">×</td><td>検出器をRF-DETR-Segに置換</td><td class="num">raw 0.34 &lt; 生YOLO 0.40</td></tr>
+      <tr><td class="no">×</td><td>YOLO×RF-DETR の WBF 統合</td><td class="num">0.3925(悪化)</td></tr>
+      <tr><td class="no">×</td><td>3fold mask投票アンサンブル(V53)</td><td class="num">Public 0.39→0.38</td></tr>
+      <tr><td class="no">×</td><td>refiner 再学習(V46/V47)</td><td class="num">悪化</td></tr>
+      <tr><td class="no">×</td><td>pseudo-label(V49)</td><td class="num">2foldで −0.006</td></tr>
+      <tr><td class="mid">△</td><td>EdgeAttNet の edge prior 固有効果</td><td class="num">matched ablation で未確認</td></tr>
+      <tr><td class="no">×</td><td>refiner 5ch 多チャンネル化(v55)</td><td class="num">−0.02</td></tr>
+      <tr><td class="mid">△</td><td>スケルトンギャップ閉合(v56)</td><td class="num">±0</td></tr>
+      <tr><td class="no">×</td><td>密集シーン oversampling(v57)</td><td class="num">FN↓だがFP↑↑で負</td></tr>
+      <tr><td class="mid">△</td><td>EMA(v54)</td><td class="num">+0.0005(微小)</td></tr>
+      <tr class="grp"><td colspan="3">tushhaaarrrr 氏(公開 notebook §11.3)</td></tr>
+      <tr><td class="no">×</td><td>clDice / skeleton 損失</td><td class="num">−0.045</td></tr>
+      <tr><td class="no">×</td><td>時系列 TTA</td><td class="num">−0.02</td></tr>
+      <tr><td class="mid">△</td><td>磁場図の補助ヘッド</td><td class="num">n.s.(有意でない)</td></tr>
+      <tr><td class="no">×</td><td>noisy student(外部1736枚)</td><td class="num">+0.0028=seedノイズ程度</td></tr>
+      <tr><td class="no">×</td><td>ニューラルネット critic</td><td class="num">−0.009</td></tr>
+      <tr><td class="no">×</td><td>輪郭の±1px 膨張・収縮</td><td class="num">−0.025</td></tr>
+      <tr><td class="mid">△</td><td>個体ごとの閾値</td><td class="num">n.s.</td></tr>
+      <tr><td class="no">×</td><td>RF-DETR 単体</td><td class="num">0.35</td></tr>
+      <tr class="grp"><td colspan="3">juanmirod 氏(公開 notebook)</td></tr>
+      <tr><td class="no">×</td><td>モルフォロジー処理</td><td class="num">−0.01〜−0.10</td></tr>
+      <tr><td class="mid">△</td><td>形状フィルタ</td><td class="num">±0.002</td></tr>
+      <tr><td class="mid">△</td><td>TTA(cascade 構成)</td><td class="num">中立〜悪化</td></tr>
+      <tr><td class="no">×</td><td>union 目標(個体でなく全体)</td><td class="num">悪化</td></tr>
+      <tr><td class="mid">△</td><td>アンサンブル員の追加</td><td class="num">中立</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    注目すべきは重複: 解像度・DETR系置換・モルフォロジー・個体別閾値・時系列・pseudo-label系など、
+    <strong>互いを知らない3者が同じ壁に同じようにぶつかっている</strong>。
+    「モデルを大きく/変えてみる」系のレバーはほぼ探索済みで枯れていると見てよい。
+  </p>
+  <p class="point">残っている未開拓のレバーは「どれを出すか」の決定層と「確率の校正」— だから優先度1はスコアラー。</p>
+</section>
+
+<!-- ==================== 16 検証の作法 ==================== -->
+<section id="s16">
+  <h2><span class="h2-num">16</span>検証の作法 — 3-fold OOF と「fold0 だけで喜ばない」</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 760 340" role="img" aria-label="3-fold交差検証の図">
+      <rect class="inset" x="140" y="20" width="170" height="34" rx="7"/>
+      <text class="f14 b tx" x="225" y="42" text-anchor="middle">fold0(236枚)</text>
+      <rect class="inset" x="330" y="20" width="170" height="34" rx="7"/>
+      <text class="f14 b tx" x="415" y="42" text-anchor="middle">fold1(236枚)</text>
+      <rect class="inset" x="520" y="20" width="170" height="34" rx="7"/>
+      <text class="f14 b tx" x="605" y="42" text-anchor="middle">fold2(235枚)</text>
+      <text class="f14 txd" x="30" y="42">学習データ 707枚</text>
+      <!-- run① -->
+      <text class="f14 tx" x="30" y="102">run①</text>
+      <rect class="accentsoft" x="140" y="74" width="170" height="38" rx="7"/>
+      <text class="f14 b txa" x="225" y="98" text-anchor="middle">採点(OOF)</text>
+      <rect class="navysoft" x="330" y="74" width="170" height="38" rx="7"/>
+      <text class="f14 txn" x="415" y="98" text-anchor="middle">学習に使う</text>
+      <rect class="navysoft" x="520" y="74" width="170" height="38" rx="7"/>
+      <text class="f14 txn" x="605" y="98" text-anchor="middle">学習に使う</text>
+      <!-- run② -->
+      <text class="f14 tx" x="30" y="156">run②</text>
+      <rect class="navysoft" x="140" y="128" width="170" height="38" rx="7"/>
+      <text class="f14 txn" x="225" y="152" text-anchor="middle">学習に使う</text>
+      <rect class="accentsoft" x="330" y="128" width="170" height="38" rx="7"/>
+      <text class="f14 b txa" x="415" y="152" text-anchor="middle">採点(OOF)</text>
+      <rect class="navysoft" x="520" y="128" width="170" height="38" rx="7"/>
+      <text class="f14 txn" x="605" y="152" text-anchor="middle">学習に使う</text>
+      <!-- run③ -->
+      <text class="f14 tx" x="30" y="210">run③</text>
+      <rect class="navysoft" x="140" y="182" width="170" height="38" rx="7"/>
+      <text class="f14 txn" x="225" y="206" text-anchor="middle">学習に使う</text>
+      <rect class="navysoft" x="330" y="182" width="170" height="38" rx="7"/>
+      <text class="f14 txn" x="415" y="206" text-anchor="middle">学習に使う</text>
+      <rect class="accentsoft" x="520" y="182" width="170" height="38" rx="7"/>
+      <text class="f14 b txa" x="605" y="206" text-anchor="middle">採点(OOF)</text>
+      <text class="f15 b tx" x="380" y="252" text-anchor="middle">OOF = 3つの採点分を合わせた 707枚ぶん全部の「正直な点数」</text>
+      <!-- 失敗例 -->
+      <rect class="badbox" x="20" y="268" width="720" height="56" rx="9"/>
+      <text class="f14 b txb" x="36" y="291">実例 — fold0 だけで「良い閾値」を選ぶと:</text>
+      <text class="f14 tx" x="36" y="311">free@0.86 → fold0 −0.003 に見えたが fold1 −0.016・fold2 −0.011(2fold一致で悪化、不採用)。WBF も同型。</text>
+    </svg>
+    <figcaption>図16. 各foldは「他の2つで学習したモデル」で採点される。1foldで良く見えた設定は、そのfoldに合わせすぎただけかもしれない。</figcaption>
+  </figure>
+
+  <p>
+    <span class="term">fold(フォールド)</span>は学習データの三等分。各 fold の採点には
+    「そのfoldを見ていないモデル」を使うから、ズルをしない前哨戦の点数(OOF)になる。
+    でも罠がある: <strong>fold0 だけで最良を探すと「fold0 専用の設定」を拾ってしまう</strong>。
+    実際に free variant の閾値 0.86 は fold0 では −0.003 だったのに、fold1/2 では
+    −0.016/−0.011 と一致して悪かった。このプロジェクトでは「3fold で改善の符号が一致 +
+    bootstrap の95%信頼区間が0を跨がない」ことだけを採用条件にしている。
+  </p>
+  <p class="point">「一番良かった場所」ではなく「全部の場所で良いか」で決める。これが過去の失敗から生まれた採用ゲート。</p>
+</section>
+
+<!-- ==================== 17 用語集 ==================== -->
+<section id="s17">
+  <h2><span class="h2-num">17</span>用語集(高校生向け)</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>用語</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PQ</strong></td><td>パノプティック品質。当てた個数と形の正確さをまとめた点数。このコンペの採点方法。</td></tr>
+      <tr><td><strong>IoU</strong></td><td>2つの形の重なり具合(重なった面積 ÷ 合わせた面積)。0=全然ズレ、1=完全一致。</td></tr>
+      <tr><td><strong>TP / FP / FN</strong></td><td>当たり / 空振り(出したが外れ)/ 見逃し(正解なのに出せず)。PQの分母を作る3つ。</td></tr>
+      <tr><td><strong>アノテータ</strong></td><td>画像に正解を描いた人。このコンペは複数人の正解それぞれと採点される。</td></tr>
+      <tr><td><strong>OOF</strong></td><td>Out-of-Fold。「学習に使っていないデータ」で採点した手元の正直な点数。</td></tr>
+      <tr><td><strong>fold</strong></td><td>学習データの分割(ここでは3等分)。採点用に1つ残し、残りで学習する単位。</td></tr>
+      <tr><td><strong>リーク</strong></td><td>テストの答えが外に漏れている状態。写せば高得点になるが実力ではない。</td></tr>
+      <tr><td><strong>校正(キャリブレーション)</strong></td><td>予測した確率が実際の当たり率と合っていること。「70%と言ったら本当に7割当たる」状態。</td></tr>
+      <tr><td><strong>期待値</strong></td><td>「当たる確率 × 当たった時のもらえる量」。博打の平均リターンと同じ考え方。</td></tr>
+      <tr><td><strong>hurdle モデル</strong></td><td>「まず当たるか」を予測→「当たった時の良さ」を別に予測する、2段構えの予測器。</td></tr>
+      <tr><td><strong>GBDT / LightGBM</strong></td><td>弱い決定木をたくさん順番に足して強くする機械学習。表形式データに強い。</td></tr>
+      <tr><td><strong>component tree</strong></td><td>確率マップを色々な閾値で切ったとき、領域が分裂していく様子を木にしたもの。</td></tr>
+      <tr><td><strong>antichain</strong></td><td>木の中から「重ならない(祖先・子孫関係にない)ノード同士」の選び方。= 重複なし提出。</td></tr>
+      <tr><td><strong>DP(動的計画法)</strong></td><td>大きな問題を小さな部分問題に分けて最適解を効率よく求める手法。木の最適選択に使う。</td></tr>
+      <tr><td><strong>TTA</strong></td><td>テスト時拡張。画像を反転・回転した複数版で予測して平均する技。確率平均はOK、形の多数決は要注意。</td></tr>
+      <tr><td><strong>EMA</strong></td><td>学習中の重みの「なめらかな平均」を別に持ち、そちらで推論する技術。微小な改善が見えている。</td></tr>
+      <tr><td><strong>pseudo-label</strong></td><td>自分のモデルが生成した「仮の正解」で追加学習する手法。ここでは2fold一致で悪化し不採用。</td></tr>
+      <tr><td><strong>shrink refiner</strong></td><td>YOLO候補の「内側だけを削って」形を整えるU-Net。伸ばせないのがポイント。</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ==================== 18 FAQ ==================== -->
+<section id="s18">
+  <h2><span class="h2-num">18</span>FAQ</h2>
+
+  <div class="faq-item">
+    <p class="faq-q">0.55 のチームに勝てないの?</p>
+    <p class="faq-a">あの点数はテストと公開データが77%重なるリーク由来で、「答え写し」の点数。運営が「PQ 0.35超を精査」「クリーンアップする」と宣言済み。実力勝負の先頭は 0.40 前後で、私たち 0.39 は並走圏内。</p>
+  </div>
+  <div class="faq-item">
+    <p class="faq-q">なぜモデルを大きくしないの?</p>
+    <p class="faq-a">試した結果が全部あるから(yolo11l・RF-DETR置換・多チャンネル化など§15参照)。学習データ707枚では、モデル容量より「どれを出すか」の決定層の方が差を生むと3者の実測が一致して示している。</p>
+  </div>
+  <div class="faq-item">
+    <p class="faq-q">外部データを使えば?</p>
+    <p class="faq-a">正解付きの外部データはルールで禁止。ラベルなし太陽写真は訓練に使えるが、pseudo-labeling(V49)は2fold一致で悪化確定済み。MAE事前学習は権利として残っているが効果不明で優先度は低い。</p>
+  </div>
+  <div class="faq-item">
+    <p class="faq-q">Public 0.39 と 0.40 は違うの?</p>
+    <p class="faq-a">表示上の差はほぼ誤差。採点は約90枚だけで、リサンプリング誤差だけで sd≈0.012 ある。本質的な差は OOF にある(私たち 0.4432 vs tushhaaarrrr 氏 0.4597)ので、そこを詰めるのが今の計画。</p>
+  </div>
+  <div class="faq-item">
+    <p class="faq-q">締切(2026-11-15)までに何を出す?</p>
+    <p class="faq-a">定量70%は提出CSV。それに加えて定性30%として「4ページ技術報告書 + 公開Gitリポジトリ(+再現notebook)」を Google Form で提出しないと最終評価の対象外。コードの見た目・文書化も採点対象。</p>
+  </div>
+</section>
+
+<!-- ==================== 19 出典 ==================== -->
+<section id="s19">
+  <h2><span class="h2-num">19</span>出典</h2>
+  <p>このノートの数値・主張はすべて以下に由来する。正本(詳細・判断根拠の全文)は §6.23。</p>
+  <ul>
+    <li>正本: <a href="../WINNING_STRATEGY_2026-08-29.md"><code>WINNING_STRATEGY_2026-08-29.md</code> §6.23</a>(競合・ディスカッション・Biohub上位解法の再調査、2026-10-09)</li>
+    <li>補足: <a href="../README.md"><code>README.md</code></a> §1(PQの定義と3つの仕様)・§2 現在地・§3 パイプライン</li>
+    <li>Kaggle discussion(filament-segmentation-2026): <code>747399</code>, <code>746318</code>, <code>744765</code>, <code>743958</code>, <code>743385</code>, <code>743521</code>, <code>744047</code>, <code>741892</code>, <code>740400</code></li>
+    <li>公開 notebook: <code>tushhaaarrrr/solar-filament-segmentation-2026-0-40</code>, <code>juanmirod/solar-filament-2026-final-report</code>(<code>kaggle kernels pull</code> で取得・精読)</li>
+    <li>Biohub「Cell Tracking During Development」公開 writeup: 1st / 3rd / 12th place(2026-09-29終了)</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Solar Filament Segmentation Challenge 2026 — 調査図解ノート(2026-10-09)。<br>
+  高校生でも読めることを目標に、図を主役・数式はPQ一本に絞って構成。自己完結HTML(外部依存なし)。</p>
+</footer>
+
+</div>
+</body>
+</html>

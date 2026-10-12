@@ -1,0 +1,9 @@
+{
+  "mode": "prod",
+  "refiner": "plain_mhsa_f2",
+  "test_images": 180,
+  "total_wall_s": 2009.6,
+  "s_per_image": 11.164,
+  "device": "cpu",
+  "threads": 14
+}

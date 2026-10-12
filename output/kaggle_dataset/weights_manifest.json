@@ -1,0 +1,37 @@
+{
+ "dataset": "solar-filament-2026-weights",
+ "files": {
+  "a1_scorer_h.pkl": {
+   "sha256": "dac43ce80f6c966fa39e2c252d762c382038324638e5c2d286eb6436a56d767c",
+   "size": 1831158
+  },
+  "a1_scorer_m.pkl": {
+   "sha256": "18d4b9894fc1538c883060dd28fe4b47f748a460b1c95788b45f37a52a5c9649",
+   "size": 1831046
+  },
+  "a1_scorer_meta.json": {
+   "sha256": "e6fff6f8582f188ddd73f49617027acfb6625fecfa6890d64f9de6f2407f2064",
+   "size": 1574
+  },
+  "ablation_plain_mhsa_seed8407_fold2.pt": {
+   "sha256": "b5f331e150bad237a095372df5ff6d0df41ce20a3224efedbbcb86029a9c4748",
+   "size": 282089497
+  },
+  "refiner_all_data.pt": {
+   "sha256": "e9f0e8dd7ff104d922177e82b63755d9b025c22b8f45bf9aff3d7ea9aa406fe2",
+   "size": 141079441
+  },
+  "yolo_fold0_best.pt": {
+   "sha256": "ab8810916e34a755cc0d7a705dbb7ade60338ae247f8baac02adfe64026c0d35",
+   "size": 45316918
+  },
+  "yolo_fold1_best.pt": {
+   "sha256": "44ba9381a575d166dac26fb5237516e9597164d7b186db99715e4330e97f2cc8",
+   "size": 45316918
+  },
+  "yolo_fold2_best.pt": {
+   "sha256": "40ec31fd2c6aa8e32c952e64be453f4351ace339d31ef747b4f28624eafe7e8c",
+   "size": 45316918
+  }
+ }
+}

@@ -1,0 +1,8 @@
+{
+  "mode": "a1",
+  "test_images": 180,
+  "total_wall_s": 3535.2,
+  "s_per_image": 19.64,
+  "device": "cpu",
+  "threads": 12
+}

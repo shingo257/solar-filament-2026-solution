@@ -1,0 +1,85 @@
+{
+  "main_threshold": 0.45,
+  "manifests_seen": 6,
+  "expected": 12,
+  "verdict": {
+    "soft": {
+      "cells": 6,
+      "complete": true,
+      "all_cells_positive": false,
+      "fold_consistent": false,
+      "mean_delta": -0.0033673333333333333
+    },
+    "hard_union": {
+      "cells": 0,
+      "complete": false,
+      "all_cells_positive": false,
+      "fold_consistent": false,
+      "mean_delta": NaN
+    }
+  },
+  "per_cell": [
+    {
+      "arm": "soft",
+      "fold": 0,
+      "seed": 3407,
+      "threshold": 0.45,
+      "pq": 0.439004,
+      "delta_vs_baseline": -0.000296,
+      "baseline_pq": 0.4393,
+      "best_crop_dice": 0.773028
+    },
+    {
+      "arm": "soft",
+      "fold": 0,
+      "seed": 8407,
+      "threshold": 0.45,
+      "pq": 0.435409,
+      "delta_vs_baseline": -0.003891,
+      "baseline_pq": 0.4393,
+      "best_crop_dice": 0.77893
+    },
+    {
+      "arm": "soft",
+      "fold": 1,
+      "seed": 3407,
+      "threshold": 0.45,
+      "pq": 0.435652,
+      "delta_vs_baseline": -0.005848,
+      "baseline_pq": 0.4415,
+      "best_crop_dice": 0.779474
+    },
+    {
+      "arm": "soft",
+      "fold": 1,
+      "seed": 8407,
+      "threshold": 0.45,
+      "pq": 0.443018,
+      "delta_vs_baseline": 0.001518,
+      "baseline_pq": 0.4415,
+      "best_crop_dice": 0.781984
+    },
+    {
+      "arm": "soft",
+      "fold": 2,
+      "seed": 3407,
+      "threshold": 0.45,
+      "pq": 0.441663,
+      "delta_vs_baseline": -0.005437,
+      "baseline_pq": 0.4471,
+      "best_crop_dice": 0.781052
+    },
+    {
+      "arm": "soft",
+      "fold": 2,
+      "seed": 8407,
+      "threshold": 0.45,
+      "pq": 0.44085,
+      "delta_vs_baseline": -0.00625,
+      "baseline_pq": 0.4471,
+      "best_crop_dice": 0.78116
+    }
+  ],
+  "soft_minus_hard_union": null,
+  "gate": "採用 = soft が 3fold×両seed で delta>0 (pooled CI は再評価で確認)"
+}

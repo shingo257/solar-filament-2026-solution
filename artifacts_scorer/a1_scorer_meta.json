@@ -1,0 +1,59 @@
+{
+  "experiment": "A1 yolo_scorer 提出用 (v80 eval で採用ゲート通過)",
+  "feature_names": [
+    "log_area",
+    "log_area_prop",
+    "shrink_ratio",
+    "aspect",
+    "elongation",
+    "solidity",
+    "bbox_w_norm",
+    "bbox_h_norm",
+    "rho_centroid",
+    "rho_edge",
+    "img_mean_in",
+    "img_p05_in",
+    "img_mean_ring",
+    "ref_mean_in",
+    "ref_max_in",
+    "ref_frac45_in",
+    "ref_ncomp",
+    "yolo_conf",
+    "level_index",
+    "n_children",
+    "n_siblings",
+    "parent_area_ratio",
+    "source_tree",
+    "max_iou_any",
+    "n_overlap_10",
+    "yolo_support_conf",
+    "n_cand_img",
+    "n_yolo_img",
+    "n_annotators"
+  ],
+  "dropped_features": [
+    "prob_frac50_in",
+    "prob_max_in",
+    "prob_mean_in",
+    "prob_mean_ring"
+  ],
+  "tau_star": 0.22,
+  "scorer_min_conf": 0.08,
+  "selection": "u_hat > tau_star → drop_contained@0.90 → greedy_disjoint(面積昇順, min_area=20)",
+  "u_hat": "model_h.predict(X) * model_m.predict(X)",
+  "hgbm_params": {
+    "max_iter": 500,
+    "learning_rate": 0.05,
+    "max_leaf_nodes": 31
+  },
+  "seed": 3407,
+  "train_rows": 149693,
+  "train_observations": 707,
+  "sample_weight": "観測あたり annotation record 数",
+  "test_imputation": {
+    "n_annotators": "学習時中央値≈2 (PLAN §7.4)",
+    "yolo_support_conf": "yolo 候補は常に NaN"
+  },
+  "scorer_h_sha256": "dac43ce80f6c966fa39e2c252d762c382038324638e5c2d286eb6436a56d767c",
+  "scorer_m_sha256": "18d4b9894fc1538c883060dd28fe4b47f748a460b1c95788b45f37a52a5c9649"
+}

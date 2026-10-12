@@ -187,6 +187,30 @@ pseudo-labelingの前提だった年代偏り仮説も同じ切り口で支持�
 明示するとよい(test小サンプルの評価ノイズ、画像特性差、アノテーション
 基準差が残る候補)。
 
+### 2.8 v80 ハイブリッド候補+期待IoUスコアラー(2026-10-10)
+
+PLAN_2026-10-09_FINAL_SPRINT.md §7.1.8b参照。YOLO候補に V34 OOF 密確率
+マップの component-tree 候補を加え、cross-fit HistGBM の期待IoU û>τ で
+選択する E1 実験(707観測・149,693候補、全fold 公式PQ)。
+
+**結果: 不採用**(hybrid−prod = −0.0142、CI95 [−0.0194,−0.0089])。
+ただし負の結果ではなく分解可能な失敗:
+
+- `hybrid_oracle` = +0.1067(TP +1454、FP −1063)→ **候補集合に大きな
+  伸びしろが実在**。too.foo氏の selection oracle +0.083 と同符号・同桁で
+  独立に再現
+- hybrid は TP +106・FN −106(tree で新規検出できている)が FP +537 で
+  正味負 — 追加検出は成功、FP 抑制が失敗
+- スコアラー診断: ROC-AUC(h>0) tree 0.900、Spearman ρ(û,u) 0.676 —
+  **û の順位付け自体は良好**。失敗は絶対校正(中位候補の û 過大評価が
+  antichain DP の累積選択で断片化を誘発)
+
+**方法論的意義:** 「候補の質(oracle余力)」「スコアラーの順位付け(AUC/ρ)」
+「選択機構(antichain DP + 排他化)」の3層を分離評価する設計により、
+v64/v59 系の「GBM selector が効かない」結論が「候補源・決定層の問題で
+あって scorer の識別力の問題ではない」と精緻化できた。v62/v66 の
+「提案不在 FN」洞察と oracle 余力 +0.107 が整合する。
+
 ## 3. 方法論として再利用可能な要素
 
 - 公式PQのローカル再実装(`solar_filament/metrics/metrics_official.py`)、
@@ -199,6 +223,223 @@ pseudo-labelingの前提だった年代偏り仮説も同じ切り口で支持�
 - 「過去の結論が実際の実験結果を正しく評価できているか」を定期的に監査する
   習慣そのものが方法論的価値を持つ(free variantの訂正は監査で発見された)
 
+### 2.9 v80-follow-up: A1 の test 配置可否(2026-10-10、prob_* ablation)
+
+v80 でゲート通過した `yolo_scorer`(+0.0039)の提出配置には、scorer 33特徴のうち
+`prob_*` 4個(V34 semantic OOF マップ由来)が test 画像に存在しない問題があった。
+`--drop-features` で4列を除いて全 arm を再評価(`output/v80_noprobdense/`):
+
+- **`yolo_scorer`(29特徴): PQ 0.4460、Δ +0.0034、fold別 0.4416/0.4464/0.4501
+  (全fold prod 上回り)、bootstrap CI95 [+0.00045, +0.00642]** —
+  **ゲート両条件を prob_* なしで維持 → 案(a) 採用**
+- hybrid −0.0158 / hybrid_split 最良 0.4449 / oracle +0.1067(不変) —
+  tree 追加は特徴を減らしても不利益という構造的結論が再確認された
+- 提出物は YOLO+refiner+sklearn の3モデル構成のまま(V34 不要)。
+  `train_a1_scorer.py` が全 OOF 行で h/m HistGBM を学習済み
+  (`artifacts_scorer/a1_scorer_{h,m}.pkl` + meta.json、Drive artifacts 配置済)
+
+### 2.10 公式採点 ↔ ローカル評価の対応表 (ずれ検知、2026-10-10)
+
+ファイル提出制のため、提出は計算枠を消費しない。過去提出と今後の予定を
+OOF↔LB の対応で追跡する (Public LB は test の約50%・2桁表示のため
+<0.01 の差は識別不能、提出間比較は OOF が正本):
+
+| 提出 | 構成 | OOF 参照値 | Public LB | 備考 |
+|---|---|---|---|---|
+| V32a/b, V33 | 初期 union/disjoint 系 | — | 0.33–0.35 | 前期 |
+| V35 | YOLO 3fold ensemble + 標準 refiner + shrink@0.45 | 0.4426 (全fold) | 0.37 | 2026-08-16 |
+| V50 | fold2 単一 + 標準 refiner | 0.4471 (fold2) | 0.37 | ensemble 効果なしを確認 |
+| V35 再提出 | V35 同一 | 0.4426 | 0.37 | 同日比較用 |
+| V52 | fold2 + EdgeAtt all-data refiner | 0.4483 (fold2) | **0.39** | 現行ベスト |
+| V53 | 3fold ensemble + EdgeAtt | ~0.44 | 0.38 | ensemble は LB で悪化 |
+| prod 再現 (57039986) | V52 と同一構成のローカル再生成 | — | **0.39** | 2026-10-10。V52 CSV との照合: IoU>0.5 一致 1171/1171 (100%)、mean best-IoU 0.9986。公式採点でも V52=0.39 を厳密再現 → ローカル推論経路が公式レベルで検証済み |
+| A1 (57047601) | prod の conf0.26 を scorer 選択 û>0.22 に置換 | 0.4460 (全fold, +0.0034) | **0.37** | 2026-10-10。1174行・prod との IoU>0.5 一致率 91.4%。OOF +0.0034 が LB では −0.02 に反転 |
+
+ずれの既知の大きさ: fold2 OOF 0.4483 → LB 0.39 (Δ≈0.058、真因未特定 —
+README §2.1.4)。LB が ~90枚の半分サンプルなので、OOF ±0.004 規模の差は
+LB では表示分解能以下。
+
+**A1 の OOF→LB 反転 (2026-10-10 確定)**: OOF で +0.0034・CI ゼロ除外の
+scorer 選択が Public LB で −0.02。仮説: (a) ~90枚サンプルでは数個の
+filament 差が 0.02 を生む (統計的に識別不能なノイズ内); (b) scorer が
+OOF 上では FP 削減、test 分布では TP も間引いた (a1 は prod 採用分の
+101本を欠落・103本を新規採用); (c) test 画像の難易度分布差。**結論:
+0.003 規模の OOF 改善は LB で確認できない — 以後の採否は「OOF で大きな
+効果」(>0.01) または機構的に堅い変更に限定すべき**。prod=0.39 が
+ローカル再現の公式ベースラインとして確定。
+
+### 2.11 v82 soft annotator-mean 目標 — 棄却確定 (2026-10-11)
+
+**結果 (soft arm 6本完了、manifest セルの `{{` バグはローカル再構築で回収)**:
+
+| fold | s3407 | s8407 | mean Δ @τ0.45 |
+|---|---|---|---|
+| 0 | −0.0003 | −0.0039 | −0.0027 |
+| 1 | −0.0058 | +0.0015 | −0.0034 |
+| 2 | −0.0054 | −0.0062 | −0.0060 |
+
+- 全閾値掃引でも mean Δ は全て負 (−0.0032〜−0.0040)。唯一の正セル
+  fold1 s8407 +0.0015 は LB 識別能以下 (§2.10 の実測参照)
+- **採用ゲート (3fold・両seed で正 + CI ゼロ除外): 明確に不合格**
+- hard_union 対照 arm は未実行 — ゲートが soft で既に決定的に失敗するため
+  判定に不要 (~9h GPU を節約)。制御としての価値はあるが優先度外
+- 解釈: 「アノテータ平均 = PQ が報酬する中心」という仮説は、少なくとも
+  この crop/損失構成では検出品質を改善しない。hard record 目標の
+  鋭さが重要だった可能性
+
+v82 は16番目の棄却レバーとして記録。全定量レバーの状況:
+OOF 採用ゲート通過は A1 scorer (+0.0034) のみだったが LB で不採用
+→ **定量改善レバーは全て枯渇確定、提出物作業に専念**。
+
+### 2.12 Colab GPU 再現検証 — 提出パイプライン確定 (2026-10-11)
+
+`solar_filament_prod_repro_colab.ipynb` (3セル構成、Drive `repro_code/` +
+`repro_code.zip` フォールバック) を Colab A100 で実行:
+
+| 指標 | 結果 |
+|---|---|
+| submission_prod.csv vs ローカル prod | **1172/1172 filament が IoU>0.5 で一致・99.91% は IoU=1.0** |
+| 実行時間 | 223s 総計 (1.24 s/img, device=cuda) — ローカル CPU (19s/img) の 15 倍 |
+| 出力 | `artifacts/repro_prod_colab/` に submission_prod.csv + audit + efficiency_prod.json |
+
+**結論**: 別環境(GPU/Colab)でも事実上同一の提出 CSV を生成 — 最終提出
+パイプラインの決定性と重み整合性が公式レベルで検証済み。
+`efficiency_prod.json` は最終提出物の efficiency 記録として使用。
+
+### 2.13 Kaggle kernel 再現 push (2026-10-11)
+
+`output/kaggle_kernel/` を `kaggle kernels push` で実行投入:
+`shingo257/solar-filament-2026-reproduction` (private, GPU, 競技データ +
+`shingo257/solar-filament-2026-weights` dataset 添付)。
+
+- 添付 all-data refiner 重みが解決できる場合、fold別 refiner 学習を
+  スキップするよう notebook を修正(提出経路では fold別 refiner は未使用、
+  GPU 枠 ~3-6h を節約)
+- 競技提出要件の「公開可能な再現 kernel」資産として位置づけ。
+
+**実行結果 (COMPLETE、同日)**: `kaggle kernels output` で成果物を検証 —
+
+| 検証 | 結果 |
+|---|---|
+| `submission_master_pipeline.csv` vs ローカル prod | **1172/1172 filament・IoU=1.0 で完全一致**(Colab GPU の 99.91% を上回る完全一致) |
+| 推論速度 | Tesla T4・1.075 s/img・総計 193.6s |
+| 重み sha256 | yolo_fold2 / refiner_all_data ともに dataset・Drive 実物と一致 |
+| 学習スキップ | 添付重み解決で YOLO3fold・all-data refiner とも再学習なし |
+| 環境記録 | `submission_reproduction_pip_freeze.txt` 出力済み |
+
+3環境(Windows CPU / Colab A100 / Kaggle T4)全てで同一提出CSVを
+再現 — 提出パイプラインの環境非依存性が完全に実証された。
+
+### 2.14 plain-MHSA refiner 提出 — 0.39 (2026-10-11)
+
+matched-parameter ablation の知見(edge prior 固有効果は未確認)を
+LB 上で直接検証するため `ablation_plain_mhsa_seed8407_fold2.pt`
+(fold2 OOF 0.44630、ablation 最良 plain cell)を prod 構成の refiner
+として差し替えた variant を生成・提出(`--refiner plain_mhsa_f2`)。
+
+| 指標 | 結果 |
+|---|---|
+| public LB | **0.39**(prod と同点) |
+| prod との差分 | 1170/1173 IoU>0.5 一致・mean best-IoU 0.9382 — 境界は有意に異なる |
+| 解釈 | edge prior なしでも public 同等 = 「attention 容量一般が効く」
+説と整合。private 側(~90枚)では境界構成差により異なる得点を
+取り得るため、prod と並ぶ第2の 0.39 構成として価値あり |
+
+学習コスト 0(既存 ablation 重み流用)・推論 ~33分・日次枠は残4。
+
+### 2.15 3refiner 同一 0.39 — LB 分解能と最終選択 (2026-10-11)
+
+`edgeatt_f2` (ablation 単一セル最良・fold2専用 refiner) も **0.39**。
+3構成が public 同点に:
+
+| variant | refiner | fold2 OOF | public | prod差分 mean-IoU |
+|---|---|---|---|---|
+| prod | edge-att **all-data** | (提出系) | **0.39** | — |
+| edgeatt_f2 | edge-att fold2 のみ | 0.44749 | **0.39** | 0.9274 |
+| plain_mhsa_f2 | MHSA・edge prior なし | 0.44630 | **0.39** | 0.9382 |
+
+**分析**:
+- 境界構成は 3 者とも有意に異なるのに public 同点 → ±0.003 規模の
+  OOF 差は ~90枚・2桁表示の public では**原理的に識別不能**(A1 と同じ教訓)
+- all-data fine-tune も edge prior も public 得点には必要十分でない
+- **最終選択(2枠)の推奨**: `prod` + `plain_mhsa_f2`。
+  edgeatt_f2 は prod と refiner 系統が同じ(差は学習データのみ)のに対し、
+  plain_mhsa は**アーキテクチャ差**があるため private 側での
+  分散ヘッジ効果が最大。最終提出選択時はこの2つを選ぶこと。
+- 残り定量候補なし。今後の枠は「新候補が出た時」用に温存が妥当
+
+### 2.16 外部手法・discussion 調査 (2026-10-11)
+
+上位陣手法・公開 kernel・competition discussion (Kaggle API で全20スレッド
+本文取得) を調査。結論: **0.55–0.63 の上位パックは漏洩由来である根拠が
+強く、誠実系フロンティアは ~0.36–0.45 で我々の 0.39 はその先端**。
+
+#### LB の見取り図 (複数独立ソースで一致)
+
+| 帯域 | 解釈 | 根拠 |
+|---|---|---|
+| 0.55–0.63 | **漏洩由来の可能性が高い** | discussion 737177: 参加者解析で Harvard Dataverse 上の全 test GT が公開ダウンロード可能と特定 — 直接ブレンドで ~0.51–0.66・学習混入(laundering)で ~0.45–0.55 に着地する計算と上位分布が一致。743958: lamhuy8904 の 0.55 kernel はコミュニティが漏洩と特定。741892: 「~0.45(または 0.41)超は公開 test アノテーション使用」(Alisher 氏) |
+| ~0.36–0.45 | 誠実系フロンティア | too.foo スタック LB 0.36 / Fususu pipeline 再採点 ~0.40 / hetspookjee 誠実 0.39 / Spaghetto99「train_images のみで 0.40」/ noisyislands 0.49 主張(未検証) |
+| >0.35 | 主催者の審査ライン | Azim 主催者「0.35 超の提出はすべて精査」「単一指標に依存しない(定量70%+定性30%)」 |
+
+補足: 評価関数は 8/7–12 に旧 misconfigured Dice から正式 PQ へ切替・
+全 LB 再採点済み (733912・Overview 告知)。byte 同一ファイルが 0.66→0.31
+に変化 — **8/12 以前の kernel 記載スコア (0.59/0.70/0.9 等) は旧値で比較不可**。
+
+#### 手法サーベイ (公開 kernel/dossier ベース・未検証は明記)
+
+| 手法 | 構成 | 実値 |
+|---|---|---|
+| **Fususu (phuongncn) + tushhaaarrrr fork** | Mask R-CNN @1024² (score≥0.70/mask≥0.50) → 正重複 mask を1つの refiner task にmerge → ResNet18 U-Net 256² crop refiner + **flip-4 TTA (トポロジーガード付)** thr 0.70/anchor 0.85 → crowding 条件で detector-seed split (maxIoU 0.10) → 正重複 merge → RLE。MD5 固定・外部ラベル不使用を明示 | 旧値 0.70 → 再採点 ~0.40 (fork 表記 0.40) |
+| magfilo-v9 (muhammadshoaibaltaf) | 軸平行 YOLO + **YOLO OBB (回転検出)** + crop U-Net・unique-photo 推論・IoU0.5 明示 | 未記載 |
+| juanmirod final report | 5fold Mask R-CNN @1024 + 4-TTA + crop U-Net + fold 間 agreement | v42 0.34 → v45 |
+| sivapnlr80 improved pipeline | **YOLO26s-OBB**・回転保持 crop・Unet++ EffB4 @1280 | 未記載 |
+| rokaiyasomapti "LB 1st" | ResNet34 U-Net baseline | 旧メトリクス 1.00 (artifact) |
+| **too.foo (Shivam Bhardwaj) 公開 dossier** | U-Net++ EffB3 patch + 公式 scorer 移植ハーネス + **学習済み component selector** (12特徴 GBM・明暗コントラスト首位) +0.018/+0.083 oracle | LB 0.36・val 0.423 |
+
+#### too.foo dossier の収束知見 (我々と独立に同結論 → 信頼度高)
+
+- **soft ラベルは逆効果** (彼らの pure soft = recall 崩壊 0.323; 我々の v82 棄却と一致)。
+  有効だったのは union 目標 + annotator 一致度重み付け
+- **crop refiner は PQ に寄与しない** (crop IoU 0.63→0.67 改善しても PQ +0.001。
+  我々の refiner 系上限議論と一致)
+- **selector が最大の oracle lane (+0.083)** — 彼らは +0.018 捕捉・LB 0.32→0.36
+  に改善 (baseline が低く FP 余地が大きいため有効)。我々の A1 は OOF +0.0034
+  → LB −0.02 — **baseline が既にタイトだと逆効果**。selector の首位特徴は
+  「局所 chromosphere に対する暗さコントラスト」— 我々の A1 特徴(29個)には
+  photometric 特徴がなく、再挑戦するならこの特徴群が第一候補
+- **検出漏れ(微小・淡い filament)が真のボトルネック** — 全 variant で ~210/576
+  val filament を miss。我々の detector-blind FN 分析と一致
+- **val ゲインの転移限界 ~+0.02** — 我々の LB 分解能議論と一致
+- per-annotator-record 採点 (test は ~2.44 record/画像・予測は各 record ごとに
+  採点) → 実効天井 ~0.45–0.55
+
+#### 規約の重要確認 (discussion・主催者回答)
+
+| 項目 | 裁定 |
+|---|---|
+| SWEFil 等の外部 GT データ | **禁止** (746318) |
+| 無ラベル GONG 観測の学習利用 | 可・ただし test ±1h 除外必須・推論時使用は不可 (744047/748045) |
+| 近接 GONG フレームへの訓練ラベル転写 | **許可** (748045) — temporal-neighbor 拡張(我々は定量棄却済み)の規約根拠 |
+| 磁気図の補助学習信号 | 可・推論時依存は不可 (743521) — 我々は棄却済み |
+| grayscale→3ch 複製 / FITS 原データ | 可 (744544/738951) |
+| 最終提出 | 選択 2 提出が異なる戦略なら repo は**両方を再現**できること・可能なら統合推奨 (747960)。Google Form 提出が別途必要 |
+
+#### 取り込み判断
+
+- **refiner-level flip-4 TTA (トポロジーガード)**: Fususu が旧値で +0.01 報告・
+  我々は detector TTA のみ試行済みで refiner TTA は未検証 → 唯一の残存候補だが
+  効果規模が小さく OOF パイロットでも +0.005 未満が見込まれる。**低優先**
+- **selector の photometric 特徴**: A1 が LB で反転済み・baseline がタイトなので
+  **見送り** (記録のみ)
+- **detector-seed split (Fususu)**: 我々の FN は detector-blind が支配的で
+  merge 由来ではない → **対象外**
+- **OBB 回転 crop**: 新規学習が必要・提案形状が変わるだけで recall 機構として
+  未証明 → **再現は見送り** (文書記録に留める)
+- 結論: **現行 prod + plain_mhsa_f2 の 2 選択方針を維持**。外部手法で
+  「採用に値する新規定量レバー」はなし — むしろ我々の負の結果が
+  独立系で再現され、棄却判断の妥当性が裏強化された
+
 ## 4. 執筆時の注意点
 
 - README.mdが数値の正本。本ログは論文構成への整理のみ、数値はコピーせず参照する
@@ -206,3 +447,57 @@ pseudo-labelingの前提だった年代偏り仮説も同じ切り口で支持�
   (`scratch/build_near_miss_viewer_data.py`)の症例を素材にできる
 - コード品質・再現性(定性30%評価軸と重複)は既にrequirements.txt/pip freeze
   の運用ルールあり(README §7)
+
+### 2.17 「両提出を再現可能」の規約対応を完了 (2026-10-12)
+
+主催者回答 (discussion 747960) の「選択した両方の提出を repo が再現
+できること」要件について、第2提出 `plain_mhsa_f2` の再現経路を整備:
+
+| 資産 | 状態 |
+|---|---|
+| Kaggle dataset `solar-filament-2026-weights` | **v2 公開** — `ablation_plain_mhsa_seed8407_fold2.pt` (282,089,497B, sha256 `b5f331e1…`) を追加。manifest 更新済み |
+| `run_test_submission.py --weights-dir` | 追加 — dataset ダウンロード先から yolo/refiner/scorer 重みを解決 (Drive 不要)。両バリアントでローカル疎通確認済み (CPU) |
+| `solar_filament_submission_reproduction.ipynb` | `CFG.SUBMISSION_VARIANT` を追加 — `"plain_mhsa_f2"` で `MediSegPlainMHSAUNet` + dataset 重みに差し替え、`submission_plain_mhsa_f2.csv` を出力 (builder 再生成・AST 検証済み、本実行は F3 クリーンランで検証予定) |
+| `output/submission_weights_manifest.json` | Drive 側 manifest にも plain_mhsa エントリを追記 |
+
+残検証: 再現 kernel の再 push + 実行 (prod/variant 両経路) — F3
+(11/08 予定) のクリーン環境通し実行で実施する。コード経路は提出実績の
+ある `run_test_submission.py` と同一クラス・同一 ckpt ロード式のため
+リスクは低い。
+
+### 2.18 レポート確定版への統合 + レビュー対応 (2026-10-12)
+
+`report/main.tex` を最終提出版に更新し、MiKTeX/latexmk のローカルビルドで
+**本文4p・謝辞+refs p5** を確認(従来はビルド未検証だった):
+
+- §3.2 末尾に最終選択段落を追加 — prod + plain_mhsa_f2(両者 Public 0.39、
+  best-match IoU 0.94/0.93)の2提出と選択根拠(refiner アーキテクチャ差による
+  private 分散ヘッジ)、T4 ~1.1 s/img end-to-end、honest-tier 文脈
+  (0.55–0.63 帯は test アノテーション公開漏洩と整合、誠実系 0.36–0.45、
+  >0.35 は主催者精査対象 — §2.16 の所見を反映)
+- §3.3 に too.foo dossier との独立合致を1文追加(soft label 逆効果・
+  crop refiner は PQ に寄与せず・unproposed instances がボトルネック)
+- Future work 更新: plain-MHSA 再提出は実施済みのため削除、
+  component-tree + learned selection(oracle +0.107 / scored −0.014)を残す
+- 4p 収束のため strengths/weaknesses/sweep 段落を事実保持で圧縮、
+  Fig.2 を 0.74\linewidth に縮小。編集由来の overfull hbox は解消
+- `main.pdf` を再ビルドして同梱、LaTeX 副産物を .gitignore へ、
+  REPORT_NOTES の残タスクを更新
+
+**Codex review (PR #346 ready 化で発火) への対応 — 4件すべて実在を確認・修正:**
+
+| 指摘 | 判定 | 対応 |
+|---|---|---|
+| `build_v82` の `if y0 > height` typo (train+eval 2箇所) | 実在 — v82 限定(prod は正しい) | 修正 + 12本の生成 ipynb 再生成(diff=typo行のみ) |
+| 再現 nb の variant 実行が `submission_master_pipeline.csv` を上書き | 実在 | artifact 名を variant 別に分離(builder+nb+kernel コピー) |
+| `run_test_submission` の `N_ANNOTATORS_IMPUTE=1.0` が meta 宣言(≈2)と不一致 | 実在 | 2.0 に修正(A1 は棄却済みだが整合性として) |
+| `compare_submissions` の `images_full_overlap` が過少計数 | 実在 | 両方向 per-instance 一致 + 件数一致に修正 |
+
+さらに `output/test_submission/`(4 variant の audit+efficiency+submission CSV)、
+`output/kernel_run/`(再現 kernel の pip freeze・sha256・生成CSV)、
+`output/v80*/v82*/`(棄却実験の eval 結果)、Kaggle dataset metadata/manifest、
+v80 候補収集 nb 3本 — 計46件の実験証跡をコミット(モジュール規約:
+結果 JSON/CSV/txt は証跡としてコミット対象)。
+
+残検証(F3 クリーンラン予定と同じ): 再現 nb の両 variant 完走。
+`run_test_submission.py --weights-dir` は両 variant で疎通済み。

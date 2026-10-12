@@ -10,7 +10,7 @@
 | 4ページ技術レポート(Overleafテンプレ必須) | **成熟原稿あり** `report/main.tex`(commit 140d8d62 由来、著者・所属・図・bib・謝辞定型文すべて完備)。2026-10-07 に Phase B の結果を統合済み | Overleaf の公式プロジェクト(read-only: `vjztpvrnbrdh`)を**自分のアカウントにコピー**してビルド確認。4p オーバーしていないか要計測(Phase B 追記で増量したため削る必要があるかも) |
 | 公開Git repo | 未整備 | モノレポの Solar_Filament_Segmentation を**独立公開repo**として切り出す方針が自然。重み・データ・成果物は外部(Drive)参照+SHA256 記録(ルール済) |
 | requirements.txt(全パッケージ+バージョン) | 土台あり | `Solar_Filament_Segmentation/requirements.txt` は `>=` 指定。提出前に**最終inference runの `pip freeze` で固定値に置き換え**必須 |
-| 全パイプラインを示すJupyterノートブック | **作成済み** `solar_filament_submission_reproduction.ipynb`(2026-10-07) | master pipeline を派生。Kaggle/Colab 両対応(環境自動検出)、重みは添付dataset→Drive→再学習の順で解決、前処理キャッシュ無し環境ではinline計算、末尾に pip freeze+SHA256 記録。**残る手動作業: 重みを公開Kaggle dataset としてアップロード**(yolo_fold{0,1,2} best.pt + refiner fold{0,1,2} resume + all_data)。builder: `scratch/build_submission_reproduction.py` |
+| 全パイプラインを示すJupyterノートブック | **作成済み** `solar_filament_submission_reproduction.ipynb`(2026-10-07) | master pipeline を派生。Kaggle/Colab 両対応(環境自動検出)、重みは添付dataset→Drive→再学習の順で解決、前処理キャッシュ無し環境ではinline計算、末尾に pip freeze+SHA256 記録。重みは公開 dataset `shingo257/solar-filament-2026-weights`(v2)にup済み — `VARIANT` で prod / plain_mhsa_f2 の**両最終提出**を再現可能。builder: `scratch/build_submission_reproduction.py` |
 
 ## main.tex に既に含まれるもの(2026-10-07 時点)
 
@@ -26,15 +26,18 @@
   (時間近傍フレーム・磁気図)を Future work へ
 - OOF↔LB乖離の考察(年/サイト分布のχ²検定で差なし)
 
-## report 残タスク
+## report 残タスク(2026-10-12 更新)
 
-1. **ページ数確認** — Phase B 追加分を含めて4ページ内に収まるか Overleaf で確認。
-   超過時は Phase B 段落を圧縮(機構列挙を表にする等)
-2. **Dice/IoU分布図** — ルーブリック定量項目。v62 manifest のペアIoUから
-   生成して figures/ に追加するか検討(4p予算との相談)
-3. **計算効率の数値** — 「end-to-end computational efficiency」は
-   審査対象の明記項目。submission run での画像あたりwall-clockを計測・記載
-4. main.pdf の再ビルド確認(現在 main.pdf は古い版)
+1. ~~**ページ数確認**~~ — **済**: MiKTeX/latexmk でローカルビルド。本文4p・
+   謝辞+refsがp5に収まることを確認。Phase B 列挙は圧縮proseで収束
+   (表化は不要だった)
+2. **Dice/IoU分布図** — ルーブリック定量項目だが4p予算いっぱいのため不採用
+   (定性比較図Fig.2を優先)
+3. ~~**計算効率の数値**~~ — **済**: T4 ~1.1 s/img end-to-end を §3.2 に記載
+4. ~~main.pdf の再ビルド確認~~ — **済**: 最新ソースで同梱
+5. ~~外部survey文脈・最終選択の反映~~ — **済**: prod+plain_mhsa_f2 の
+   選択根拠・honest-tier文脈(0.55–0.63帯=漏洩整合/誠実系0.36–0.45)・
+   too.foo dossier との独立合致を §3.2/§3.3 に統合
 
 ## 新レバー見積結果(A案、2026-10-07 実測)
 
@@ -72,7 +75,7 @@
 - [x] 再現notebook: `solar_filament_submission_reproduction.ipynb`
       (確定構成: YOLO11m-seg@1280 conf0.26 → refiner crop320/ctx1.65 → ownership。
       Kaggle/Colab両対応・添付重み解決・環境固定記録つき)
-- [ ] 重みの公開Kaggle dataset化: yolo_fold{0,1,2}/weights/best.pt +
-      mediseg_edgeattnet_refiner_fold{0,1,2}_resume.pt +
-      mediseg_edgeattnet_refiner_all_data_resume.pt(Drive
-      `solar_filament_v30/{runs,artifacts}` から集めて公開datasetとしてupload)
+- [x] 重みの公開Kaggle dataset化: `shingo257/solar-filament-2026-weights`(v2)
+      — yolo_fold{0,1,2}_best.pt + refiner_all_data.pt +
+      ablation_plain_mhsa_seed8407_fold2.pt + A1 scorer一式、
+      `weights_manifest.json` に SHA256 記録済み

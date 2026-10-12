@@ -1,0 +1,50 @@
+{
+  "competition": "filament-segmentation-2026",
+  "daily_quota": 5,
+  "submissions": [
+    {
+      "kaggle_ref": 57039986,
+      "file": "submission_prod.csv",
+      "date": "2026-10-10",
+      "sha16": "84f1b89466f988d9",
+      "config": "prod = V52 replica: fold2 YOLO11m-seg (conf pred0.195/filter0.26) + EdgeAtt all-data refiner thr0.45 + drop_contained0.90 + area-asc ownership min20",
+      "rows": 1172,
+      "oof_ref": "fold2 OOF 0.4483",
+      "public_lb": 0.39,
+      "note": "V52 CSV replica-check: IoU>0.5 match 1171/1171, mean best-IoU 0.9986"
+    },
+    {
+      "kaggle_ref": 57047601,
+      "file": "submission_a1.csv",
+      "date": "2026-10-10",
+      "sha16": "c3f515eb12368f66",
+      "config": "a1 = conf0.08 proposals -> 29feat HistGBM h*m=u_hat>0.22 -> refiner/ownership (scorer pkl a1_scorer_{h,m})",
+      "rows": 1174,
+      "oof_ref": "all-fold OOF 0.4460 (+0.0034, CI95 [+0.00045,+0.00642])",
+      "public_lb": 0.37,
+      "note": "vs prod: 91.4% IoU>0.5 match; OOF gain reversed on LB"
+    },
+    {
+      "kaggle_ref": 57072525,
+      "file": "submission_prod_plain_mhsa_f2.csv",
+      "date": "2026-10-11",
+      "sha16": "7b3de4e78a543cf2",
+      "config": "prod variant: fold2 YOLO + plain-MHSA (no edge prior) refiner, ablation ckpt seed8407 fold2",
+      "rows": 1173,
+      "oof_ref": "fold2 OOF 0.44630 (ablation plain_mhsa best cell; prod edge-att all-data = 0.4454 ref)",
+      "public_lb": 0.39,
+      "note": "vs prod: 1170/1173 IoU>0.5 match, mean best-IoU 0.9382 - same public score, different boundaries; supports capacity-not-edge-prior finding"
+    },
+    {
+      "kaggle_ref": 57073220,
+      "file": "submission_prod_edgeatt_f2.csv",
+      "date": "2026-10-11",
+      "sha16": "4aeeae45b6b4424e",
+      "config": "prod variant: fold2 YOLO + edge-att refiner fold2-only s8407 (ablation single best cell, no all-data fine-tune)",
+      "rows": 1175,
+      "oof_ref": "fold2 OOF 0.44749 (ablation best single cell)",
+      "public_lb": 0.39,
+      "note": "vs prod: 1169/1175 IoU>0.5 match, mean best-IoU 0.9274. all-data fine-tune not needed for LB parity"
+    }
+  ]
+}

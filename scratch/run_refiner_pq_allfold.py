@@ -105,13 +105,13 @@ def imread_unicode(path: Path):
     return cv2.imdecode(np.frombuffer(path.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
 
 
-def square_box(mask, context=CROP_CONTEXT, minimum=96):
-    height, width = mask.shape
-    ys, xs = np.where(mask)
-    if not len(xs):
-        return 0, 0, width, height
-    cx, cy = (xs.min() + xs.max() + 1) / 2, (ys.min() + ys.max() + 1) / 2
-    side = int(math.ceil(max(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1) * context))
+def square_box_from_extent(ex0, ey0, ex1, ey1, height, width,
+                           context=CROP_CONTEXT, minimum=96):
+    """square_box と同一式だが、非ゼロ領域の extent を直接受け取る版。
+    component-tree ノードのように bbox が既知の候補で全面マスクの
+    マテリアライズを避けるために使う。"""
+    cx, cy = (ex0 + ex1) / 2, (ey0 + ey1) / 2
+    side = int(math.ceil(max(ex1 - ex0, ey1 - ey0) * context))
     side = min(max(side, minimum), min(height, width))
     x0, y0 = int(round(cx - side / 2)), int(round(cy - side / 2))
     x1, y1 = x0 + side, y0 + side
@@ -128,6 +128,17 @@ def square_box(mask, context=CROP_CONTEXT, minimum=96):
         y0 -= y1 - height
         y1 = height
     return max(0, x0), max(0, y0), min(width, x1), min(height, y1)
+
+
+def square_box(mask, context=CROP_CONTEXT, minimum=96):
+    height, width = mask.shape
+    ys, xs = np.where(mask)
+    if not len(xs):
+        return 0, 0, width, height
+    return square_box_from_extent(
+        xs.min(), ys.min(), xs.max() + 1, ys.max() + 1, height, width,
+        context=context, minimum=minimum,
+    )
 
 
 def build_variant(proposal, box, probability, method, threshold):
@@ -153,26 +164,31 @@ def greedy_disjoint(masks, order, min_area=MIN_AREA):
     return kept
 
 
-def refine_batch(model, image, proposals):
-    """1画像分の crop をまとめて forward する。戻り値は (boxes, probability maps)。"""
-    boxes, crops = [], []
-    for proposal in proposals:
-        x0, y0, x1, y1 = square_box(proposal)
+def refine_crops(model, image, boxes):
+    """事前計算済みの box 群に対して crop → forward → box 座標の確率マップを返す。"""
+    crops = []
+    for x0, y0, x1, y1 in boxes:
         crop = cv2.resize(image[y0:y1, x0:x1], (CROP_SIZE, CROP_SIZE),
                           interpolation=cv2.INTER_LINEAR)
-        boxes.append((x0, y0, x1, y1))
         crops.append(crop.transpose(2, 0, 1))
     probabilities = []
+    device = next(model.parameters()).device
     with torch.no_grad():
         for start in range(0, len(crops), REFINER_BATCH):
             chunk = np.stack(crops[start:start + REFINER_BATCH])
-            tensor = torch.from_numpy(chunk.copy()).float() / 255.0
-            output = model(tensor).sigmoid()[:, 0].numpy()
+            tensor = torch.from_numpy(chunk.copy()).float().to(device) / 255.0
+            output = model(tensor).sigmoid()[:, 0].cpu().numpy()
             for offset in range(output.shape[0]):
                 x0, y0, x1, y1 = boxes[start + offset]
                 probabilities.append(cv2.resize(output[offset], (x1 - x0, y1 - y0),
                                                 interpolation=cv2.INTER_LINEAR))
-    return boxes, probabilities
+    return probabilities
+
+
+def refine_batch(model, image, proposals):
+    """1画像分の crop をまとめて forward する。戻り値は (boxes, probability maps)。"""
+    boxes = [square_box(p) for p in proposals]
+    return boxes, refine_crops(model, image, boxes)
 
 
 def main() -> int:

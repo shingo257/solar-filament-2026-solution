@@ -1395,6 +1395,120 @@ orphan FP判別に「別種の物理情報」を持ち込める可能性。コ�
 
 ---
 
+### 6.23 競合・ディスカッション・Biohub上位解法の再調査(2026-10-09)
+
+**【番号について】並行レーン `devin/solar-next-pilots`(PR #244)が §6.17〜6.22 と v58〜v68 を使用済みのため、本節は §6.23、実験IDは v80 以降を使う。** §6.12(2026-09-15)以降のKaggleディスカッション・公開notebook・Biohub
+(Cell Tracking During Development、2026-09-29終了)の公開writeupを調査し、
+§6.16末尾で示した「次は提案品質側のレバー」という方向を外部証拠で裏付けた。
+一次情報はKaggle discussion `747399`・`746318`・`744765`・`743958`・`743385`・
+`743521`・`744047`・`741892`・`740400`、notebook `tushhaaarrrr/solar-filament-
+segmentation-2026-0-40`・`juanmirod/solar-filament-2026-final-report`
+(いずれも`kaggle kernels pull`で取得・精読)、Biohub writeup 1st/3rd/12th place。
+
+#### 6.23.1 競技の実像の更新
+
+- **Public LBはtestの約50%(≈90枚)で採点される**とリーダーボードページに明記
+  されている。README §2.1.6のOOF-Public LBギャップ議論は「test 180枚」を前提に
+  していたが、実際の採点枚数はその半分で、tushhaaarrrr氏の見積りでは
+  リサンプリングだけでsd≈0.012。**Public LBの2桁表示は0.01未満の差を
+  原理的に識別できない**。提出間比較はOOFのみで行うという既存方針を維持し、
+  LBは「順位が崩れていないことの確認」にのみ使う。
+- リーク系クラスタはさらに上積みされ、上位は0.63/0.62/0.61…(1位は108提出)。
+  運営(Azim氏、16時間前)の最新発言: 「PQ 0.35超の全提出を精査する」
+  「fakeは容易に弾ける」「0.41は非常に真剣に受け止める」「LBのクリーンアップは
+  行う(詳細は未公表)」。追走しないという§6.12の判断を維持。
+- **ルール裁定(新規)**: 外部GT(SWEFil等)は**禁止**(`746318`)。推論時の近傍
+  フレーム利用も**禁止**(`743385`・`744047`)。一方、**訓練限定**なら、ラベル
+  なしGONG時系列・**同時刻GONG磁場図の補助損失**・グレースケール3ch複製は
+  いずれも明示的に許可された。本プロジェクトの現行構成はすべて適合。
+- 誠実ティアのPublic最前線は**0.40**(tushhaaarrrr氏)。我々の0.39は並走圏。
+  ただしOOFでは差がある(下表)。
+
+| チーム | OOF PQ | Public | 構成 |
+|---|---:|---:|---|
+| 我々(V52 / plain_mhsa) | 0.4432(707枚) | 0.39 | YOLO11m → U-Net refiner shrink@0.45 → 排他化 |
+| tushhaaarrrr (filseg v4) | **0.4597**(703枚) | 0.40 | 密な確率マップ → component tree → 学習スコアラー → 厳密DP → 回転正規化refiner |
+| juanmirod | 0.44(106枚) | 0.37 | YOLO11m → crop refiner、我々とほぼ同型 |
+| Spaghetto99 | 0.48(106枚、分割法不明・未検証) | 不明 | Focal+Dice、詳細非公開 |
+
+#### 6.23.2 tushhaaarrrr氏の設計から学ぶべき点(最重要)
+
+スコア差の源泉は**モデルではなく決定層**。要点:
+
+1. 密な確率マップ p(x) = 「ランダムなアノテータが画素xを塗る確率」を
+   soft annotator-mean目標で学習(BCE+0.5 Dice、EMA、D4 TTA、3モデル×5fold)。
+   **校正を壊す損失(clDice −0.045、Lovász)は全部不採用**。
+2. 15閾値のcomponent tree(max-tree)を2048px nativeで構築。forestの任意の
+   antichainが有効な非重複提出になる。
+3. 各候補ノードに**期待matched IoU û = ĥ·m̂**(ĥ=IoU>0.5で一致する確率、
+   m̂=一致時のIoU)をLightGBM hurdleモデルで予測。56記述子+RF-DETRの
+   per-node証拠4つ。GroupKFoldでcross-fit、行重み=アノテータ数R。
+4. **Dinkelbach**: pooled PQは2つの加法量の比なので、`Σ(û − τ)`を
+   τ=PQ*/2(≈0.26、**単一のグローバル定数**。画像別閾値は最適でない)で
+   最大化するantichainを木のDPで厳密解。本人計測で**固定閾値比+0.06**。
+5. Stage 2: 選択済み個体ごとに**長軸を水平に回転正規化した384×128クロップ**
+   (5ch: flat field・p・spine・seed・**他の選択済み個体**)で再セグメント。
+   出力閾値は期待IoU最適点 t*=J*/(1+J*)≈0.40 を理論導出(実測最適と一致)。
+6. 不採用リストが我々の負の結果とよく整合: 時系列TTA −0.02、磁場図補助
+   ヘッド n.s.、noisy student(外部1736枚) = seedノイズ、neural critic −0.009、
+   morphological dilate/erode ±1px で −0.025、per-instance閾値 n.s.。
+   **「2048 nativeで木を切らないと−0.006」**(1024マスクの劣化)は我々の
+   refiner解像度にも関係しうる(未確認)。
+
+**我々との対応関係**: README §1に`p·u > 0.5·PQ`の損益分岐が既に書かれて
+いるが、実装は`conf 0.26固定 + drop_contained`のまま。V42の11特徴logistic
+verifier(§27.13)は**pre-refiner代理目標**で最終PQへ移らず不採用となったが、
+S1計画(§27.18)で予定していた「**post-refiner・最終PQ利得目標**」版は競技
+トラックでは未実行。tush氏の設計はまさにその形(post-候補・期待IoU目標・
+GBDT・グローバルτ)であり、§6.16が結論づけた「提案品質側のレバー(優先度5)」
+と一致する。OOF cacheは`conf 0.08`まで候補を保持している
+(`output/v35/pq_conf_sweep.csv`: raw TP 5420@0.08 vs 5017@0.20)ため、
+**GPU不要・既存cacheのみ**で3-fold cross-fit検証が可能。
+
+#### 6.23.3 Biohub上位解法からの移植可能性
+
+| Biohub(順位) | 内容 | Solarへの対応 | 評価 |
+|---|---|---|---|
+| 1st | 校正された小モデル群(検出・Soon Net・linker)+ greedy decode | 校正スコアラー+厳密最適化(=6.17.2と同原理) | **最有力** |
+| 1st | 2周目でhard-negative mining(OOFで誤分類した候補を1:1混入) | スコアラーが誤採択する候補をOOFで掘り再学習 | 上記に同梱 |
+| 1st | EMA+強augmentation | v54 EMA pilot(fold1/2待ち、§6.15) | 継続 |
+| 1st | MAE事前学習(ラベルなし、競技180動画+外部) | ラベルなしGONGで許可。ただし本人も効果不明、tush氏のnoisy studentもnoise水準 | 低 |
+| 3rd | 検出heatmapをfold平均+flip TTAで**確率平均**(3backbone加重) | refinerの確率マップを3fold refiner+flipで平均。V43/V53の失敗は**maskレベル投票**であり確率平均は未試行 | 中・安価(推論のみ) |
+| 3rd | 疎アノテーションで不確実な背景を損失から除外 | 単一アノテータ画像で「塗られていない≠負例」。soft annotator-mean目標が対応物 | 中 |
+| 3rd | public/private分布差をprobingで把握、選抜はOOF固定 | Public≈90枚、選抜はOOFのみ(既存方針) | 確認済 |
+| 1st/3rd | 高信頼pseudo-label | V49で否定済み(§README 2.1.3) | 不採用 |
+| 12th | 各段を計測済み・fail-safeな修復ステージとして積む | 本プロジェクトの規律と同じ | 確認済 |
+
+#### 6.23.4 再整理した優先順位(§6.12・§6.16を更新)
+
+1. **post-refiner期待IoUスコアラー + τ=PQ/2選択(優先度: 最高、CPUのみ)** —
+   YOLO confを0.10程度まで下げて候補を広げ、各候補にrefiner適用後の
+   記述子(YOLO conf・面積・伸長度・refiner確率統計・shrink比・limb距離ρ・
+   局所密度・他候補との重なり等)からû=ĥ·m̂をLightGBM hurdleで予測、
+   `û > τ`で選択→既存排他化。教師はOOF cache上で各recordのGTとのIoUから
+   `u = (1/R)Σ_r IoU·1[IoU>0.5]`として直接計算。3-fold cross-fit、
+   採否は従来通り3fold符号一致+observation bootstrap CI。V42との差分
+   (post-refiner目標・GBDT・グローバルτ・候補拡張)を明示して記録する。
+   **tush氏のE6(hurdle > direct regression)・E9(neural critic −0.009)に
+   従い、最初からGBDT hurdleで行き、NNは試さない。**
+2. **refiner確率マップのfold平均+flip TTA(優先度: 高、推論のみ)** —
+   3fold refinerの確率を平均してからshrink@0.45。V53の失敗はYOLO proposal
+   のmask投票統合であり、refiner確率平均とは別物。
+3. 回転正規化クロップ+隣接個体チャンネル(優先度: 中、refiner再学習) —
+   v55多チャンネル化が−0.02で失敗した経緯(検証Datasetのseed RNG問題含む)が
+   あるため、着手するなら検証proposalを固定した上で1と2の後。
+4. 報告書・README反映(定性30%) — 「Public≈90枚」「運営の精査方針」
+   「外部GT禁止裁定への適合(MAGFiLO本家・SWEFil不使用)」「訓練限定なら
+   磁場図・時系列が許可(未使用と明記)」を`report/main.tex`・README §1に反映。
+
+締切までの週次スケジュール・実験ID採番・採用ゲートは
+[`PLAN_2026-10-09_FINAL_SPRINT.md`](PLAN_2026-10-09_FINAL_SPRINT.md)を正本とする。
+
+優先度1の設計は`docs/s1/S1_PROPOSAL_MARGINAL_UTILITY_PILOT_REPORT_2026-08-24.md`
+の教師生成手順(leave-one-out最終PQ利得、31.5秒/観測)より単純な
+「候補単位の期待IoU」を目標にする。ownership相互作用は目標に含めず、
+選択後に実際の排他化を通した3-fold OOF PQで直接判定する。
+
 ### 6.24 並行レーン(devin/solar-competitor-survey-2026-10)の v80/v81 結果 —
 「全定量レバー全滅」宣言の訂正(2026-10-10)
 

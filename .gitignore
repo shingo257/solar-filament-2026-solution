@@ -27,3 +27,11 @@ kaggle_downloads/
 output/s0/prediction_cache_512/
 output/s0/s1_proposal_marginal_refined_cache/
 output/s0/v42_verifier_official_cache/
+
+# LaTeXビルド副産物(main.tex/main.pdf/REPORT_NOTES.md はコミット対象)
+report/*.aux
+report/*.bbl
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.out
