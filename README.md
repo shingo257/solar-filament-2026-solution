@@ -766,6 +766,50 @@ models.py`の`CombinedLoss`(BCE+Diceのみ、実際には現行パイプライ�
    より精密なboundary loss(例: Kervadecらのdistance-transform boundary
    loss)へ置き換える」という、新規軸ではなく改良軸として位置づけ直す
 
+**(2026-10-05追記) 上記レバーの実験ステータス**: 優先度1(EMA、v54)は
+fold0でΔ+0.0005の微小正だったがfold1でseed間符号不一致(−0.00004/
++0.00101)、fold2も両seed負(−0.0008/−0.0002)となり3fold通して不採用確定。優先度2(マルチチャンネル
+化、v55)はΔ−0.0206で不採用確定、優先度3(スケルトンギャップ閉合、v56)
+はgap結合の寄与が最大+0.0004程度で不採用。さらに優先度6(密集シーンの
+学習サンプルoversampling、v57)はfold0で2seedともrefined PQ悪化
+(−0.0014/−0.0085。dense FNは−49/−19と改善したがFPが+229/+146と爆増し
+相殺)で不採用。残る未着手レバーは優先度4(現行boundary lossの精密化)・
+5(IoU>0.5断崖向け閾値較正)・7(SAM2系refiner)。各実験の詳細は
+`WINNING_STRATEGY_2026-08-29.md` §6.14〜6.16。
+
+**(同日追記2) v57の陰性結果を踏まえた3本の後続パイロットを準備済み**
+(`WINNING_STRATEGY_2026-08-29.md` §6.17、Colab実行待ち):
+v58=提案confスイープ(学習なし・v57の既存ckpt使い回しでconf曲線を掃引、
+fold0上の探索なので採用点はfold1/2独立確認が条件)、v59=距離変換
+boundary loss(優先度4、refiner側の単変数置換)、v60=copy_paste
+augmentation(優先度6の代替機構、シーン複製でなくインスタンス貼付)。
+
+**(同日追記3) v59・v54確定 + v58確定**(§6.18): v59 dtbは3fold完結 —
+fold0 [+0.0015/+0.0003]・fold1 [−0.0001/+0.0007]・fold2 [−0.0018/−0.0003]、
+全6観測で平均≈±0・正負3対3・最大|Δ|0.0018の完全なノイズで
+**不採用確定**(優先度4完了)。境界精度(SQ)を上げる効果自体は
+fold2で検出できたがrecallとのトレードオフで正味ゼロ以下。v54 EMAはfold2も両seed負(−0.0008/−0.0002)で3fold通して
+不採用確定。v58確定: prodのconfピークはfold0/fold2で0.26一致
+(現行操作点は適切)。dense2xは「両seed・同confでbaselineを上回る点」が
+存在せず、各config最良点同士の比較でも負けるためconf救済は棄却確定 —
+oversampling系(優先度6)は完全に閉じた。
+
+**(同日追記4) v60確定**(§6.18): copy_paste=0.2 は fold2 で両seedとも
+仮説と逆方向 — dense FN は減らず増え(+23/+81)、FPは一貫して減少
+(−47/−48、過剰提案抑制の正則化として作動)。ΔPQは−0.0007/−0.0200で
+不採用確定(s8407はearly-stopで学習不安定化)。これで検出器側の
+密集リコール系レバー(優先度6系: シーン複製・conf救済・インスタンス
+貼付)は機構の方向を問わずPQ正味で改善しないことが確定。
+
+**(同日追記5) v61確定 — 優先度7終了、全レバー実験完結**(§6.19):
+SAM2.1 hiera_large の box-prompt zero-shot refiner 置換は、同一proposal
+paired で sam2_shrink −0.0348・sam2_free −0.1354 と大幅負で**不採用確定**。
+shrink揃えでもSQはraw並(U-Net refinerの+0.027 SQに届かず)、freeでは
+box外はみ出しでFP+469・RQ崩壊 — ドメインギャップ敗北が確定的。これで
+§6.12の優先度1〜7(EMA・マルチチャンネル・スケルトン・密集
+oversampling・conf救済・距離変換境界損失・copy_paste・SAM2)は
+**すべて実験済み・全件不採用**が確定し、現行V30+refiner shrink構成が
+試した全代替案に対して最良のままであることが確認された。
 
 **(2026-10-05、V57 記録回収)** 密集シーン oversampling の既存 fold0 pilot は
 2seed とも paired refined PQ が悪化し、不採用。既存 Drive manifest の4runを
@@ -871,6 +915,18 @@ ipynb の JSON を手編集するより再現性が高い。
 ---
 
 ## 5. 再現手順
+
+### 5.0 提出物の再現(審査用・ここだけ見ればよい)
+
+**`solar_filament_submission_reproduction.ipynb`** が公式の再現 notebook。
+「すべて実行」で前処理 → 検出器学習 → refiner 学習 → test 推論 →
+`submission.csv` 生成まで通る。Kaggle(`/kaggle/input` 自動検出)と
+Colab(Google Drive)の両方で動作し、学習済み重みを添付 dataset /
+Drive artifacts から解決する(無ければフル再学習)。末尾セルで
+`pip freeze` と重み SHA256 を記録する。
+
+生成元は `scratch/build_submission_reproduction.py`。
+以下の §5.1-5.4 は開発履歴・負の結果の再現用で、提出の再現には不要。
 
 ### 5.1 指標のテスト（依存: numpy, scipy）
 

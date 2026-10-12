@@ -1,0 +1,294 @@
+<title>Solar Filament — 現在地と次の計画(2026-10-06)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #faf6ee; --bg-elevated: #ffffff; --bg-inset: #f2ead9;
+    --ink: #241f16; --ink-dim: #6f6553; --border: #e1d5ba;
+    --accent: #c1501f; --accent-dim: #d97a3f; --accent-ink: #ffffff;
+    --good: #3c7a4d; --good-bg: #e6f1e8; --bad: #ad3a2e; --bad-bg: #f7e6e2;
+    --code-bg: #efe6d2;
+    --shadow: 0 1px 2px rgba(36,31,22,0.05), 0 12px 32px rgba(36,31,22,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171310; --bg-elevated: #201b15; --bg-inset: #29221a;
+      --ink: #f2ead9; --ink-dim: #a89a80; --border: #3c3223;
+      --accent: #e08a4f; --accent-dim: #c1682f; --accent-ink: #171310;
+      --good: #74bb85; --good-bg: #1e2c21; --bad: #e0897c; --bad-bg: #332320;
+      --code-bg: #2a2318;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.45);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif; line-height: 1.7; font-size: 16px; }
+  ::selection { background: var(--accent-dim); color: white; }
+  .shell { display: grid; grid-template-columns: 260px minmax(0,1fr); max-width: 1180px; margin: 0 auto; }
+  @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+  .toc { position: sticky; top: 0; align-self: start; padding: 40px 20px 40px 24px;
+    height: 100vh; overflow-y: auto; }
+  .toc-title { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  .toc a { display: block; font-size: 13.5px; color: var(--ink-dim); text-decoration: none;
+    padding: 5px 0; border-left: 2px solid transparent; padding-left: 10px; margin-left: -12px; }
+  .toc a:hover { color: var(--ink); }
+  main { padding: 48px 32px 120px; min-width: 0; }
+  @media (max-width: 860px) { main { padding: 32px 20px 100px; } }
+  .kicker { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-weight: 700;
+    font-size: clamp(30px, 4vw, 42px); line-height: 1.2; margin: 0 0 14px; text-wrap: balance; }
+  .lede { font-size: 17px; color: var(--ink-dim); max-width: 62ch; margin: 0 0 40px; }
+  section { margin: 64px 0; scroll-margin-top: 24px; }
+  h2 { font-family: "Source Serif 4", Georgia, serif; font-weight: 700; font-size: 26px;
+    margin: 0 0 8px; padding-top: 10px; border-top: 3px solid var(--accent); }
+  .h2-num { font-family: "IBM Plex Mono", monospace; color: var(--accent); font-weight: 600; margin-right: 8px; }
+  h3 { font-family: "IBM Plex Sans", sans-serif; font-weight: 700; font-size: 18px;
+    margin: 32px 0 10px; scroll-margin-top: 24px; }
+  p { max-width: 68ch; margin: 0 0 16px; }
+  ul, ol { max-width: 66ch; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  strong { font-weight: 600; }
+  .callout { background: var(--bg-elevated); border: 1px solid var(--border);
+    border-left: 4px solid var(--accent); border-radius: 8px; padding: 18px 22px;
+    margin: 20px 0; box-shadow: var(--shadow); max-width: 68ch; }
+  .callout.good { border-left-color: var(--good); }
+  .callout.bad { border-left-color: var(--bad); }
+  .callout h4 { margin: 0 0 8px; font-size: 15px; }
+  .callout p:last-child { margin-bottom: 0; }
+  table { border-collapse: collapse; margin: 18px 0; font-size: 14px;
+    background: var(--bg-elevated); box-shadow: var(--shadow); border-radius: 8px; overflow: hidden; }
+  th, td { padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--ink-dim); background: var(--bg-inset); }
+  td.num, th.num { text-align: right; font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .pill.good { background: var(--good-bg); color: var(--good); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .pill.warn { background: var(--code-bg); color: var(--accent); }
+  code, .mono { font-family: "IBM Plex Mono", monospace; font-size: 0.9em; }
+  .path { font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  .figure-note { font-size: 13px; color: var(--ink-dim); max-width: 68ch; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  .foot { font-size: 13px; color: var(--ink-dim); max-width: 68ch; }
+</style>
+
+<div class="shell">
+  <nav class="toc">
+    <p class="toc-title">Contents</p>
+    <a href="#s1">1. 現在地 — 定量最前線の根拠</a>
+    <a href="#s2">2. コンペ経緯 — 評価器・リーク・採点</a>
+    <a href="#s3">3. 実験の歴史 — 8件全棄却の構造</a>
+    <a href="#s4">4. v62 エラー解剖 — 天井の実測</a>
+    <a href="#s5">5. 競合 oracle の外部較正</a>
+    <a href="#s6">6. 今後の計画</a>
+    <a href="#s7">付録 — 成果物パス</a>
+  </nav>
+
+  <main>
+    <p class="kicker">Solar Filament Segmentation Challenge 2026 · Status Report</p>
+    <h1>現在地と次の計画</h1>
+    <p class="lede">
+      2026-10-06 時点の総括。定量面では我々の OOF refined PQ <strong>0.443</strong> が
+      公開されている誠実ティアの最高水準(0.423〜0.427)を上回る見込みで、
+      実質的に最前線。改善の次の一手は、エラー解剖で天井を測ってから選ぶ
+      「oracle駆動の機構選択」に移行した。まとめ: <strong>v64 learned component
+      selector</strong> が次の実験。
+    </p>
+
+    <section id="s1">
+      <h2><span class="h2-num">1</span>現在地 — 定量最前線の根拠</h2>
+      <p>
+        我々の確定構成(YOLO11m-seg 検出器 → MediSeg U-Net refiner → shrink →
+        ownership)の fold2 OOF refined PQ は <strong>0.4432</strong>。
+        これが「最前線」と言える根拠は3点:
+      </p>
+      <ol>
+        <li><strong>リーダーボードの上位は実力を反映していない。</strong>
+          0.55〜0.56 に並ぶ38チームのクラスタは、テスト180枚中77.2%が公開
+          MAGFiLO 1.0 とバイト一致する検証済みリーク由来(正解をそのまま提出)。
+          運営は「LBではなく定量70%+定性30%の合議制」と明言しており、
+          このクラスタは追走対象ではない。</li>
+        <li><strong>誠実ティアの最前線は LB ~0.36・公開 val ~0.42。</strong>
+          最も詳細に開示している競合(too.foo)の公式プロトコル val は
+          0.423〜0.427、LB 0.36。我々の OOF 0.4432 は同一プロトコル
+          (annotator×image基準のPQ)でこれを上回る。</li>
+        <li><strong>実質天井は PQ 0.45〜0.55 と推定されている。</strong>
+          採点は annotator record 単位で、annotator 間一致率は Kappa 0.66。
+          全annotatorを同時に満たす単一予測集合は原理的に存在しないため、
+          0.44台は天井の帯に既に入っている。</li>
+      </ol>
+      <div class="callout good">
+        <h4>注意(誠実な留保)</h4>
+        <p>0.4432 は OOF(held-out fold)評価で LB への直接提出値ではない。
+        val protocol の差(我々 grouped 3fold / too.foo 独自holdout)はあるが、
+        同一の公式採点プロトコル基準の数字として比較可能。</p>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2><span class="h2-num">2</span>コンペ経緯 — 評価器・リーク・採点</h2>
+      <p>ディスカッション調査(2026-10-06)で確定したタイムライン:</p>
+      <table>
+        <tr><th>時期</th><th>出来事</th></tr>
+        <tr><td>〜8月上旬</td><td>旧評価器は「matched pair の Dice 平均のみ」を取る壊れた実装。
+          <strong>空提出が 0.88〜0.93</strong> を記録(参加者の制御実験で確定)</td></tr>
+        <tr><td>8月7〜9日</td><td>評価器を正式 Panoptic Quality に差替え。
+          自己評価 notebook(host公開)も追加</td></tr>
+        <tr><td>8月12日</td><td><strong>LB 全件再採点</strong>。残った 0.55 帯は
+          MAGFiLO リーク由来と判明</td></tr>
+        <tr><td>現在</td><td>採点 = テスト1画像あたり平均2.4レコードの annotator 個別
+          annotation に対する PQ + 分布評価(IoU/Dice/1対多対応) +
+          計算効率。最終判定は定量70% + 定性30% の合議制</td></tr>
+      </table>
+      <p>
+        提出物は filament_id + RLE のCSV。最終審査は4ページレポート・
+        公開再現repo・予測morphologyを含む(締切は11月半ばとされる、要公式確認)。
+      </p>
+    </section>
+
+    <section id="s3">
+      <h2><span class="h2-num">3</span>実験の歴史 — 8件全棄却の構造</h2>
+      <p>
+        §6.12 のレバーリスト(競合調査+未試行機構の棚卸し、優先度1〜7)は
+        すべて paired 評価で消化した。採用0件だが、負の知見は確定的:
+      </p>
+      <table>
+        <tr><th>ID</th><th>機構</th><th class="num">結果</th><th>判定理由</th></tr>
+        <tr><td>v54</td><td>EMA(重み平均)</td><td class="num">3fold ±0</td><td>seed間符号不一致</td></tr>
+        <tr><td>v55</td><td>refinerマルチch化</td><td class="num">−0.021</td><td>明確な悪化</td></tr>
+        <tr><td>v56</td><td>スケルトンギャップ閉合</td><td class="num">+0.0004</td><td>ノイズ以下</td></tr>
+        <tr><td>v57</td><td>密集oversampling</td><td class="num">−0.001/−0.009</td><td>FN↓だがFP爆増</td></tr>
+        <tr><td>v58</td><td>conf救済スイープ</td><td class="num">—</td><td>conf最適0.26確認、救済不可</td></tr>
+        <tr><td>v59</td><td>距離変換境界損失</td><td class="num">6観測±0</td><td>完全ノイズ</td></tr>
+        <tr><td>v60</td><td>copy_paste</td><td class="num">−0.0007/−0.020</td><td>仮説と逆方向</td></tr>
+        <tr><td>v61</td><td>SAM2 refiner置換</td><td class="num">−0.035/−0.135</td><td>ドメインギャップ敗北</td></tr>
+      </table>
+      <div class="callout bad">
+        <h4>8連敗が教える構造的事実</h4>
+        <p>「FNかFPの片方を改善する」単変数変更は、もう片方を悪化させて正味±0。
+        現構成の操作点近傍で PQ は局所的に平坦。<strong>有望なのは
+        FN↔FP のトレードオフを「交換」ではなく「壊す」機構だけ</strong> —
+        つまり両者を同時に下げるもの、または SQ(TP品質)だけを動かすもの。</p>
+      </div>
+    </section>
+
+    <section id="s4">
+      <h2><span class="h2-num">4</span>v62 エラー解剖 — 天井の実測</h2>
+      <p>
+        fold2 の全最終予測(1,498個)を GT×pred IoU 行列でクラスタ分解し、
+        各機構が理想実装された場合の ΔPQ(oracle上界)を測定した
+        (<span class="path">v62_error_anatomy_fold2_manifest.json</span>)。
+      </p>
+      <h3>エラークラスタ(annotator×image基準、n_gt=2,785)</h3>
+      <table>
+        <tr><th>クラスタ</th><th class="num">個数</th><th>対応する機構</th></tr>
+        <tr><td>FN blind(IoU&lt;0.1、提案なし)</td><td class="num">561</td><td>検出リコール系 — 既に全滅</td></tr>
+        <tr><td>FN weak(0.1〜0.3)</td><td class="num">168</td><td>同上</td></tr>
+        <tr><td>FN near-miss(0.3〜0.5)</td><td class="num">333</td><td>境界改善系 — refinerは2チーム否定済み</td></tr>
+        <tr><td>FP orphan(背景誤検出)</td><td class="num">136</td><td><strong>verifierで除去可能</strong></td></tr>
+        <tr><td>FP misassigned(FN GTに重なる不良)</td><td class="num">196</td><td>verifier候補</td></tr>
+        <tr><td>FP fragment(TP済GTの断片)</td><td class="num">2</td><td>ほぼ存在しない(ownershipが処理済み)</td></tr>
+      </table>
+      <h3>oracle上界(理想実装時のΔPQ)</h3>
+      <table>
+        <tr><th>oracle</th><th class="num">ΔPQ</th><th>解釈</th></tr>
+        <tr><td>perfect_verifier(全FP除去)</td><td class="num good"><strong>+0.0462</strong></td><td>最大レーン。FP 751→255</td></tr>
+        <tr><td>drop_orphan(背景FPのみ)</td><td class="num">+0.0169</td><td>これだけでも +0.017</td></tr>
+        <tr><td>merge(断片統合)</td><td class="num">+0.0035</td><td>小さい → <span class="pill bad">v63棄却</span></td></tr>
+        <tr><td>drop_fragment</td><td class="num">+0.0003</td><td>対象が2個のみ</td></tr>
+      </table>
+      <p>
+        FNの68%(729/1,071)は提案不在。つまり真のボトルネックは検出リコール —
+        だが検出器側は全滅済み。<strong>verifier が強ければ conf floor を下げて
+        提案を増やしてもFPを制御できる</strong>ため、selector は「FP除去」と
+        「リコール解放」の両側からトレードオフを壊せる唯一の機構となる。
+      </p>
+    </section>
+
+    <section id="s5">
+      <h2><span class="h2-num">5</span>競合 oracle の外部較正</h2>
+      <p>
+        too.foo チームが同一手法(oracle天井で機構を選ぶ)を公式プロトコルで
+        実行済み。彼らの測定値が我々の解剖を外部裏付けする:
+      </p>
+      <table>
+        <tr><th>機構(too.foo実測)</th><th class="num">oracle/結果</th><th>我々との対応</th></tr>
+        <tr><td>component selection(FP除去)</td><td class="num"><strong>oracle +0.083</strong>、GBMで +0.018実取</td><td>同構造 → v64へ</td></tr>
+        <tr><td>マスク完全整形(refiner)</td><td class="num">oracle 0.756だが実装は不動〜負</td><td>v59/v61と同じ結論</td></tr>
+        <tr><td>fragment merge</td><td class="num">oracle +0.026</td><td>我々は +0.0035 → 棄却</td></tr>
+        <tr><td>hysteresis断片接合</td><td class="num">−0.004 棄却</td><td>v56と同ファミリー失敗</td></tr>
+        <tr><td>損失/target変種6系統</td><td class="num">全て±0.02内</td><td>単体モデル天井の実証</td></tr>
+      </table>
+      <p>
+        彼らのselector特徴(局所chromosphereとの暗さコントラスト、細長さ、
+        limb近接度)は我々が未実装の有用特徴。v62の簡易特徴だけでは
+        conf 0.71 / probmass 0.54 と弱いので、<strong>特徴量強化の学習selector</strong>
+        が次の実験となる。
+      </p>
+    </section>
+
+    <section id="s6">
+      <h2><span class="h2-num">6</span>今後の計画</h2>
+      <h3>Phase B — v64 learned component selector(次の実行notebook)</h3>
+      <p>
+        <span class="path">solar_filament_v64_selector_fold2_colab.ipynb</span>
+        生成済み。設計:
+      </p>
+      <ul>
+        <li>floor=0.05 の全提案を train-fold / val-fold 両方で収集し、
+          10特徴(conf/probmass/IoU/面積比/aspect/solidity/<strong>暗さコントラスト</strong>/
+          <strong>limb距離</strong>)を算出</li>
+        <li>selector(HistGradientBoosting)は <strong>train-fold のみ</strong>で学習
+          — eval-fold proposalには触れない(選択バイアス対策)</li>
+        <li>train-foldをA/Bに分割し、Aで学習→Bで(conf_floor, p_keep)gridの
+          PQ最大点を選定→<strong>凍結操作点をfold2 valに一度だけ適用</strong></li>
+        <li>採否(事前宣言): 凍結点 ΔPQ&gt;+0.005 → fold0独立確認。
+          |Δ|&lt;0.002 棄却、負→selector系も閉じる</li>
+      </ul>
+      <h3>条件付き起動(v64結果次第)</h3>
+      <table>
+        <tr><th>方向</th><th>起動条件</th><th>期待</th></tr>
+        <tr><td>conf floor 引き下げ + selector で recall 解放</td><td>v64でselectorが強い(AUC高・凍結点正)</td><td>blind FN 561の一部を回収</td></tr>
+        <tr><td>recall specialist の instance-level 統合</td><td>selector成立後のみ</td><td>too.foo計画中と同構成</td></tr>
+        <tr><td>SAM2 decoder fine-tune</td><td>別機構だが期待値低め・要相談</td><td>中コスト</td></tr>
+      </table>
+      <h3>Phase C — 定性30%(並行)</h3>
+      <p>
+        最終審査の定性30%(4ページレポート・公開repo・予測morphology)は
+        誠実ティアで記述済みなのは too.foo のみ = <strong>最も競争密度の低い
+        得点源</strong>。定量70%で既に最前線にいる以上、こちらへの投資が
+        最終順位を左右する可能性が高い。`SCIENTIFIC_UTILITY_ROADMAP.md` の
+        評価図・形態学的妥当性を実験待ち時間に進める方針。
+      </p>
+      <div class="callout">
+        <h4>次のアクション</h4>
+        <p>v64 notebook を Colab(A100)で実行 → manifest の
+        <span class="path">val_selector_frozen</span> / <span class="path">delta_pq_frozen</span> /
+        <span class="path">feature_importances</span> を確認 → 採否判定。</p>
+      </div>
+    </section>
+
+    <hr>
+    <section id="s7">
+      <h2><span class="h2-num">付録</span>成果物パス</h2>
+      <p class="foot">
+        戦略記録: <span class="path">Solar_Filament_Segmentation/WINNING_STRATEGY_2026-08-29.md</span>
+        (§6.19 v61結果 / §6.20 計画 / §6.21 競合調査)<br>
+        最新notebook: <span class="path">solar_filament_v64_selector_fold2_colab.ipynb</span><br>
+        builder: <span class="path">scratch/build_v62_error_anatomy.py</span> ·
+        <span class="path">scratch/build_v64_selector_pilot.py</span><br>
+        manifests: <span class="path">artifacts/v61_sam2_refiner_fold2_manifest.json</span> ·
+        <span class="path">artifacts/v62_error_anatomy_fold2_manifest.json</span> ·
+        <span class="path">artifacts/v64_selector_fold2_manifest.json</span>(実行後)
+      </p>
+    </section>
+  </main>
+</div>

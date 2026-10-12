@@ -799,6 +799,634 @@ paired Δ(dense2x − baseline): seed3407 Δraw **−0.0062** / Δrefined **−0
   除外機構)が筋。oversampling系の亜種(extra回数・閾値変更)も同じ
   FP副作用を持つため推奨しない。
 
+### 6.17 v58・v59・v60 パイロット準備完了、Colab実行待ち(2026-10-05)
+
+Google AI Ultra 移行で Colab 計算資源に余裕ができたため、v57 の陰性結果
+(§6.16)を踏まえて系統立てて設計した3本のパイロット notebook を用意した。
+いずれも `devin/solar-next-pilots` ブランチ(PRはv57ブランチにスタック)の
+`Solar_Filament_Segmentation/` 直下に生成済み。
+
+#### v58 — 提案 conf スイープ(学習なし・既存ckpt使い回し)
+
+- builder: `scratch/build_v58_conf_sweep_probe.py`
+- notebook: `solar_filament_v58_conf_sweep_fold0_colab.ipynb`
+- 仮説: v57 で dense2x が残した dense FN 改善は、conf 閾値を上げれば FP 爆増を
+  抑えて残せる可能性がある。また現行操作点 CONF=0.26 自体がこの評価経路で
+  未掃引だった。
+- 設計: 既存検出器 ckpt 5本(`yolo_fold_0` prod / v57 baseline×2seed /
+  v57 dense2x×2seed)に対し、predict floor 0.03 で一度だけ推論+全提案を
+  refine して RLE 保持、conf ∈ {0.05,0.08,0.12,0.16,0.20,0.26,0.32,0.40} の
+  スイープはメモリ上で採点。raw/refined PQ + dense/sparse FN を各点で記録。
+- **バイアス対策**: これは評価fold上の探索であり、ここで選んだ点をそのまま
+  採用しない(free variant 0.86 の前科)。両config・両seedで同方向に改善する
+  点のみ fold1/2 で独立確認(v57のfold1/2 ckptは未学習なので必要なら別途用意)。
+- コスト: 学習なし、推論+refineのみで約1〜1.5時間。
+
+#### v59 — 距離変換 boundary loss(§6.12優先度4)
+
+- builder: `scratch/build_v59_boundary_dt_pilot.py`
+- notebook: `solar_filament_v59_boundary_dt_fold0_colab.ipynb`
+- helper: `solar_filament/pipeline/boundary_dt.py` + `tests/test_boundary_dt.py`
+  (9テスト、ローカルで全パス)
+- 仮説: IoU>0.5 崖の近傍で TP 化するためには境界精度が効く。現行の
+  morphological-gradient L1(V30から不変の粗い定式化)を Kervadec 系の
+  距離変換境界損失 `mean(sigmoid·φ_G)` に置き換える。φ_G は GT の正規化済み
+  符号付き距離写像(内部負・外部正・境界0)、augment適用後のtargetから
+  バッチ内で計算する。重み0.15は既存edge項からそのまま引き継ぐ単変数置換。
+- 設計: v54テンプレートと同一構造。`v54_ema_pilot_fold0_manifest.json` の
+  baseline行を再利用するため新規学習は dtb×2seed のみ(見込み40分)。
+  refiner側の変更なので検出器seed差ノイズを持ち込まない。
+- 判定: 2seedで符号一致した場合のみfold1/2へ展開。境界項の効果はSQに
+  現れるはずなので、PQが動かなくてもSQの系統的改善があれば次の手を検討。
+
+#### v60 — copy_paste augmentation(v57の代替機構)
+
+- builder: `scratch/build_v60_copypaste_pilot.py`
+- notebook: `solar_filament_v60_copypaste_fold0_colab.ipynb`
+- 仮説: v57のシーン複製が持った「そのシーンで過剰提案するpriorを学ぶ」副作用を、
+  インスタンス単位の貼付(ultralytics組込み `copy_paste=0.2`)なら避けられる
+  可能性がある。密集の「インスタンスが多い」信号だけを増やす。
+- 設計: V30学習レシピ完全同一で `copy_paste` のみ変数。baseline は v57
+  manifest の行を再利用(同一レシピ・同一seed・同一評価経路)するため
+  新規学習は copypaste×2seed のみ(見込み2〜3時間)。dense/sparse FN
+  スライスもv57と同じcut定義で記録し、機構比較を可能にする。
+- 判定: v57と同規約。FN改善があってもFP爆増でPQが下がれば不採用
+  (confスイープはv58で網羅済み)。copypasteでもdense FNが減らなければ
+  検出器側の密集リコール系レバーは総括して不採用方向。
+
+**推奨実行順**: v58(最安・学習なし)→ v59(40分)→ v60(2〜3時間)。
+v58 の結果は v60 の解釈(copypasteでFPが増えた場合の対処法の有無)にも効く。
+
+### 6.18 v59 fold2先行実行結果 + v54 fold2補完 + v58中間報告(2026-10-05)
+
+#### v59(距離変換boundary loss)fold2 結果
+
+fold2を先行実行。baseline行はv54 manifestから再利用(同一評価経路・同一seed
+のpaired)。結果:
+
+| run | PQ | SQ | RQ | TP | FP | FN |
+|---|---|---|---|---|---|---|
+| baseline s3407 | 0.445722 | 0.678268 | 0.657148 | 1726 | 742 | 1059 |
+| dtb s3407 | 0.443924 | 0.678805 | 0.653978 | 1718 | 751 | 1067 |
+| baseline s8407 | 0.444964 | 0.678945 | 0.655376 | 1722 | 748 | 1063 |
+| dtb s8407 | 0.444704 | 0.679345 | 0.654608 | 1719 | 748 | 1066 |
+
+paired Δ(dtb − baseline): s3407 PQ **−0.0018** / SQ +0.0005 / RQ −0.0032;
+s8407 PQ **−0.0003** / SQ +0.0004 / RQ −0.0008。
+
+**読み取り**: 仮説の半分が作動した — SQ(マッチしたTPの平均IoU)は2seedとも
+微増し、距離変換境界損失が「マッチした予測の境界精度」を上げる効果は確認
+できる。しかし RQ が2seedとも低下(TP −8/−3、FN +8/+3)し、ネットでは
+両seedで負。効果量は ±0.001 程度のノイズ級だが符号は一致して負。
+「境界を精密に学ぶ → わずかに保守的な予測 → recallが微減」という挙動。
+
+**判定**: fold0・fold1 への展開は低優先(効果量が採用閾値 +0.005 を大きく
+下回り、方向も負)。アーカイブ目的で fold0 を回す余地はあるが、重みや
+正規化の調整(§6.12優先度4の探索余地)を試すにしても、この1fold観測で
+確実に言えるのは「0.15 単変数置換では改善しない」ことまで。
+
+#### v54(EMA)fold2 補完 — 3foldで不採用確定
+
+v59 の baseline 再利用で v54 fold2 manifest の存在が判明。ema行:
+s3407 = 0.444965(Δ−0.0008)、s8407 = 0.444769(Δ−0.0002)で**両seed負**。
+fold0(微小正)・fold1(符号不一致)・fold2(両負)を通してEMAは一貫して
+無効〜微負であり、**不採用確定**。重み平均系レバーの探索を正式に閉じる。
+
+#### v58(confスイープ)中間報告
+
+- **prod は fold0・fold2 で conf=0.26 がピーク**(fold0: 0.4357、fold2:
+  0.4433)と2fold独立で一致 — 現行操作点は適切で、prodのconfを動かす
+  余地はほぼ無いことが確定
+- v57baseline(再学習検出器)はピーク位置がseed不一致(s3407: 0.32、
+  s8407: 0.26)で、「一律にconfを上げる」改善は成立しない
+- dense2x の評価は fold0 manifest が conf=0.08 で途中停止
+  (26/40行)。残りは notebook 再実行で resume される
+- 低conf域の2点では dense2x は baseline に PQ で劣後(−0.015/−0.017)、
+  FP 過剰(+422〜+444)が残り、dense FN優位も縮小(−11〜−17)
+
+#### v59 fold0 補完 — fold間符号不一致で不採用確定
+
+fold0 も実行完了(baseline行はv54 manifestから再利用):
+
+| run | PQ | SQ | RQ | TP | FP | FN |
+|---|---|---|---|---|---|---|
+| baseline s3407 | 0.441331 | 0.676897 | 0.651991 | 1703 | 772 | 1046 |
+| dtb s3407 | 0.442857 | 0.676991 | 0.654155 | 1708 | 765 | 1041 |
+| baseline s8407 | 0.441795 | 0.677506 | 0.652091 | 1700 | 765 | 1049 |
+| dtb s8407 | 0.442102 | 0.676362 | 0.653647 | 1707 | 767 | 1042 |
+
+paired Δ(dtb − baseline): fold0 s3407 **+0.0015** / s8407 **+0.0003**
+(RQ経由: TP+5/+7、FN−5/−7); fold2 s3407 **−0.0018** / s8407 **−0.0003**
+(RQ経由: TP−8/−3、FN+8/+3)。
+
+**判定: 不採用(0.15単変数置換)。** fold0で両seed正・fold2で両seed負と
+**fold間で符号が反転**し、効果量も全観測で |Δ|≤0.002 とノイズ級。
+fold1をtiebreakとして回しても採用閾値+0.005に届く見込みがなく、
+どちらに転んでも実効がない。距離変換境界損失が「マッチした予測の
+境界精度」を上げる効果自体(fold2でSQ+0.0005/+0.0004)は検出できたが、
+recallとのトレードオフがfold依存で正負に振れるため、この定式化・重みでは
+正味ゼロ以下。優先度4を実験済みとして閉じる。残る未着手レバーは
+優先度7(SAM2系refiner)のみ。
+
+#### v58 fold0 完走 — dense2x の conf 救済は棄却確定
+
+fold0 の dense2x 全16点が揃った(計40行)。paired Δ(dense2x − baseline、
+同seed・同conf)の結果:
+
+- **「両seed・同じconfで dense2x が baseline を上回る点」は存在しない**
+  (s3407 で唯一の正は conf0.40 の +0.0038、s8407 では conf0.32 の +0.0007
+  と、正になるconfがseed間で一致しない = 事前宣言の採用条件を満たさず)
+- **各configの最良点同士でも dense2x が負ける**: s3407 baseline best
+  0.4322@0.32 vs dense2x best 0.4279@0.32;s8407 baseline best 0.4281@0.26
+  vs dense2x best 0.4248@0.32
+- dense2x の FN(dense)優位は conf を上げると消える(s8407 conf0.40 では
+  +1と逆転)。「提案量が多い」だけのリコール改善で、conf で絞ると
+  実質が残らないことが確定
+- FP 過剰は全conf域で残留(+60〜+444)
+
+**確定知見**: oversampling 系レバー(優先度6)は機構の作動確認済みだが
+「FP救済策としてのconf掃引」でも救えないことが確定し、完全に閉じた。
+prod CONF=0.26 の最適性は fold0/fold2 でピーク一致として独立確認済み。
+再学習検出器はピークconfがseed不一致になるだけのばらつきを持つことも
+実測された(検出器実験はpaired必須の裏付けが追加)。
+
+#### v59 fold1 補完 — 3fold完結、不採用確定
+
+fold1: dtb s3407 0.440288(Δ−0.0001) / s8407 0.442721(Δ+0.0007)
+(baseline v54再利用: 0.440425 / 0.441976)。
+
+**全3fold・6観測の確定集計**: ΔPQ は fold0 [+0.0015, +0.0003]、
+fold1 [−0.0001, +0.0007]、fold2 [−0.0018, −0.0003]。平均 ≈ ±0、
+正負3対3、最大|Δ| 0.0018 — 完全にノイズ。SQ差もfold0/1では符号不一致、
+fold2のみ両seed微増。距離変換境界損失(0.15単変数置換)はPQに対して
+検出可能な正味なし。**優先度4、3foldの独立確認を以て不採用確定・完了。**
+
+#### v60(copy_paste=0.2)fold2 完走 — 不採用確定、密集リコール系レバー総括終了
+
+fold2 を4run(baseline/copypaste × seed 3407/8407)実行
+(`runs/v60_copypaste/`、notebookはfold2実行)。採点は manifest
+`v60_copypaste_fold2_manifest.json`、dense/sparse FN スライスはv57と同じ
+cut定義。結果(refined OOF):
+
+| run | PQ | SQ | RQ | TP | FP | FN | FN(dense) | FN(sparse) |
+|---|---|---|---|---|---|---|---|---|
+| baseline s3407 | 0.446406 | 0.681190 | 0.655333 | 1754 | 814 | 1031 | 487 | 544 |
+| copypaste s3407 | 0.445746 | 0.681001 | 0.654545 | 1728 | 767 | 1057 | 510 | 547 |
+| baseline s8407 | 0.445104 | 0.679765 | 0.654791 | 1746 | 802 | 1039 | 500 | 539 |
+| copypaste s8407 | 0.425128 | 0.677786 | 0.627230 | 1617 | 754 | 1168 | 581 | 587 |
+
+paired Δ(copypaste − baseline):
+
+| seed | ΔPQ | Δraw PQ | ΔFP | ΔFN(dense) | ΔFN(sparse) |
+|---|---|---|---|---|---|
+| 3407 | **−0.0007** | +0.0027 | −47 | **+23** | +3 |
+| 8407 | **−0.0200** | −0.0177 | −48 | **+81** | +48 |
+
+**読み取り**: 仮説(インスタンス貼付が密集リコールを上げる)と**逆方向**の
+挙動が両seedで一致した — copy_paste は dense FN を減らさず**増やす**
+(+23/+81)。代わりに FP を一貫して減らす(−47/−48)。v57 dense2xの
+「FN減・FP爆増」と表裏の関係で、copy_paste はこの設定では「過剰提案を
+抑制する正則化」として働いた。さらに s8407 では学習が不安定化し
+early-stop(ep47、best=ep33)して生の検出品質から落ちた
+(raw PQ −0.0177、refined −0.0200)。
+
+**判定: 不採用確定(事前宣言の採用条件に非適合)。** dense FN削減という
+主目的は2seedとも達成されず、PQ正味も負(s8407で顕著)。fold0/fold1への
+展開は機構の方向性が確定したため不要。FP削減(−47/−48)は一貫した副次
+効果として記録に残すが、単体の採用根拠にはならない(FP削減を活かすには
+conf下げ等の別レバーとの組合せが要り、その組合せ実験の費用対効果は
+優先度7未着手を考えると低い)。
+
+**総括**: v57(シーン複製oversampling)・v58(conf救済の棄却)・
+v60(インスタンス貼付copy_paste)を通じて、**検出器側の密集リコール系
+レバー(優先度6系)は機構の方向を問わずPQ正味で改善しない**ことが
+確定した。残る未着手レバーは優先度7(SAM2系refiner)のみ。
+
+### 6.19 v61 — SAM2 promptable refiner パイロット準備完了(優先度7、学習なし)
+
+最後の未着手レバー(優先度7)を検証する notebook を用意した。
+
+- builder: `scratch/build_v61_sam2_refiner_pilot.py`
+- notebook: `solar_filament_v61_sam2_refiner_fold2_colab.ipynb`
+- 仮説: 現行 refiner(MediSeg U-Net、crop320/context1.65、shrink確定構成)は
+  小データ学習の頭打ち感がある。基盤モデル SAM2.1 hiera_large に
+  **YOLO提案の外接矩形を box prompt として与え**、学習なしで refiner を
+  置き換えられないか。H-alphaフィラメントは SAM2 学習ドメイン外なので
+  「大きな賭け」だが、refiner が変えられるのは主に SQ(FNは提案集合で固定)
+  のため悪化リスクが限定的。
+- 設計: 学習なし・prod検出器(`runs/yolo_fold_{N}`)1本の提案
+  (conf>=0.26・area>=20)に対し、同一proposal集合で4armをpaired評価:
+  `raw` / `refined`(現行製品再現arm) / `sam2_free`(SAM2出力そのまま) /
+  `sam2_shrink`(SAM2∩proposal)。画像ごとに `set_image` は1回だけなので
+  推論コストは小さい。`refined` arm が fold2基準 0.4471 をほぼ再現するか
+  どうかを経路健全性のチェックに使う。
+- 診断: SAM2 の predicted IoU・IoU(SAM2, proposal)・面積比・空mask率を
+  manifest の `sam2_diagnostics` に集計し、ドメインギャップの大きさを
+  数値で残す(IoU(SAM2,proposal)が低いままならドメインギャップ敗北と
+  判断し、ファインチューン系の追加投資はしない)。
+- **採用ゲート(事前宣言)**: sam2系armの refined PQ が `refined` を
+  **+0.005 超**で上回った場合のみ「候補」とし、同構成を第2foldで独立確認
+  してから採否を決める。|Δ|<0.002 はノイズ棄却。負なら優先度7を不採用
+  として閉じ、全優先度の実験が完了する。
+- コスト: 学習なし・推論+SAM2のみで約1時間見込み。初回のみckpt約2.4GBを
+  Driveへキャッシュ。manifest: `v61_sam2_refiner_fold{N}_manifest.json`。
+
+#### v61 fold2 実行結果 — 不採用確定、優先度7終了(全レバー実験完結)
+
+fold2 で4arm完走(`v61_sam2_refiner_fold2_manifest.json`)。同一proposal
+集合での paired 結果:
+
+| arm | PQ | SQ | RQ | TP | FP | FN | FN(dense) |
+|---|---|---|---|---|---|---|---|
+| raw | 0.3985 | 0.6516 | 0.6115 | 1605 | 859 | 1180 | 578 |
+| refined(現行) | 0.4432 | 0.6788 | 0.6530 | 1714 | 751 | 1071 | 517 |
+| sam2_free | 0.3079 | 0.6413 | 0.4801 | 1265 | 1220 | 1520 | 717 |
+| sam2_shrink | 0.4084 | 0.6513 | 0.6271 | 1652 | 832 | 1133 | 549 |
+
+paired Δ(arm − refined): sam2_shrink **−0.0348**(ΔSQ −0.0275、FP +81)、
+sam2_free **−0.1354**(ΔSQ −0.0376、FP +469、RQ崩壊0.480)。
+
+**読み取り**: ドメインギャップ敗北が確定的。
+
+- sam2_shrink の SQ(0.6513)は raw(0.6516)とほぼ同じ — **∩proposalを掛けても
+  SAM2の zero-shot マスクは提案品質をほぼ改善しない**。U-Net refiner が
+  提案に乗せる +0.027 SQ は小データ学習で得たドメイン固有の精密化であり、
+  汎用基盤モデルのbox-prompt zero-shotでは代替できない
+- sam2_free は box 外へ大きくはみ出し(FP +469)、延長したマスクが他instanceを
+  侵食して FN も +449 増 — 現行 shrink 構成の「提案で切る」設計が本質的に
+  有効であることの裏返しでもある
+- `refined` arm は 0.4432 で fold2基準(0.4471)より −0.004。prod ckpt と
+  基準算出時の評価経路差と考えられるが、同一proposal内 paired なので
+  判定には影響しない(健全性確認の範囲)
+
+**判定: 不採用確定(事前宣言のノイズ帯 |Δ|<0.002 を大幅に下回る負)。**
+box prompt zero-shot での refiner 置換は機構として成立せず。
+sam2_diagnostics の IoU(SAM2,proposal) が低い=ドメインギャップ直接の証拠
+として manifest に記録済み。ファインチューン系の追加投資は行わない方針を
+事前宣言通り確認。
+
+**総括**: §6.12 の優先度1〜7はすべて実験完了。採用に至ったレバーは0件、
+全て paired 評価で棄却が確定した(EMA v54・マルチチャンネル v55・
+スケルトンギャップ閉合 v56・密集oversampling v57・conf救済 v58・
+距離変換境界損失 v59・copy_paste v60・SAM2 refiner v61)。現行 V30+refiner
+shrink構成が、試した全代替案に対して最良のままであることが確定。
+
+### 6.20 ポスト・レバーリスト実験計画 — エラー解剖駆動の機構選択(2026-10-06)
+
+§6.12レバーリストは全消化。8連敗のパターンから確定した構造的事実:
+**FNかFPを改善する単変数変更はもう片方を悪化させ正味±0**(操作点近傍で
+PQが局所平坦)。以後の探索は「思い込みの優先度」ではなく、**エラーを機構
+別クラスタに分解し各機構のoracle上界を実測してから選ぶ**方針に切り替える。
+計算資源(AI Ultra)に余裕があるため、診断・実験はfold並列で進める。
+
+#### Phase A — エラー解剖(v62、学習なし・約30〜60分)
+
+prod fold2 検出器の提案→refiner→ownership 後の予測を1回生成してキャッシュし、
+GT×pred IoU 行列から以下を計測:
+
+- **FN分解**: 各FN GTの best pred IoU をバケット化 — `blind`(<0.1、
+  検出器が完全に見逃し、提案なしでは救済不可)/ `weak`(0.1〜0.3)/
+  `near-miss`(0.3〜0.5、境界改善で TP 化し得る帯)
+- **FP分解**: `orphan`(best GT IoU<0.1、背景誤検出 — verifier系で除去可能)/
+  `fragment`(TP済みGTに重なる余剰予測 — merge系で除去可能)/
+  `misassigned`(FN GTに重なるが IoU<0.5 — 境界不良で、boundary改善の対象)
+- **over-merge検出**: 1予測が複数GTの best match になる件数(split系の対象)
+- **oracle上界**: 予測集合を機械的に書き換えてPQを再採点 —
+  `drop_orphan` / `drop_fragment` / `perfect_verifier`(全FP除去)/
+  `merge_oracle`(GTに重なる断片をunion)の各ΔPQ
+- **verifier分離可能性**: conf・refined/raw IoU・refiner prob-mass の
+  TP-vs-FP 分離度(rank AUC) — 特徴でFPが識別できるかを学習前に判定
+
+出力 manifest: `v62_error_anatomy_fold{N}_manifest.json`。
+各oracleのΔPQ = その機構が理想実装された場合の天井。**天井が+0.01以下の
+機構は実験せず棄却**、最大天井の機構のみ Phase B へ。
+
+#### Phase B — 機構別パイロット(v62の結果で条件付き起動)
+
+| ID | 機構 | 起動条件(v62のoracle) | コスト |
+|---|---|---|---|
+| v63 | 提案を跨ぐ断片merge後処理 | merge系天井が有意 | 低(後処理のみ) |
+| v64 | zero-training FP verifier(conf/probmass/面積比の閾値)+ 必要なら小分類器 | orphan FPが大・特徴AUCが高い | 低〜中 |
+| v65 | refiner/detector TTA(hflip union等) | near-miss FN帯が大 | 低 |
+| v66 | SAM2 decoder部分fine-tune | v61拒否はzero-shot範囲の話で fine-tuneは別機構。ただし期待値低め | 中(学習あり) |
+
+機構実験の採用規約は従来通り: fold2で候補選定→別foldで独立確認、
+ノイズ帯|Δ|<0.002は棄却。
+
+#### Phase C — 定性30%(並行トラック、PQと独立)
+
+LBリークで定量70%の伸びしろが限られる一方、合議制の定性30%は未投資。
+`SCIENTIFIC_UTILITY_ROADMAP.md` の評価図・形態学的妥当性の証拠積み増し。
+PQ実験の合間の待ち時間で進める。
+
+### 6.21 競合・ディスカッション再調査(2026-10-06)— 外部oracle値で Phase B を較正
+
+#### タイムライン訂正・確定
+
+- 旧評価器は「matched pairのDice平均のみを取る」壊れた実装で、**空提出が
+  0.88〜1.00を取れた**(discussion/729809 Valentin Haase氏の制御実験で確定:
+  同一モデルで0予測=0.93、1.9件=0.72、11件=0.65と予測数が増えるほど低下)
+- 8月7〜9日に評価器を正式PQに差替え、**8月12日にLB全件再採点済み**(公式
+  アナウンス)。再採点後も残る 0.55〜0.56 クラスタ38チームは§6.12の通り
+  MAGFiLOリーク由来で、誠実ティアの実力は **LB ~0.36程度が最前線**
+  (too.foo氏のselector構成がLB 0.36を計測)
+- 評価は**annotator record単位**(テスト1画像あたり平均2.4レコード、
+  各レコードの個別アノテーションに対してPQ採点)。我々のOOF評価経路
+  (annotator×image)と同じ構造で整合。annotator不一致(Kappa 0.66)により
+  実質天井は PQ 0.45〜0.55 と推定(too.foo)
+
+#### 競合の実力と手法(2026-10-06時点)
+
+| 勢力 | 構成 | 実測 |
+|---|---|---|
+| too.foo(最も詳細な公開) | U-Net++ EffNet-B3 512pxパッチ → 連結成分 → **12特徴GBMコンポーネントselector** → adaptive crop refiner | val PQ 0.423→0.427、LB 0.36 |
+| VisionX(gopi470) | v2: YOLO11s@1280 + CLAHE連結成分(recall) → IoU-NMS統合 → 可変GSD 4ch crop(raw/CLAHE/seed/DT) → smp.Unet refiner(0.3BCE+0.4Dice+0.3Boundary、EMA/SWA/HNM) → 6pass TTA+Otsu+skelギャップ閉合 | スコア非公開 |
+| solar-seg(srivatsav) | 幅24コンパクトU-Net + 4flip TTA、独自holdout/embargo | holdout 0.346、LB 0.31 |
+| 我々 | YOLO11m-seg + MediSeg refiner shrink | OOF refined 0.443(fold2) |
+
+**注目点: 我々のOOF 0.443は公表されている誠実ティアの最高水準(0.423〜0.427)
+を上回っている可能性が高い**(val protocol差はあるが同一公式プロトコル基準)。
+
+#### too.foo の oracle 実測値 — 我々のv62結果の外部キャリブレーション
+
+彼らが公式プロトコルvalで測った機構別の天井:
+
+- **selection oracle(TP相当のみ残す): +0.083(0.398→0.481)** — 提出成分の
+  約半分がどのannotatorとも一致しない。「keep/drop判定」が最大の実現可能
+  レーン。GBM selector v1で +0.018 実取(0.398→0.416)、v2(23特徴+
+  record単位Dinkelbach閾値 p*=λ/2ī≈0.32)で 0.423 まで
+- **trim-aware oracle(マスクを完全整形): 0.756** — ただしcrop refiner実装は
+  crop-IoU 0.63→0.67 に改善しても **PQは不動〜微負(0.414<0.423)**。
+  「平均crop-IoUが上がってもIoU 0.5断崖を跨ぐ数が増えない」と同じ理由で
+  refiner系は機能しない — **我々のv59/v61棄却と独立に一致**
+- **fragment merge oracle: +0.026** — 実在するが中程度
+- **hysteresis再構成(弱い確率橋で断片を接合): −0.004 棄却** — 我々の
+  v56スケルトン閉合(+0.0004)と同じファミリーの失敗
+- 損失/target変種6系統(consensus M*、endpoint重み、skeleton-recall、
+  768px context等)は全て ±0.02 内 — semantic単体モデルの天井実証
+
+#### 我々の Phase B への示唆(計画較正)
+
+1. **v64 verifier(FP selector)が最優先候補** — too.fooの最大レーン(+0.083)
+   と一致。彼らのselector特徴(局所chromosphereに対する暗さコントラスト、
+   細長さ、確率統計、サイズ、limb近接度)をv62の特徴セット
+   (conf/probmass/IoU/面積)に追加検討価値あり。我々のFP=751は同規模の
+   機会を示唆
+2. **v63 mergeは天井+0.026程度と期待値を下方修正** — v62のmerge oracleが
+   それを大きく上回る場合のみ実施
+3. **refiner精密化レーンは二チーム独立に否定済み** — v59/v61/v62系の
+   「境界を磨く」方向は閉じたまま維持
+4. **recall specialistのinstance-level統合**(too.foo計画中、未結果)は
+   我々のv57/v60密集recall失敗と同じリスクを持つが、**selector通過を
+   挟む設計**が彼らの差別化点 — v64が先に成否を決める
+
+#### 定性30%の現実的価値(再確認)
+
+審査はNSO/GSU/NJIT/UMSL委員会の合議制。最終提出は4ページレポート+公開
+再現repo+予測morphology(締切はtoo.foo記載で11月15日付近、要公式確認)。
+誠実ティアでレポートを書いているのはtoo.fooのみ — **定性30%は最も
+競争密度の低い得点源**。
+
+#### v62 fold2 実行結果 — 解剖確定、v63棄却・v64採用(2026-10-06)
+
+fold2 prod ckpt の全最終予測(1498個)を解剖(`v62_error_anatomy_fold2_manifest.json`)。
+baseline再現: refined PQ 0.4432(v61と一致、経路健全)。
+
+**エラー解剖**(annotator×image基準、n_gt=2785):
+
+| クラスタ | 個数 | 機構の対応 |
+|---|---|---|
+| FN blind(IoU<0.1) | 561 | 提案なし — 検出リコール系(全滅済み) |
+| FN weak(0.1-0.3) | 168 | 提案弱 — 同上 |
+| FN near-miss(0.3-0.5) | 333 | 境界不良 — refiner系(2チーム否定) |
+| FP orphan | 136 | 背景誤検出 — **verifierで除去可** |
+| FP misassigned | 196 | FN GTに重なる不良品 — verifier候補 |
+| FP fragment | 2 | **ほぼ存在しない**(ownershipが処理済み) |
+
+**oracle上界**: perfect_verifier **+0.0462** / drop_orphan **+0.0169** /
+merge +0.0035 / drop_fragment +0.0003。
+
+**判定**: 事前宣言ゲートにより v63 merge **棄却**(天井+0.0035<+0.01)、
+v64 verifier **採用**(最大天井、too.fooの+0.083独立実証と同構造)。
+v65 TTAは保留(near-miss残るがrefiner系は否定済み)。
+
+**verifier分離度(proposal単位rank AUC)**: conf 0.710 / probmass 0.537 /
+ref_raw_iou 0.531 / 面積 ~0.48。**既存特徴だけでは弱いが、conf一本で切る
+現行より学習selectorの改善余地が実測で存在**。too.fooの実証済み特徴
+(暗さコントラスト・細長さ・limb近接度)を追加する設計へ。
+
+**構造的洞察**: FNの68%(729/1071)は提案不在(blind+weak)。verifierが
+強ければ conf floor を下げて提案を増やしてもFPを制御できる = 全滅だった
+「FN↔FPトレードオフ」を壊せる唯一の機構。v64は conf floor 0.05 で
+全提案を取り、selector×conf のフロンティアを測る設計とした。
+
+#### v64 fold2 結果 — selector棄却確定(2026-10-07)
+
+HistGBM selector(10特徴: conf/probmass/IoU/面積比/aspect/solidity/
+暗さコントラスト/limb距離、train-Aのみ学習、train-Bで操作点選定):
+
+- **trainB最良点は conf=0.26・p_keep=0.0 = selector不使用**(trainB PQ 0.4903)
+- val側gridでも凍結点以外の全セルが +0.002未満
+  (val oracle最良 conf=0.26・p_keep=0.3 → 0.4445、Δ+0.0013のみ)
+- 凍結点 ΔPQ +0.0000 → **実験的棄却**。残りFPはconf≥0.26・refiner・
+  ownershipを通過した難しい誤検出で、この特徴集合では分離不能と確定。
+  oracle +0.0462は「この特徴/モデルでは届かない天井」だった
+- 特徴重要度(train-B permutation AUC): **conf=0.2412**、probmass=0.0306、
+  ref_raw_iou=0.011、他(solidity/darkness/limb/aspect/面積系)は全部<0.008
+  → 追加9特徴がほぼ無情報で、selectorはconfの再表現に留まった
+
+実装上の障害も克服して記録: collect 提案をRLE保持化(2048×2048 bool全保持で
+OOM ~100GB → ~40分の1)、ファイル単位pickle ckptで中断再開、
+`v64_status_fold2.json` で Drive 経由の外部進捗監視。
+
+#### 残る機構 — v65/v66 を実装済み(評価待ち)
+
+- **v65 TTA-consensus**(fold2): id/hflip/imgsz1536の3viewから
+  `tta_hflip_iou/conf`・`tta_big_iou/conf`・`tta_support` 特徴を作り、
+  (a)consensusフィルタ単体 (b)selector-v2(15特徴)を同じA/B凍結プロトコルで
+  評価。`build_v65_tta_consensus.py` → `solar_filament_v65_tta_consensus_fold2_colab.ipynb`
+- **v66 RF-DETR union**(fold0): v45のOOFキャッシュが残っているので
+  再学習なしで「yolo@0.26 ∪ rfdetr@f」のrefiner+ownership評価。
+  blind-FN rescue診断付き。`build_v66_rfdetr_union.py` →
+  `solar_filament_v66_rfdetr_union_fold0_colab.ipynb`
+- 両者棄却なら定量系は機構的に枯渇と宣言し、定性30%へ移行
+  (→ **v65・v66 ともに棄却確定、枯渇宣言が発動**(下記))
+
+#### v65 fold2 結果 — TTA-consensus ノイズ棄却(2026-10-07、manifest確定値)
+
+3view(id/hflip/imgsz1536)の変換安定性特徴で2系統評価:
+
+- trainB 最良: selector-v2(pk) conf=0.26・param=0.3(trainB 0.4932)→ 凍結適用で
+  **val 0.4440(Δ+0.0007)** — |Δ|<0.002 のノイズ棄却域
+- 挙動は再びゼロ和: TP −16 / FP −40 → 正味+0.0007
+- **val側oracle最良(診断): pk conf=0.26・param=0.5 → 0.4484(Δ+0.0052)**
+  — oracleは採用閾値を超えるが trainB が選んだ点と一致せず、
+  操作点の汎化性が無い(v64と同じ「信号はあるが操作点が転移しない」構造)
+- **特徴重要度でTTA特徴の合計(~0.126)が conf(0.083)を上回った**:
+  tta_hflip_conf 0.059・tta_hflip_iou 0.026・tta_big_* 各0.021。
+  変換安定性は実信号を持つが、残りFPは「3viewでも安定的に出る難しい誤検出」で
+  分離しきれなかった
+- support(consensusフィルタ単体)は低conf洪水を制御できず全滅
+
+#### 定量レーン枯渇の確定宣言(2026-10-07)
+
+この操作点(YOLO@0.26 → refiner → ownership)で試せる機構は全て出尽くした:
+
+| 系列 | 機構 | ΔPQ |
+|---|---|---:|
+| v54-v61 | EMA・multi-ch・skeleton・oversample・conf-sweep・DT-loss・copy-paste・SAM2 | 全棄却 |
+| v63 | merge後処理 | oracle +0.0035(事前棄却) |
+| v64 | 静的特徴selector | +0.0000 |
+| v65 | TTA-consensus | +0.0007 |
+| v66 | RF-DETR union | -0.0276 |
+| v67 | temporal近傍増強 | -0.0087 |
+| v68 | 磁気図PIL補助selector-v3 | +0.0000 |
+
+残存方向は「この枠組みに無い情報源」の持ち込みのみ:
+時間近傍無ラベルフレーム増強・共時刻磁気図補助信号(共に主催者裁定済み合法、
+コスト見積要)→ または定性30%トラックへ資源移行(11/15締切の提出物準備)。
+
+#### v68 magnetogram PIL features — 棄却確定(2026-10-10、最後の定量レバー)
+
+最後に残った合法新情報源 = 共時刻GONG `bqr` 磁気図(180×180・10分cadence)。
+観測時刻+サイトから最近傍を解決し、H-α disk に写像してPIL(分極反転線)
+距離等5特徴を提案へ付与、v64と同じselectorプロトコルで評価:
+
+| 項目 | 値 |
+|---|---|
+| 磁気図カバレッジ | **671/707 (95%)** |
+| sanity(信号確認) | hit→PIL中央値 **63.3px** vs ランダム **80.7px** (n=573) |
+| 特徴付与 | 11,353/11,854 提案 |
+| trainB 最良 | conf=0.26 pk=0.0(selector不使用) |
+| 凍結 val ΔPQ | **+0.0000 → noise-reject** |
+
+**結論**: PIL 近接性は物理的に実在する信号だが、conf≥0.26・refiner・
+ownership を通過した残り FP751 は「磁気図でも区別できない難しい誤検出」
+と確定。**全定量レバー全滅確定(v54-v68、15機構)**。残りは定性30%+
+提出物トラックのみ。
+
+- `scratch/v68_magnetogram_probe.py`(ローカル実行・partial checkpoint再開対応)
+- manifest: `output/v68_magnetogram_probe_manifest.json`
+- 教訓: `cv2.imread` は非ASCIIパス(マイドライブ)を読めない → `imdecode`経由必須。
+  GONG HTTP は~50req/短時間で遮断 → DL済みはローカル索引から引く
+
+#### v67 temporal-neighbor augmentation — 棄却確定(2026-10-09)
+
+枯渇宣言後の唯一残る合法定量レバー。fold2 pilot(±20分・近傍最大2件・
+同一annotation流用、prod同一ハイパラ、**同一セル内ペア採点**):
+
+| arm | PQ | TP | FP | FN |
+|---|---:|---:|---:|---:|
+| prod 再採点 | 0.4432 | 1714 | 751 | 1071 |
+| v67 近傍増強 | 0.4345 | 1658 | 735 | 1127 |
+
+**ΔPQ −0.0087 → 棄却**。SQは同等(0.678)だがRQ低下(0.640 vs 0.653)、
+TPが−56 — 増強で検出漏れが**増えた**。推定原因: ±20分のラベル陳腐化と
+FITS→JPEG階調近似のドメイン差が、ラベルノイズ+分布ノイズとして働いた。
+「同じfilamentの別実現」は augmentation として有効ではなく、
+ノイズとして作用したと読む。
+
+**これで全定量レバーが尽きた** — v54-v67 の14機構すべて棄却。
+残る合法方向は共時刻磁気図補助信号のみ(コスト見積レベル)か、
+定性30%トラックへの全振り。
+
+- `build_v67_temporal_aug.py` → `solar_filament_v67_temporal_aug_fold2_colab.ipynb`
+- manifest: `artifacts/v67_temporal_aug_fold2_manifest.json`
+
+#### v66 fold0 結果 — naive union棄却、ただし相補リコールの存在を確認(2026-10-07)
+
+RF-DETR OOF キャッシュ(v45由来、再学習なし)で yolo@0.26 ∪ rfdetr@f を評価:
+
+| arm | PQ | ΔPQ | TP | FP | FN |
+|---|---:|---:|---:|---:|---:|
+| baseline yolo@0.26 | 0.4393 | — | — | — | — (fold0基準と完全一致) |
+| union@0.4(最良) | 0.4117 | **-0.0276** | 1752 | 1202 | 997 |
+| union@0.05 | 0.1737 | -0.2656 | 1560 | 7399 | 1189 |
+
+→ naive union **棄却**(ゲート通り負)。RF-DETR は低conf帯で数千のジャンクを
+出し、ownership経由で既存TPのマスクも破壊する。
+
+**だが rescue 診断に重要な残滓**: blind GT 612のうち RF-DETR@0.10 が
+IoU>0.3 で 493個、**IoU>0.5 で 317個をカバー** — 提案源の相補性は実在。
+ただし raw box IoU>0.5 の 317 が refine+ownership+match 後に TP 化するのは
+ごく一部(実際のFN減は -74)。「box段階の相補カバー → 最終TP化」の変換効率が
+悪いことが次のボトルネックと判明。条件付きunion(YOLO非検出領域のみ追加)や
+source-aware verifier は別機構として原理的には残るが、優先度は低い。
+
+### 6.22 競合・規則偵察(2026-10-07)
+
+Kaggle API(LB全895チーム)+公開カーネル10本 pull+ディスカッション全スレッド
+走査の結果。詳細は `scratch/competitor_recon_2026-10-07.md`。
+
+**評価構造(実態)**: 定量70% = PQ + Dice/IoU分布 + **one-to-many/many-to-one
+分布**(断片化・過剰マージ — v62解剖のクラスタがそのまま審査項目)。
+定性30% = pipeline記述 + 形態 + コード品質。public LBは test の ~50%のみ、
+**private LB(残50%)も存在**。**締切 11/15**: 4p report + 公開repo +
+requirements.txt + 全パイプラインnotebook が必須。
+
+**リーク構造の確定**: 公開 MAGFiLO v1.0 がテスト観測をカバー → GT dump で
+~0.55。LB 0.55+の72チームがリーククラスタ、0.40-0.50帯は26チームのみ。
+主催者: "0.35超は十分価値あり"・"0.41は真剣に受け止める"・"fake onesは
+容易に除去する"・LB最終クリーン化予定。**OOF 0.443 は誠実ティア最前線**。
+
+**重要な較正値**(tushhaaarrrr): **human-vs-human PQ ≈ 0.34**(1人のannotatorを
+他annotatorで採点)。0.443 は単一annotator一貫性を上回る。
+
+**合法レバーの境界(主催者裁定済)**:
+- ✅ train JSONの spine/bbox/area/category_id、mask由来 skeleton/距離変換
+- ✅ **近傍・共時刻の無ラベルGONGフレームを学習時に使用**(temporal増強)
+- ✅ **共時刻GONG磁気図(bzi)を学習時のみの補助信号に**(「good idea」)
+- ✅ MAGFiLO期間外の無ラベルGONG半教師あり
+- ❌ 推論時の外部入力(単一test画像のみ)
+- ❌ 外部GT标注(SWEFil 明示的に禁止)
+
+**競合で確認された我々と同型/近い手法**:
+- timgluhkikh: seed-refine cascade(我々と同型!)+ **Box-Jitter TTA** → local ~0.409
+- muhammadshoaibaltaf V9: yolo26l→crop UNet++/EdgeAttNet+OBB — 同型2段
+- sivapnlr80: MaskRCNN×5fold+**4-TTA+cross-fold consensus**+refiner → LB 0.34
+- tushhaaarrrr: 物理チャネル(flat-field/Lindeberg ridge)+annotator-mean soft
+  mask+spine aux+PQ-aware後処理+FNバケット分析(我々のv62と同じ発想)
+
+**含意**: (a)TTA/consensus系(v65)は外部でも検証されている方向で妥当。
+(b)未開拓の合法レバー = 時間近傍フレーム増強と磁気図補助 — v64で失敗した
+orphan FP判別に「別種の物理情報」を持ち込める可能性。コスト見積が先決。
+(c)報告書は審査基準(分布統計+形態+コード品質)に直接マップする構成で
+書く — v62解剖・負の結果の記録はそのまま加点材料。
+
+---
+
+### 6.24 並行レーン(devin/solar-competitor-survey-2026-10)の v80/v81 結果 —
+「全定量レバー全滅」宣言の訂正(2026-10-10)
+
+§6.22 までの HANDOVER(070213aa)は「v54-v68 全15機構棄却・残りは提出物
+のみ」と宣言したが、これは**調査レーン側の v80 結果確定前**に書かれた
+もの。同レーン(PLAN_2026-10-09_FINAL_SPRINT.md §7.1.8b/8c、worktree
+`devin-solar-competitor-survey`)の 707観測・全fold OOF 公式PQ評価で:
+
+- **A1(yolo_scorer)= +0.0039 で採用ゲート通過**: YOLO 候補 conf≥0.08 に
+  fold別 refiner(shrink@0.45)を適用し、post-refiner 特徴から期待IoU
+  û=ĥ·m̂(cross-fit HistGBM hurdle)を予測、û>0.22 で選択。3fold 全て正
+  (+0.0008/+0.0069/+0.0038)、pooled bootstrap CI95 [+0.00057,+0.00735]
+  でゼロを除外。v64 静的 selector(+0.0000)との差分は「post-refiner 特徴
+  + hurdle 目標 + conf≥0.08 候補拡張 + 3fold cross-fit」の設計差。
+  **この節の記録時点では提出構成への組込み候補だった**。後続の
+  `HANDOVER.md` §5 と `report/main.tex` では、A1 の Public LB が
+  prod の 0.39 に対して 0.37 となり、不採用になったと記録されている。
+- E1(hybrid、tree 候補併合)= −0.0142 で不採用。v81 tree 側 τ 独立掃引
+  (0.20–0.68)は単調に yolo_scorer 漸近線へ収束し、**tree 候補追加は
+  どんな τ でも不利益**と確定(û の絶対校正では解放不可)。
+- **hybrid_oracle = +0.1067**: component-tree 候補(v34 OOF 密確率マップ)
+  を含む候補集合に大きな余力が実在 — too.foo 氏 selection oracle +0.083、
+  v62 blind-FN 68% と整合。解放には別機構(校正マップ再学習 v86、強い
+  記述子、ranking 損失、FP ペナルティ選択)が必要。
+- スコアラー診断: ROC-AUC(h>0) tree 0.900・Spearman ρ(û,u) 0.676 —
+  û の順位付け自体は良好で、失敗は絶対校正(中位候補の過大評価が
+  antichain DP の累積選択で断片化を誘発)。
+
+**この節の記録時点の判断**: 「定量レバーは A1(+0.004)のみ残存・採用候補、
+tree 候補路線は v80/v81 で閉じた」。これは後続の A1 不採用判断より前の
+経緯であり、現行の提出構成への採用指示ではない。最新の提出方針は
+`HANDOVER.md` §3・§5 を参照する。
 
 **2026-10-05 回収・再開契約補修:** 元 PR #239 の既存 fold0 manifest を Drive から
 読取りで照合した。SHA256 は
