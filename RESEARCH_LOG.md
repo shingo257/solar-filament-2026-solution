@@ -501,3 +501,57 @@ v80 候補収集 nb 3本 — 計46件の実験証跡をコミット(モジュー
 
 残検証(F3 クリーンラン予定と同じ): 再現 nb の両 variant 完走。
 `run_test_submission.py --weights-dir` は両 variant で疎通済み。
+
+### 2.19 discussion/LB 再調査 — リフレッシュ差分 (2026-10-12)
+
+§2.16 から1日後の再取得 (kagglesdk `DiscussionApi.ListTopics` を
+category=COMPETITIONS + 複数検索語 union で全網羅、LB は
+`competitions leaderboard --download` の全983チーム CSV を解析)。
+
+#### Discussion: 新着ゼロ
+
+- 全トピックの `last_comment_date` ≤ 2026-10-10 22:40 — **調査以降の新規
+  スレッド・コメントはなし**。情報は §2.16 時点で確定済み
+- 追加取得した本文の注目点:
+  - 745880 "realistic scores": Spaghetto99 (LB 0.41) が Fususu の公開
+    kernel「0.70」を実際に再現すると **0.35** にしかならないと報告 —
+    §2.16 の「再採点 ~0.40」推定を下回る第三者複製データ点。
+    同氏は誠実レンジを 0.35–0.50・noisyislands 0.49 を誠実系トップと推定
+  - Trishanth Mellimi (team "son", LB 0.40): local PQ 0.46 vs LB 0.40、
+    Spaghetto99 も local 0.4576 vs LB 0.41 — **val→LB 転移差 ~0.04-0.06 が
+    複数チームで一致** (我々の OOF 0.44 → LB 0.39 と同じパターン)
+
+#### LB スナップショット (983 チーム・自チーム ERS rank 136 / 0.39 / 16 subs)
+
+| 帯域 | チーム数 | 解釈 |
+|---|---|---|
+| ≥0.55 | **78** (うち **ちょうど 0.55 が65チーム**) | 単一値プラトー = 同一リーク blend の署名。前日比 +~8 でまだ増殖中 (Sayandeep 0.62・Tarunkush019 0.62 等 10-11/12 投稿) |
+| 0.45–0.54 | 3 | Cac Cat 0.54・Thariq J 0.53・noisyislands 0.49 (未検証) — 想定した「laundering 帯」はほぼ空 |
+| 0.40–0.44 | 31 | **誠実系トップは 0.41** (Spag99・Salty Taro・trycat・supersede・Manurupan M・Swarup S.M. の6チーム)。tushhaaarrrr (Fususu fork)・JAB100・Ishan Sharma・Varad 等は 0.40 |
+| 0.35–0.39 | 332 | 我々の 0.39 は 53チーム同点の帯域先頭群 |
+
+→ 「0.55–0.63 クラスタ」の描写を精緻化: **正確に 0.55 に65チームが
+  収束するプラトー** は、同一の公開 test アノテーション CSV を同様に
+  ブレンドした結果としか説明がつかない定量的指紋。誠実系実効天井は
+  ~0.45 でなく **0.41** と判明。
+
+#### 新着公開 kernel (10-11 以降 + 境界の10-09/04 分)
+
+| kernel | 手法 | 評価 |
+|---|---|---|
+| jamesmills1975 cage-filament-unet (10-11) | smp UNet resnet34-imagenet @1024 + hflip TTA + PQ調整postproc | 自己申告 PQ 0.33 — 誠実 baseline |
+| hodohabalotchikp notebookc66249a467 (10-12) | TF/Keras attention U-Net・multi-seed・OOF で postproc tuning・1024/2048 解像度比較 | 誠実系・我々と同型の OOF 手法 |
+| pandadev0069 solar-filament-yolo-refine (10-04) | **YOLO26 検出 + ResNet18 CropUNet refiner** | 我々の prod パイプラインと同構成の独立実装 (「test GT 非アクセス」明記) — 3例目の収束証拠 |
+| topabaem filament-v02-* (10-09) | base64 bundle + 入力 digest 検証の決定的 replay ハーネス | 手法でなく再現性ハーネス — 我々の証跡運用と同思想 |
+| b'bang1850 solar-filament-sovereign-sota (10-04) | 403 private — 内容不明 | — |
+
+#### 結論
+
+**prod + plain_mhsa_f2 の最終選択は不変**。新規採用レバーなし。
+一方で honest-tier 論証の外部証拠が強化された:
+(1) 0.55 プラトー ×65チーム = リークの定量指紋、
+(2) 誠実系フロンティアは 0.41、
+(3) 第三者による Fususu 複製 0.35・val→LB ギャップ 0.04-0.06 の複数一致。
+レポートの「0.55–0.63 帯は漏洩と整合・誠実系は 0.36–0.45」の記述は
+「誠実系実効天井 ~0.41・0.55 同一値プラトー65チーム」と
+より強い形に更新可能 (main.tex 更新は別途)。
