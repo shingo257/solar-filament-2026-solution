@@ -119,15 +119,25 @@ pip freeze + SHA256記録・`submission_efficiency.json`出力。
    **v2 (2026-10-12)**: `ablation_plain_mhsa_seed8407_fold2.pt` を追加 —
    主催者要件「選択した両方の提出を再現できること」で第2提出
    (plain_mhsa_f2)の再現に必須のため。
+   **v3/v4 (2026-10-13)**: `grouped_folds.csv` (凍結 fold 分割、
+   sha256 `24367120…c3b`)を同梱 — 再現 notebook の fold 自動解決先
+   (PR #350)。v4 で yolo_fold0/1 を復帰させ完全同梱に戻した
+   (v3 では fold0/1 欠落により Kaggle 側で再学習が走る状態だった)。
 2. ~~再現実行~~ → **完了(2026-10-11, Colab GPU 版)**:
    `solar_filament_prod_repro_colab.ipynb`(3セル直列構成)が A100 で完走、
    `artifacts/repro_prod_colab/` に submission_prod.csv + efficiency。
    ローカル prod CSV と filament 一致率100%(IoU>0.5)・99.91% IoU=1.0。
-   **本番 notebook の完全版再現は未実施 — 提出に使うなら Kaggle 側での
-   実行が残る**(kernel パッケージ `output/kaggle_kernel/` 準備済み)。
-   notebook は `CFG.SUBMISSION_VARIANT="plain_mhsa_f2"` で第2提出も
-   再現できるよう拡張済み(2026-10-12、未実行 — F3 のクリーン環境
-   通し実行で prod/variant 両経路を検証すること)。
+   **両提出の決定的再現は検証済み(2026-10-13, ローカル CPU)**:
+   `scratch/run_test_submission.py` 経路で 180枚全件を走らせ、
+   `submission_prod.csv` (sha256 `84f1b894…`)と
+   `submission_prod_plain_mhsa_f2.csv` (sha256 `7b3de4e7…`) が
+   コミット済み証跡 `output/test_submission/` とそれぞれ
+   **バイト一致**。Kaggle kernel は v2 で
+   `GROUPED_FOLDS_SHA256` 未設定により起動時エラーだったが、
+   PR #350 で SHA 同梱 + `grouped_folds.csv` を添付 dataset / Drive から
+   自動解決(SHA256 一致候補のみ採用)に修正済み —
+   dataset v3 以降に `grouped_folds.csv` 同梱。
+   notebook 完全版の Kaggle/Colab 通し実行は F3 の任意検証として残る。
 3. **Overleaf で `report/main.tex` ビルド** → 4ページに収まるか確認。
    A1 LB反転+v82棄却を追記済み(2文追加、ページ影響は微小の見込み)。
 4. `requirements.txt` 凍結(最終推論環境の pip freeze)。

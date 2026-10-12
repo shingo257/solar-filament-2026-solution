@@ -555,3 +555,43 @@ category=COMPETITIONS + 複数検索語 union で全網羅、LB は
 レポートの「0.55–0.63 帯は漏洩と整合・誠実系は 0.36–0.45」の記述は
 「誠実系実効天井 ~0.41・0.55 同一値プラトー65チーム」と
 より強い形に更新可能 (main.tex 更新は別途)。
+
+### 2.20 両提出の決定的再現検証 + notebook 修正 (2026-10-13)
+
+#### ローカル CPU 経路 — 両 variant byte-identical
+
+`scratch/run_test_submission.py` で test 180枚全件を実行し、
+コミット済み証跡 (`output/test_submission/`) と SHA256 比較:
+
+| variant | 出力 | sha256 | 一致 |
+|---|---|---|---|
+| prod | `submission_prod.csv` (1172行, ~31min, 10.5s/img) | `84f1b89466f988d92b6a7d14e6ff26c665a78e98b350cf441109cd05faee241e` | byte-identical |
+| plain_mhsa_f2 | `submission_prod_plain_mhsa_f2.csv` (1173行, 1525.5s, 8.475s/img) | `7b3de4e78a543cf29bba3e66af8ce9b2d9d0d8fd2ea085aef3120aad97e0bbba` | byte-identical |
+
+重み3点 (yolo_fold2, refiner_all_data, ablation_plain_mhsa_fold2) は
+dataset から DL し manifest SHA256 と全件一致を確認済み。
+
+#### notebook 修正 (PR #350, squash `102ca5ba`)
+
+Kaggle kernel v2 が `GROUPED_FOLDS_SHA256=""` で起動時エラー。
+`build_submission_reproduction.py` を修正し正本+kernel コピーを再生成:
+
+- 凍結 SHA256 `24367120…c3b` を `SETUP_CELL` に同梱
+- `FOLD_CSV_STAGING`: `grouped_folds.csv` を添付 dataset (Kaggle) /
+  Drive artifacts (Colab) から自動解決 — **SHA256 一致候補のみ採用**、
+  不一致なら書き込みせず FileNotFoundError (Codex 指摘で
+  不一致フォールバックを除去、永続領域への誤 CSV 残留を防止)
+- `test_submission_reproduction_split.py` に staging 経路テスト2件追加
+  (hash一致優先・不一致拒否) — 9/9 pass
+
+#### 重み dataset 版履歴
+
+- v3 (10-13): `grouped_folds.csv` 同梱 (16,983B, SHA256 検証済)。
+  fold0/1 重みが欠落し Kaggle 側で再学習が走る状態だった
+- v4 (10-13): fold0/1 復帰で完全同梱に復帰 (v2 + fold CSV)
+
+#### 残存
+
+- notebook 完全版の Kaggle/Colab 通し実行は未実施 (F3 任意検証)。
+  CLI 経路が決定的再現の第一正本
+- `dataset_upload/` staging: `C:/work/solar_run/dataset_upload/`
