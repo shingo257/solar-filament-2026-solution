@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import shutil
 from collections import defaultdict
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,7 +15,8 @@ MODULE = Path(__file__).resolve().parents[1]
 VALID_CSV = "file_name,fold\nimage_0.jpeg,2\nimage_1.jpeg,0\nimage_2.jpeg,1\n"
 
 
-def _run_preprocessing(tmp_path, csv_content, expected_hash):
+def _run_preprocessing(tmp_path, csv_content, expected_hash,
+                       artifact_dir=None, data_cache=None):
     notebook = json.loads(
         (MODULE / "solar_filament_submission_reproduction.ipynb").read_text(encoding="utf-8")
     )
@@ -27,14 +29,18 @@ def _run_preprocessing(tmp_path, csv_content, expected_hash):
     (tmp_path / "train_images").mkdir()
     for name in files:
         (tmp_path / name).write_text("cached", encoding="utf-8")
-    path = tmp_path / "grouped_folds.csv"
+    artifact_dir = artifact_dir or tmp_path
+    data_cache = data_cache or tmp_path
+    path = artifact_dir / "grouped_folds.csv"
     if csv_content is not None:
         path.write_bytes(csv_content.encode("utf-8"))
     scope = {
         "Path": Path, "json": json, "defaultdict": defaultdict, "pd": pd,
-        "CFG": SimpleNamespace(ARTIFACT_ROOT=tmp_path, PREPROC_DIR=tmp_path,
-                               PREPROC_CACHE=None, N_FOLDS=3,
+        "shutil": shutil,
+        "CFG": SimpleNamespace(ARTIFACT_ROOT=artifact_dir, PREPROC_DIR=tmp_path,
+                               PREPROC_CACHE=None, N_FOLDS=3, DATA_CACHE=data_cache,
                                GROUPED_FOLDS_SHA256=expected_hash),
+        "IS_KAGGLE": False,
         "find_dataset_root": lambda: tmp_path,
         "tqdm": lambda values, **kwargs: values,
     }
@@ -52,6 +58,33 @@ def test_missing_frozen_csv_is_not_regenerated(tmp_path):
     with pytest.raises(FileNotFoundError):
         _run_preprocessing(tmp_path, None, "1" * 64)
     assert not (tmp_path / "grouped_folds.csv").exists()
+
+
+def test_staged_fold_csv_prefers_hash_match(tmp_path):
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    data_cache = tmp_path / "cache"
+    (data_cache / "stale").mkdir(parents=True)
+    (data_cache / "stale" / "grouped_folds.csv").write_bytes(b"file_name,fold\nstale,0\n")
+    (data_cache / "frozen").mkdir(parents=True)
+    (data_cache / "frozen" / "grouped_folds.csv").write_bytes(VALID_CSV.encode("utf-8"))
+    digest = hashlib.sha256(VALID_CSV.encode("utf-8")).hexdigest()
+    actual, path = _run_preprocessing(
+        tmp_path, None, digest, artifact_dir=artifact_dir, data_cache=data_cache)
+    assert actual == {"image_0.jpeg": 2, "image_1.jpeg": 0, "image_2.jpeg": 1}
+    assert path.read_bytes() == VALID_CSV.encode("utf-8")
+
+
+def test_staging_rejects_unmatched_candidates(tmp_path):
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    data_cache = tmp_path / "cache"
+    data_cache.mkdir()
+    (data_cache / "grouped_folds.csv").write_bytes(b"file_name,fold\nstale,0\n")
+    with pytest.raises(FileNotFoundError):
+        _run_preprocessing(tmp_path, None, "1" * 64,
+                           artifact_dir=artifact_dir, data_cache=data_cache)
+    assert not (artifact_dir / "grouped_folds.csv").exists()
 
 
 def test_existing_frozen_split_is_preserved(tmp_path):

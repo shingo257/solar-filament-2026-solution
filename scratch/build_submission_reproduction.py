@@ -34,9 +34,9 @@ HEADER_MD = """\
 
 **これは提出物の公式再現 notebook です。** 「すべて実行」で前処理 → 検出器学習 →
 refiner 学習 → test 推論 → `submission.csv` 生成まで一通り通ります。
-既存の `artifacts/grouped_folds.csv` と外部で凍結した SHA256 を
-`CFG.GROUPED_FOLDS_SHA256` に設定してください。未設定・欠落・不整合なら
-前処理前に停止し、新しい分割は生成しません。
+凍結 fold 分割(`grouped_folds.csv`)の SHA256 は `CFG.GROUPED_FOLDS_SHA256` に
+同梱済みで、CSV 本体は重み dataset(Kaggle)または Drive artifacts(Colab)から
+自動解決されます。欠落・不整合なら前処理前に停止し、新しい分割は生成しません。
 
 ## 実行環境
 
@@ -98,7 +98,9 @@ else:
 class CFG:
     SEED = 3407
     N_FOLDS = 3
-    GROUPED_FOLDS_SHA256 = ""  # 外部で凍結した grouped_folds.csv の SHA256 が必須
+    # 凍結済み grouped_folds.csv(707 observations, file_name/fold)の SHA256。
+    # CSV 本体は重み dataset または Drive artifacts から自動解決される。
+    GROUPED_FOLDS_SHA256 = "24367120279820997396f7063b1ae5b235a442fd1c92617e1e8941d472504c3b"
     if IS_KAGGLE:
         DRIVE_ROOT = WORK_ROOT / "solar_filament_v30"  # 成果物の書き込み先(working)
         PREPROC_CACHE = None  # Kaggle には前処理キャッシュ無し → inline計算
@@ -246,6 +248,29 @@ if ALLDATA_CKPT.exists():
 else:
     all_ds = InstanceCropDataset(train_files, augment=True)"""
 
+FOLD_CSV_STAGING = """\
+grouped_folds_path = CFG.ARTIFACT_ROOT / "grouped_folds.csv"
+if not grouped_folds_path.exists():
+    # 添付 dataset(Kaggle) / Drive artifacts(Colab) から凍結 fold CSV を解決。
+    # SHA256 が一致するコピーのみ採用し、不一致候補は永続領域に書き込まない。
+    import hashlib as _hashlib
+    fold_bases = (DATA_SEARCH_ROOTS if IS_KAGGLE
+                  else [CFG.ARTIFACT_ROOT, CFG.DATA_CACHE])
+    fold_hits = sorted(h for base in fold_bases
+                       for h in base.rglob("grouped_folds.csv") if h.is_file())
+    chosen = next(
+        (h for h in fold_hits
+         if _hashlib.sha256(h.read_bytes()).hexdigest() == CFG.GROUPED_FOLDS_SHA256),
+        None)
+    if chosen is None:
+        raise FileNotFoundError(
+            "凍結 fold CSV(grouped_folds.csv)が見つかりません。"
+            "Kaggle では重み dataset 同梱分を、Colab では Drive artifacts に配置してください")
+    shutil.copy2(chosen, grouped_folds_path)
+    print({"fold_csv_resolved": str(chosen)})
+
+"""
+
 ENV_RECORD_CELL = """\
 # [6/6] 環境固定記録 — pip freeze + 重みSHA256
 import hashlib, subprocess, sys
@@ -297,6 +322,11 @@ def main() -> None:
     data_loading = data_loading.replace(old_preproc, '''TRAIN_DIR = find_train_dir(DATA_ROOT)
 for name in tqdm(train_files, desc="前処理画像をローカルへ"):
     prepare_preprocessed(name, TRAIN_DIR)''')
+    # 凍結 fold CSV を ARTIFACT_ROOT へ自動ステージ(添付 dataset / Drive から解決)。
+    # loader は固定パスの SHA256 を厳格検証するため、解決はコピーのみで検証は変えない。
+    old_folds = 'grouped_folds_path = CFG.ARTIFACT_ROOT / "grouped_folds.csv"\n'
+    assert old_folds in data_loading, "cell3 fold path anchor mismatch"
+    data_loading = data_loading.replace(old_folds, FOLD_CSV_STAGING, 1)
     cells[3] = code(PREPROC_CELL + frozen_loader + data_loading)
 
     # 4. YOLO学習セル(cell 5): train_yolo_fold 冒頭に添付重み解決を挿入
