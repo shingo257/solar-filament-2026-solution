@@ -1558,3 +1558,45 @@ SHA256 を固定し、未完了 arm の load 前にも照合する。新規実�
 過去の中断セッションの学習時間/GPU/VRAM は未取得と明示する。Colab compute units は runtime API
 から取得できないため null と理由を残し、セッション UI で別途記録する。
 これは競技用探索 pilot の保守であり、S1 登録契約と blocked gate は変更しない。
+
+### 6.25 v69 タイル推論(native解像度SAHI相当)— fold2 OOF 棄却確定(2026-10-13)
+
+v62 解剖で FN の68%が提案不在(blind+weak)と判明後、検出リコール系に
+唯一残っていた仮説: 「全画面2048→1280の0.625圧縮で細いフィラメントが
+消えている」。これは v65 TTA(imgsz1536全画面=0.75スケール)では
+カバーされない native 解像度の機構。2x2タイル(1152px・overlap256)で
+検出→prod同一 refiner/ownership/公式PQまで通して fold2 OOF 評価。
+
+**検出プローブ**(`run_tile_infer_probe.py`、全235観測):
+blind GT 143→60、うち IoU≥0.5 に達する救出 **60件(42%)**。
+prod conf≥0.26 に届くのは10件のみ(別提案の同時適合を数える修正版
+カウント、旧値8を訂正) — 救出の83%は低conf帯。
+
+**全パイプライン**(`run_tile_pipeline_oof.py`、keep閾値×NMS×unionの
+グリッドを union-refine1回で使い回し、base PQ 0.4442 = v62基底0.4432と整合):
+
+| arm | PQ | Δ | TP | FP | FN |
+|---|---|---:|---:|---:|---:|
+| base@0.26 (prod) | 0.4442 | — | 1715 | 750 | 1070 |
+| base@0.195 | 0.4355 | −0.009 | 1780 | 968 | 1005 |
+| tile@0.26 | 0.4047 | −0.040 | 1829 | 1530 | 956 |
+| tile@0.10 | 0.3359 | −0.108 | 1870 | 2871 | 915 |
+| tile@0.05 | 0.2948 | −0.149 | 1845 | 3796 | 940 |
+| tile@0.10\|nms0.3 | 0.3540 | −0.090 | 1965 | 2788 | 820 |
+| union@0.26 | 0.4116 | −0.033 | 1862 | 1506 | 923 |
+| union@0.10 | 0.3378 | −0.106 | 1861 | 2814 | 924 |
+
+**判定: 棄却(noise band ±0.002を桁違いに超える負、fold0/1検証不要)**。
+本命の union@0.26(base全保持+tile追加、Codex P1対応)でも TP+147 に
+対し FP+756。tile-only では TP+114/FP+780。keepを下げるほど悪化、
+強NMSでも不届。
+
+**含意**: v80 hybrid_oracle +0.1067 と v62 blind-FN 68% が示す容量は
+検出側に実在するが、rescued-TPとtile-FPを分離するverifierなしでは
+収益化できず、それはv64(+0.0000)・v68(+0.0000)で到達不能確定済み。
+**検出リコール系を含む全定量レバーはこれで完璧に全滅** —
+操作点(YOLO@0.26→refiner→ownership)の改善余地は残っていない。
+
+証跡: `output/tile_infer_probe/`、`output/tile_pipeline_oof/`、
+`scratch/run_tile_{infer_probe,pipeline_oof}.py`、
+`scratch/recount_rescue_prod_conf.py` (P2訂正の再計算)。

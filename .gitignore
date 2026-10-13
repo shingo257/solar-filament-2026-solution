@@ -28,6 +28,9 @@ output/s0/prediction_cache_512/
 output/s0/s1_proposal_marginal_refined_cache/
 output/s0/v42_verifier_official_cache/
 
+# タイル推論評価の提案キャッシュ(npz、再生成可能。結果のJSON/CSVのみコミット対象)
+output/tile_pipeline_oof/cache/
+
 # LaTeXビルド副産物(main.tex/main.pdf/REPORT_NOTES.md はコミット対象)
 report/*.aux
 report/*.bbl

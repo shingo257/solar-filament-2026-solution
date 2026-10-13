@@ -595,3 +595,71 @@ Kaggle kernel v2 が `GROUPED_FOLDS_SHA256=""` で起動時エラー。
 - notebook 完全版の Kaggle/Colab 通し実行は未実施 (F3 任意検証)。
   CLI 経路が決定的再現の第一正本
 - `dataset_upload/` staging: `C:/work/solar_run/dataset_upload/`
+
+### 2.21 タイル推論 (native-resolution) — fold2 OOF で棄却 (2026-10-13)
+
+v62解剖で FN1071 の68%が提案不在 (blind+weak) と分かっており、検出
+リコール系で唯一未検証だったのが「全画面2048→1280の0.625圧縮で細い
+フィラメントが消えている」仮説。2x2タイル (1152px, overlap256, native
+解像度、SAHI相当) で検出→既存 refiner/ownership/公式PQまで通して評価。
+
+#### 検出レベルプローブ (`scratch/run_tile_infer_probe.py`, 全235観測)
+
+| 指標 | 値 |
+|---|---|
+| blind GT (best IoU<0.1) | base 143 → tile 60 |
+| 救出 IoU≥0.5 | **60件** (blind の42%) |
+| 救出 IoU≥0.5 かつ conf≥0.26 | **10件**のみ |
+| 提案数/img (conf≥0.05) | 16.0 → 30.9 |
+
+救出機構は明確に実在。ただし83%の救出が conf<0.26 の低信頼帯に分布。
+
+(prod-conf 救出の当初値 8 は「best-IoU 提案自身が conf≥0.26」のみを
+数える定義で、別提案が IoU≥0.5∧conf≥0.26 を同時に満たす2件を数え
+落としていた — Codex P2 指摘で修正。`recount_rescue_prod_conf.py` が
+同一条件で再計算し blind=143/rescued=60/旧値8 を完全一致で再現した上で
+修正値 10 を確定。証跡: `output/tile_infer_probe/prod_rescue_recount_fold2.json`)
+
+#### 全パイプライン評価 (`scratch/run_tile_pipeline_oof.py`, 3.3h)
+
+同一提案の refined mask は決定的なので、tile は nms 生存者∪union-NMS
+生存者に一度だけ refiner を掛け、keep 閾値×NMS グリッドを後段で使い回し。
+Codex P1 指摘を受け tile-only に加え **base∪tile の union arm** (合併候補を
+cross-source NMS 後に同一パイプライン) も評価:
+
+| arm | PQ | Δ vs base | TP | FP | FN | final/img |
+|---|---|---|---|---|---|---|
+| **base@0.26 (prod)** | **0.4442** | — | 1715 | 750 | 1070 | 6.38 |
+| base@0.195 | 0.4355 | −0.009 | 1780 | 968 | 1005 | 7.16 |
+| tile@0.26 | 0.4047 | −0.040 | 1829 | 1530 | 956 | 8.84 |
+| tile@0.10 | 0.3359 | −0.108 | 1870 | 2871 | 915 | 12.40 |
+| tile@0.05 | 0.2948 | −0.149 | 1845 | 3796 | 940 | 14.79 |
+| tile@0.10\|nms0.3 | 0.3540 | −0.090 | 1965 | 2788 | 820 | 12.46 |
+| union@0.26 | 0.4116 | **−0.033** | 1862 | 1506 | 923 | 8.87 |
+| union@0.10 | 0.3378 | −0.106 | 1861 | 2814 | 924 | 12.23 |
+
+(base PQ 0.4442 は v62 基底 0.4432 と整合 — 再現性確認済み)
+
+#### 判定: 棄却
+
+- 本命の union@0.26 (base 検出を全保持+tile 救出を追加) でも
+  TP+147・FN−147 に対し **FP+756 (750→1506)** で −0.033
+- tile-only でも TP+114・FN−114 の救出は実在するが FP+780 で同様に崩壊
+- keep 閾値を下げるほど単調悪化 (−0.033→−0.106) — 低 conf 救出は
+  refiner(0.45) を通るだけの形状を持ち TP に届かず FP 化
+- nms0.3 は TP 最大 (1965) だが FP 2788 で不届
+- 統制 base@0.195 も −0.009 → prod の 0.26 keep は適切だった裏付け
+- 全 arm が noise band (±0.002) を桁違いに超える負。fold0/1 の
+  独立検証は不要なほど明確な棄却
+
+**構造的含意**: blind-FN 救出を収益化するには rescued-TP と tile-FP を
+分ける verifier が必須で、それは v64 で到達不能と確定済み。提案集合の
+不足は operating point の制約ではなく、**検出リコール系の未検証レバーは
+これで全滅**。残る天井は perfect verifier oracle (+0.046) のみで、
+実装手段が存在しない。
+
+証跡: `output/tile_infer_probe/` (prod_rescue_recount_fold2.json 含む)、
+`output/tile_pipeline_oof/`、
+`scratch/run_tile_{infer_probe,pipeline_oof}.py`、
+`scratch/recount_rescue_prod_conf.py`
+(cache npz は gitignore — 結果の CSV/JSON のみコミット)。

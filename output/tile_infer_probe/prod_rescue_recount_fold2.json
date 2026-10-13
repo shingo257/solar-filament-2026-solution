@@ -1,0 +1,9 @@
+{
+  "fold": 2,
+  "\u89b3\u6e2c": 235,
+  "base_blind": 143,
+  "rescued_IoU0.5": 60,
+  "rescued_05_prod_old": 8,
+  "rescued_05_prod_corrected": 10,
+  "wall_s": 2540.3
+}

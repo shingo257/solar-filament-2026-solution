@@ -94,7 +94,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | LB 上位クラスタ（0.55〜0.56、38チーム） | **テストセットリーク由来と判断・追走しない（2026-09-15、§2.1.11）** |
 | Public LB の採点対象 | **testの約50%（≈90枚）**（LBページ明記、2026-10-09確認）。2桁表示では0.01未満の差を識別できないため提出間比較はOOFのみ |
 | 誠実ティアの最前線（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr`、学習スコアラー+厳密DPの決定層）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
-| **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）＋ plain_mhsa_f2（fold-2 YOLO + plain-MHSA refiner、edge prior なし）、いずれも Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却）のため確定。2本目は refiner アーキテクチャ差による private 分散ヘッジ |
+| **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）＋ plain_mhsa_f2（fold-2 YOLO + plain-MHSA refiner、edge prior なし）、いずれも Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却 + v69タイル推論棄却=検出リコール系の最終未検証レバー）のため確定。2本目は refiner アーキテクチャ差による private 分散ヘッジ |
 
 ### 最終提出の再現（最短経路）
 

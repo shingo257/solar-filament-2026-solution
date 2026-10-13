@@ -1,0 +1,16 @@
+{
+  "fold": 2,
+  "records": 396,
+  "gt_total": 2785,
+  "blind_base": 143,
+  "blind_tile": 60,
+  "rescued_IoU0.1": 88,
+  "rescued_IoU0.3": 83,
+  "rescued_IoU0.5": 60,
+  "rescued_IoU0.5_prod_conf": 8,
+  "props_base_mean": 16.03,
+  "props_tile_mean": 30.92,
+  "props_prod_base_mean": 7.07,
+  "props_prod_tile_mean": 13.03,
+  "wall_s": 3657.5
+}
