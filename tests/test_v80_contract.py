@@ -19,6 +19,7 @@ pytest.importorskip("torch", reason="eval imports refiner module helpers")
 from scratch.run_v80_scorer_eval import (  # noqa: E402
     EVAL_SIZE,
     TAU_GRID,
+    adoption_gate,
     _evaluate_image,
     context_features,
     rle_dicts,
@@ -117,3 +118,10 @@ def test_geometry_features_empty_mask() -> None:
 
     empty = np.zeros((EVAL_SIZE, EVAL_SIZE), dtype=bool)
     assert _geometry_features(empty) == (0.0,) * 8
+
+
+def test_non_nested_scorer_cannot_pass_adoption_gate() -> None:
+    gate = adoption_gate([0.1, 0.2, 0.3], 0.05, 0.1)
+    assert gate["exploratory_numeric_gate_passed"] is True
+    assert gate["adopt"] is False
+    assert gate["oracle_headroom_ok"] is True

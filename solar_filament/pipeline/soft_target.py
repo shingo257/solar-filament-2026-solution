@@ -44,9 +44,11 @@ def cluster_gt_instances(
 
     ``masks_per_record[r]`` is the instance list of record ``r``. Returns a
     list of clusters; each cluster is a list of ``(record, instance)`` pairs.
-    Instances sharing a record are never directly merged.
+    No resulting cluster may contain two instances from the same record,
+    including instances connected indirectly through another annotator.
     """
     parent: dict[tuple[int, int], tuple[int, int]] = {}
+    records: dict[tuple[int, int], set[int]] = {}
 
     def find(x: tuple[int, int]) -> tuple[int, int]:
         root = x
@@ -63,20 +65,16 @@ def cluster_gt_instances(
     ]
     for inst in instances:
         parent[inst] = inst
-    # 各 component が含む record 集合 (root で引く)。同一 record の2インスタンスが
-    # 異なる成分経由で合流する transitive merge を防ぐ。
-    records: dict[tuple[int, int], set[int]] = {
-        inst: {inst[0]} for inst in instances
-    }
+        records[inst] = {inst[0]}
     for pos, (r, i) in enumerate(instances):
         for s, j in instances[pos + 1 :]:
             if s == r:
                 continue
             if _iou(masks_per_record[r][i], masks_per_record[s][j]) > iou_threshold:
                 ra, rb = find((r, i)), find((s, j))
-                if ra != rb and not records[ra] & records[rb]:
+                if ra != rb and records[ra].isdisjoint(records[rb]):
                     parent[rb] = ra
-                    records[ra] |= records[rb]
+                    records[ra].update(records.pop(rb))
     clusters: dict[tuple[int, int], list[tuple[int, int]]] = {}
     for inst in instances:
         clusters.setdefault(find(inst), []).append(inst)

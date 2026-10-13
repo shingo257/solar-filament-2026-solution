@@ -22,6 +22,7 @@ pooled CI を厳密に取るには checkpoint をこのスクリプトで再評�
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import sys
@@ -224,6 +225,21 @@ def main() -> int:
         {key: {str(t): c for t, c in per_tau.items()}
          for key, per_tau in counts.items()},
         ensure_ascii=False), encoding="utf-8")
+    (args.out / "v82_refiner_counts_provenance.json").write_text(json.dumps({
+        "result_kind": "exploratory_paired_counts",
+        "adoption_eligible": False,
+        "observed_folds_sha256": hashlib.sha256(grouped_folds_csv(drive).read_bytes()).hexdigest(),
+        "annotations_sha256": hashlib.sha256(train_annotations_json(drive).read_bytes()).hexdigest(),
+        "counts_sha256": hashlib.sha256(out_path.read_bytes()).hexdigest(),
+        "missing_checkpoints": missing_ckpt,
+        "folds_requested": list(folds), "seeds_requested": list(seeds),
+        "limit": args.limit,
+        "limitations": [
+            "Observed hashes are not independently pinned training-split provenance",
+            "Checkpoint/cache training membership and complete input coverage are not verified",
+            "Paired counts alone do not establish independent adoption acceptance",
+        ],
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nwrote {out_path}  missing_ckpt={len(missing_ckpt)}")
     for p in missing_ckpt:
         print("  missing:", p)

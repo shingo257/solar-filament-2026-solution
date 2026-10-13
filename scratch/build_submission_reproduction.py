@@ -18,6 +18,7 @@ HERE = Path(__file__).resolve().parent
 MODULE = HERE.parent
 MASTER = MODULE / "solar_filament_master_pipeline_colab.ipynb"
 OUTPUT = MODULE / "solar_filament_submission_reproduction.ipynb"
+KAGGLE_OUTPUT = MODULE / "output" / "kaggle_kernel" / OUTPUT.name
 
 
 def md(source: str) -> dict:
@@ -138,6 +139,9 @@ class CFG:
     MIN_AREA = 20
     PREDICT_IOU = 0.55
     SINGLE_FOLD = 2  # V50/V52で確認済み
+
+if CFG.SUBMISSION_VARIANT not in ("prod", "plain_mhsa_f2"):
+    raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")
 
 for path in (CFG.LOCAL_ROOT, CFG.PREPROC_DIR, CFG.ARTIFACT_ROOT, CFG.YOLO_ROOT, CFG.RUNS_ROOT):
     path.mkdir(parents=True, exist_ok=True)
@@ -391,16 +395,18 @@ refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
     assert old_refiner in src12, "cell12 refiner anchor mismatch"
     src12 = src12.replace(old_refiner, """if CFG.SUBMISSION_VARIANT == "plain_mhsa_f2":
     plain_ckpt = resolve_pretrained(
-        ["*plain_mhsa*fold2*.pt", "*plain_mhsa*.pt"])
+        ["ablation_plain_mhsa_seed8407_fold2.pt"])
     if plain_ckpt is None:
         raise FileNotFoundError(
             "plain_mhsa_f2 の refiner 重みが見つかりません。"
             "重み dataset をアタッチするか Drive artifacts に配置してください")
     refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
-else:
+elif CFG.SUBMISSION_VARIANT == "prod":
     refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
-    refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)""")
+    refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
+else:
+    raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")""")
     old_test_copy = """for file_name in tqdm(test_files, desc="test画像をローカルへ"):
     local = CFG.PREPROC_DIR / file_name
     if not local.exists():
@@ -458,7 +464,10 @@ print({"rows": len(submission), "images_with_predictions":
 
     # markdown のセクション番号を再掃き替えはしない(元の A-E ラベルは内部参照無し)
     nb["cells"] = cells
-    OUTPUT.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
+    serialized = json.dumps(nb, ensure_ascii=False, indent=1)
+    OUTPUT.write_text(serialized, encoding="utf-8", newline="\n")
+    KAGGLE_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    KAGGLE_OUTPUT.write_text(serialized, encoding="utf-8", newline="\n")
     print(f"wrote {OUTPUT} ({len(cells)} cells)")
 
     # AST 検証

@@ -51,7 +51,7 @@ from solar_filament.pipeline.paths import (  # noqa: E402
     train_annotations_json,
 )
 
-# 提出固定値 — v80 eval で採用ゲートを通過した構成 (PLAN §7.4)
+# 歴史的な提出構成。non-nested v80評価は独立採用ゲートの証拠ではない。
 TAU_STAR = 0.22
 SCORER_MIN_CONF = 0.08
 HGBM_PARAMS = dict(max_iter=500, learning_rate=0.05, max_leaf_nodes=31)
@@ -171,7 +171,14 @@ def main() -> int:
     h_path.write_bytes(pickle.dumps(model_h))
     m_path.write_bytes(pickle.dumps(model_m))
     meta = {
-        "experiment": "A1 yolo_scorer 提出用 (v80 eval で採用ゲート通過)",
+        "experiment": "A1 yolo_scorer 全OOF行再学習 (探索的・独立採用未検証)",
+        "result_kind": "exploratory_full_oof_refit",
+        "adoption_eligible": False,
+        "acceptance_limitations": [
+            "v80 scorer cross-fit does not nest upstream model fits by outer fold",
+            "Frozen split identity and complete candidate-cache coverage are not verified",
+            "Historical A1 public result was below the production baseline",
+        ],
         "feature_names": features_kept,
         "dropped_features": sorted(drop),
         "tau_star": TAU_STAR,

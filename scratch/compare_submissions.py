@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from pycocotools import mask as mask_util
+from scipy.optimize import linear_sum_assignment
 
 SIZE = 2048
 
@@ -58,9 +59,12 @@ def main() -> int:
             mask_util.iou(rles_a, rles_b, [0] * len(rles_b)), dtype=np.float64)
         iou_values.extend(matrix.max(axis=1).tolist())
         hits = matrix > args.iou
-        matched += int((hits.any(axis=0)).sum())
-        if (len(rles_a) == len(rles_b)
-                and hits.any(axis=0).all() and hits.any(axis=1).all()):
+        # Maximize threshold-valid one-to-one pairs, so a duplicated prediction
+        # cannot match the same reference instance twice.
+        row_indices, column_indices = linear_sum_assignment(-hits.astype(np.int8))
+        image_matched = int(hits[row_indices, column_indices].sum())
+        matched += image_matched
+        if image_matched == len(rles_a) == len(rles_b):
             images_full_overlap += 1
 
     ious = np.asarray(iou_values)
@@ -68,6 +72,7 @@ def main() -> int:
         "a": str(args.csv_a), "b": str(args.csv_b),
         "images": len(stems),
         "filaments_a": total_a, "filaments_b": total_b,
+        "matching": "one_to_one_at_iou_threshold",
         f"b_matched_at_iou{args.iou}": matched,
         "match_rate_b": round(matched / max(total_b, 1), 4),
         "best_iou_per_a": {

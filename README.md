@@ -93,25 +93,31 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | 参照アノテーション一致ベースライン（訂正済み、§2.1.7） | PQ 0.3398（複数アノテータ観測296枚限定） |
 | LB 上位クラスタ（0.55〜0.56、38チーム） | **テストセットリーク由来と判断・追走しない（2026-09-15、§2.1.11）** |
 | Public LB の採点対象 | **testの約50%（≈90枚）**（LBページ明記、2026-10-09確認）。2桁表示では0.01未満の差を識別できないため提出間比較はOOFのみ |
-| 誠実ティアの最前線（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr`、学習スコアラー+厳密DPの決定層）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
-| **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）＋ plain_mhsa_f2（fold-2 YOLO + plain-MHSA refiner、edge prior なし）、いずれも Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却 + v69タイル推論棄却=検出リコール系の最終未検証レバー）のため確定。2本目は refiner アーキテクチャ差による private 分散ヘッジ |
+| 作者調査の参照例（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr` の公開記述。分割・来歴は独立未確認）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
+| **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）、Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却）のため確定 |
 
 ### 最終提出の再現（最短経路）
 
+以下の外部実行・スコア・一致率は作者の既存記録であり、今回の統合で独立再実行した受入結果ではない。
+`HANDOVER.md` 冒頭の通り、過去実行の入力・コード・モデル・分割・出力を結ぶ manifest は未確認で、
+別の分割コピーには489/707件の割当相違がある。これらを新たな分割の正本や独立科学評価の証拠にしない。
+
 学習済み重みからの**推論のみ**の再現。前処理・学習を含む全段の公式再現は
 §5.0 の `solar_filament_submission_reproduction.ipynb` を参照。
-**選択した2提出（prod + plain_mhsa_f2）はいずれも再現可能**（主催者要件）。
+**選択候補2提出（prod + plain_mhsa_f2）の再現コード経路を整備済み**。現コード世代の両経路のクリーン環境受入は未完了。
+2026-10-13の作者記録にはCLI両経路の180枚CSVバイト一致（PR #351）と、v69タイル推論のfold2棄却（PR #352）が追加された。
+最終選択はprod＋plain_mhsa_f2（作者報告はいずれもPublic 0.39）。これらは過去実行の履歴として保持し、独立受入とは区別する。
 
 ```bash
 # test 180枚 → submission_prod.csv（ローカルCPU ~50分 / Colab GPU ~4分）
-# --drive で solar_filament_v30 ルートを指定可（既定は Drive 自動検出）
+# --drive で solar_filament_v30 を含む親ディレクトリを指定可（例: G:/マイドライブ）
 python scratch/run_test_submission.py --mode prod --device cuda  # --device省略時はCPU
 
 # 第2提出（plain_mhsa_f2）の再現
 python scratch/run_test_submission.py --mode prod --refiner plain_mhsa_f2 --device cuda
 
-# Drive 無しでも可: Kaggle dataset をダウンロードして --weights-dir に渡す
-# （test画像のみ Drive から読む。2026-10-12 に両バリアントで疎通確認済み）
+# 重みを Drive 以外から読む: Kaggle dataset をダウンロードして --weights-dir に渡す
+# （test画像には引き続き Drive 相当の配置が必要。両バリアント疎通は作者報告）
 python scratch/run_test_submission.py --mode prod \
     --refiner plain_mhsa_f2 --weights-dir <dataset_dir> --device cuda
 ```
@@ -122,7 +128,7 @@ python scratch/run_test_submission.py --mode prod \
   sha256 manifest 同梱）。ローカルでは Drive `solar_filament_v30/artifacts/` の
   実績パスを既定参照
 - **Colab 再現 notebook**: [`solar_filament_prod_repro_colab.ipynb`](solar_filament_prod_repro_colab.ipynb)
-  （3セル直列・Drive経由・A100で223秒）。2026-10-11 実行済み、ローカル生成CSVと
+  （3セル直列・Drive経由・A100で223秒という作者報告）。2026-10-11 の記録では、ローカル生成CSVと
   **1172/1172 filament が IoU>0.5 で一致（99.91% IoU=1.0）**
 - **提出履歴**: prod 0.39 → A1 scorer 0.37（OOF→LB反転）→ plain_mhsa_f2 **0.39**、
   edgeatt_f2 **0.39**（ablation 重み流用の refiner バリアント、学習コスト0）。

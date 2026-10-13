@@ -116,9 +116,12 @@ pip freeze + SHA256記録・`submission_efficiency.json`出力。
    `shingo257/solar-filament-2026-weights` (private→公開化は提出時に切替)。
    yolo_fold{0,1,2}_best.pt + refiner_all_data.pt + a1 scorer 3点 + manifest。
    fold 別 refiner checkpoint は容量の関係で未同梱(Kaggle/Colab 側で再学習可)。
-   **v2 (2026-10-12)**: `ablation_plain_mhsa_seed8407_fold2.pt` を追加 —
+   **v2 (2026-10-12、作者報告・公開状態は独立未確認)**: `ablation_plain_mhsa_seed8407_fold2.pt` を追加 —
    主催者要件「選択した両方の提出を再現できること」で第2提出
    (plain_mhsa_f2)の再現に必須のため。
+   **v3/v4 (2026-10-13、作者報告)**: 凍結 `grouped_folds.csv`
+   (SHA256 `24367120…c3b`)を同梱し、v4でv3のyolo_fold0/1欠落を修復。
+   PR #350/#351の解決・実行履歴は保持するが、今回の独立受入ではない。
    **v3/v4 (2026-10-13)**: `grouped_folds.csv` (凍結 fold 分割、
    sha256 `24367120…c3b`)を同梱 — 再現 notebook の fold 自動解決先
    (PR #350)。v4 で yolo_fold0/1 を復帰させ完全同梱に戻した
@@ -127,17 +130,15 @@ pip freeze + SHA256記録・`submission_efficiency.json`出力。
    `solar_filament_prod_repro_colab.ipynb`(3セル直列構成)が A100 で完走、
    `artifacts/repro_prod_colab/` に submission_prod.csv + efficiency。
    ローカル prod CSV と filament 一致率100%(IoU>0.5)・99.91% IoU=1.0。
-   **両提出の決定的再現は検証済み(2026-10-13, ローカル CPU)**:
-   `scratch/run_test_submission.py` 経路で 180枚全件を走らせ、
-   `submission_prod.csv` (sha256 `84f1b894…`)と
-   `submission_prod_plain_mhsa_f2.csv` (sha256 `7b3de4e7…`) が
-   コミット済み証跡 `output/test_submission/` とそれぞれ
-   **バイト一致**。Kaggle kernel は v2 で
-   `GROUPED_FOLDS_SHA256` 未設定により起動時エラーだったが、
-   PR #350 で SHA 同梱 + `grouped_folds.csv` を添付 dataset / Drive から
-   自動解決(SHA256 一致候補のみ採用)に修正済み —
-   dataset v3 以降に `grouped_folds.csv` 同梱。
-   notebook 完全版の Kaggle/Colab 通し実行は F3 の任意検証として残る。
+   **本番 notebook の完全版再現は未実施 — 提出に使うなら Kaggle 側での
+   実行が残る**(kernel パッケージ `output/kaggle_kernel/` 準備済み)。
+   notebook は `CFG.SUBMISSION_VARIANT="plain_mhsa_f2"` で第2提出も
+   再現できるよう拡張済み(2026-10-12、未実行 — F3 のクリーン環境
+   通し実行で prod/variant 両経路を検証すること)。
+   **2026-10-13 の作者記録**: CLIでtest 180枚の両提出を再生成し、既存CSVと
+   byte-identical (prod SHA256 `84f1b894…`、plain-MHSA `7b3de4e7…`)と報告。
+   新規に同梱されたhash・実行証跡も、未確認の過去実行manifestや489/707件の
+   分割相違を遡及的に解決せず、現在のコード世代のクリーン受入を代替しない。
 3. **Overleaf で `report/main.tex` ビルド** → 4ページに収まるか確認。
    A1 LB反転+v82棄却を追記済み(2文追加、ページ影響は微小の見込み)。
 4. `requirements.txt` 凍結(最終推論環境の pip freeze)。

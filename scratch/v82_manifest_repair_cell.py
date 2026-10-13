@@ -15,6 +15,12 @@ def sha256_of(path):
 
 manifest = {
     "experiment_id": "v82_soft_target_refiner",
+    "result_kind": "reconstructed_runtime_summary",
+    "adoption_eligible": False,
+    "provenance_limitations": [
+        "Surviving runtime variables do not establish complete original run provenance",
+        "Training split, input, code and paired baseline identities require independent verification",
+    ],
     "arm": CFG.ARM, "fold": CFG.FOLD, "seed": CFG.SEED,
     "cluster_iou": CFG.CLUSTER_IOU, "repeat_factor": CFG.REPEAT_FACTOR,
     "model": "MediSegUNet(3,1) — 現行 refiner と同一",
@@ -24,7 +30,7 @@ manifest = {
     "oof_pq_by_threshold": report,
     "torch": torch.__version__, "gpu": torch.cuda.get_device_name(0),
     "checkpoint": str(checkpoint_path), "checkpoint_sha256": sha256_of(checkpoint_path),
-    "gate": "soft - hard_record が 3fold・両seedで正、pooled CI がゼロを除外",
+    "gate": "採用不可: 修復セルは探索的記録のみ。来歴固定したpaired再評価が必要",
 }
 report_path = CFG.ARTIFACT_ROOT / f"v82_{CFG.ARM}_fold{CFG.FOLD}_s{CFG.SEED}_manifest.json"
 report_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

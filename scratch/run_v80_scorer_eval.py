@@ -19,6 +19,8 @@ arms (同一候補・同一 refiner 出力・paired):
 
 採用ゲート: hybrid − prod が 3fold すべて正 かつ pooled bootstrap 95%CI が
 ゼロを除外。hybrid_oracle が +0.02 未満なら候補集合の上界が低いと判断する。
+ただし現行キャッシュは上流モデルまでouter-fold別に再学習したnested構成ではない。
+数値条件は探索的診断のみで、adoptは常にfalseとする。
 
 使い方:
     python scratch/run_v80_scorer_eval.py [--limit N] [--workers 8] [--boot 2000]
@@ -232,6 +234,23 @@ def pq_of(counts) -> float:
     fn = sum(c[3] for c in counts)
     den = tp + 0.5 * fp + 0.5 * fn
     return tp_sum / den if den > 0 else 0.0
+
+
+def adoption_gate(fold_deltas, ci_lower: float, oracle_delta: float) -> dict:
+    """Keep the numeric diagnostic separate from independent acceptance.
+
+    Rows in scorer-training fold g use an upstream model trained on all folds
+    except g, including scorer-evaluation fold f. Excluding f only in the
+    scorer fit therefore does not establish nested out-of-fold validation.
+    """
+    return {
+        "adopt": False,
+        "exploratory_numeric_gate_passed": bool(
+            len(fold_deltas) == len(FOLDS)
+            and all(delta > 0 for delta in fold_deltas) and ci_lower > 0),
+        "oracle_headroom_ok": bool(oracle_delta >= 0.02),
+        "reason": "Non-nested upstream fits and unverified frozen split/cache coverage",
+    }
 
 
 def main() -> int:
@@ -483,7 +502,14 @@ def main() -> int:
 
     fold_cols = [f"pq_fold{f}" for f in FOLDS]
     report = {
-        "scope": f"全fold OOF ({len(names)}観測)、候補=YOLO∪component-tree、cross-fit HistGBM",
+        "scope": f"探索的scorer cross-fit ({len(names)}観測)、上流モデルはnon-nested",
+        "result_kind": "exploratory_non_nested_scorer_crossfit",
+        "adoption_eligible": False,
+        "provenance_limitations": [
+            "Scorer training-fold upstream models include outer held-out-fold labels",
+            "Frozen split identity and complete candidate-cache coverage are not verified",
+            "Nested outer-fold upstream/cache refits or independent evaluation are required",
+        ],
         "dropped_features": sorted(drop),
         "n_features": len(all_features),
         "tau_fixed_point": float(fixed),
@@ -506,13 +532,9 @@ def main() -> int:
         "delta_yolo_scorer_vs_prod": float(table.loc["yolo_scorer", "ΔPQ_vs_prod"]),
         "bootstrap_ci95_hybrid_minus_prod": [float(ci[0]), float(ci[1])],
         "bootstrap_ci95_yolo_scorer_minus_prod": [float(ci_yolo[0]), float(ci_yolo[1])],
-        "gate": {
-            "adopt": bool(
-                (table.loc["hybrid", fold_cols] > table.loc["prod", fold_cols]).all()
-                and ci[0] > 0
-            ),
-            "oracle_headroom_ok": bool(table.loc["hybrid_oracle", "ΔPQ_vs_prod"] >= 0.02),
-        },
+        "gate": adoption_gate(
+            [float(table.loc["hybrid", col] - table.loc["prod", col]) for col in fold_cols],
+            float(ci[0]), float(table.loc["hybrid_oracle", "ΔPQ_vs_prod"])),
         "runtime_sec": round(time.perf_counter() - started, 1),
         "utc_completed": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

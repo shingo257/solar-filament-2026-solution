@@ -91,6 +91,7 @@ def main() -> int:
             "all_cells_positive": all_positive,
             "fold_consistent": fold_consistent,
             "mean_delta": mean_delta,
+            "adoption_eligible": False,
         }
         if complete:
             print(f"{arm}: {'全セル正' if all_positive else '負セルあり'} "
@@ -120,13 +121,20 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
     report = {
+        "result_kind": "exploratory_manifest_summary",
+        "adoption_eligible": False,
+        "provenance_limitations": [
+            "Printed/repaired manifests and cell counts do not prove split or checkpoint provenance",
+            "Historical hard_record baseline is not a same-input paired rerun",
+            "Independent acceptance requires pinned split/input/checkpoint identities and pooled CI",
+        ],
         "main_threshold": args.threshold,
         "manifests_seen": len(manifests), "expected": expected,
         "verdict": verdict,
         "per_cell": json.loads(main_rows.round(6).to_json(orient="records")),
         "soft_minus_hard_union": (json.loads(merged.round(6).to_json(orient="index"))
                                   if merged is not None else None),
-        "gate": "採用 = soft が 3fold×両seed で delta>0 (pooled CI は再評価で確認)",
+        "gate": "採用判定不可: セルの符号は探索的要約のみ。来歴固定したpaired再評価とpooled CIが必要",
     }
     (args.out / "v82_aggregate.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

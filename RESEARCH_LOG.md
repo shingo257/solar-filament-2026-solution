@@ -189,6 +189,14 @@ pseudo-labelingの前提だった年代偏り仮説も同じ切り口で支持�
 
 ### 2.8 v80 ハイブリッド候補+期待IoUスコアラー(2026-10-10)
 
+**2026-10-12 の証拠範囲:** 以下の v80/A1・v82・提出・外部再現結果は作者の既存記録。
+`HANDOVER.md` 冒頭に記した過去実行 manifest の欠落と489/707件の分割相違は未解決であり、
+今回追加する検証ガードは過去実行を遡及的に検証しない。
+v80/A1 の scorer cross-fit は上流モデル・特徴キャッシュを outer fold ごとに作り直していない。
+scorer 学習側の別foldキャッシュの生成モデルが評価outer foldを学習済みのため、
+報告 OOF 値・CI・「ゲート通過」は探索結果に限定し、不偏な独立OOF評価や採用許可には使わない。
+採用判断には、凍結分割の同一性・全キャッシュの網羅性と、outer fold を除外した上流学習を含む nested 検証が必要。
+
 PLAN_2026-10-09_FINAL_SPRINT.md §7.1.8b参照。YOLO候補に V34 OOF 密確率
 マップの component-tree 候補を加え、cross-fit HistGBM の期待IoU û>τ で
 選択する E1 実験(707観測・149,693候補、全fold 公式PQ)。
@@ -303,7 +311,8 @@ OOF 採用ゲート通過は A1 scorer (+0.0034) のみだったが LB で不採
 | 出力 | `artifacts/repro_prod_colab/` に submission_prod.csv + audit + efficiency_prod.json |
 
 **結論**: 別環境(GPU/Colab)でも事実上同一の提出 CSV を生成 — 最終提出
-パイプラインの決定性と重み整合性が公式レベルで検証済み。
+パイプラインの出力一致が作者記録で報告された。過去実行 manifest 未確認のため、
+今回の統合による決定性・重み整合性の独立受入とは区別する。
 `efficiency_prod.json` は最終提出物の efficiency 記録として使用。
 
 ### 2.13 Kaggle kernel 再現 push (2026-10-11)
@@ -328,7 +337,8 @@ OOF 採用ゲート通過は A1 scorer (+0.0034) のみだったが LB で不採
 | 環境記録 | `submission_reproduction_pip_freeze.txt` 出力済み |
 
 3環境(Windows CPU / Colab A100 / Kaggle T4)全てで同一提出CSVを
-再現 — 提出パイプラインの環境非依存性が完全に実証された。
+再現できたという作者報告。これは当該3環境の出力比較記録であり、
+環境非依存性一般や、今回のコード世代の独立再現を実証するものではない。
 
 ### 2.14 plain-MHSA refiner 提出 — 0.39 (2026-10-11)
 
@@ -371,14 +381,15 @@ LB 上で直接検証するため `ablation_plain_mhsa_seed8407_fold2.pt`
 ### 2.16 外部手法・discussion 調査 (2026-10-11)
 
 上位陣手法・公開 kernel・competition discussion (Kaggle API で全20スレッド
-本文取得) を調査。結論: **0.55–0.63 の上位パックは漏洩由来である根拠が
-強く、誠実系フロンティアは ~0.36–0.45 で我々の 0.39 はその先端**。
+本文取得) を調査したという作者記録。**0.55–0.63 帯の漏洩説は参加者発言からの仮説であり、
+各提出のデータ・分割・来歴は独立未確認。スコア帯だけで個別チームの違反や誠実性を判定しない**。
+~0.36–0.45 は作者が比較対象に選んだ公開報告の帯域で、検証済みの実力上限ではない。
 
 #### LB の見取り図 (複数独立ソースで一致)
 
 | 帯域 | 解釈 | 根拠 |
 |---|---|---|
-| 0.55–0.63 | **漏洩由来の可能性が高い** | discussion 737177: 参加者解析で Harvard Dataverse 上の全 test GT が公開ダウンロード可能と特定 — 直接ブレンドで ~0.51–0.66・学習混入(laundering)で ~0.45–0.55 に着地する計算と上位分布が一致。743958: lamhuy8904 の 0.55 kernel はコミュニティが漏洩と特定。741892: 「~0.45(または 0.41)超は公開 test アノテーション使用」(Alisher 氏) |
+| 0.55–0.63 | 漏洩説あり・個別提出は未確認 | 作者が記録した参加者発言: discussion 737177 は公開 test GT と想定スコア帯を解析、743958 は特定 kernel の使用データを疑問視、741892 は高スコアへの疑念を表明。いずれも今回の独立検証・主催者の個別裁定とは区別する |
 | ~0.36–0.45 | 誠実系フロンティア | too.foo スタック LB 0.36 / Fususu pipeline 再採点 ~0.40 / hetspookjee 誠実 0.39 / Spaghetto99「train_images のみで 0.40」/ noisyislands 0.49 主張(未検証) |
 | >0.35 | 主催者の審査ライン | Azim 主催者「0.35 超の提出はすべて精査」「単一指標に依存しない(定量70%+定性30%)」 |
 
@@ -448,24 +459,29 @@ LB 上で直接検証するため `ablation_plain_mhsa_seed8407_fold2.pt`
 - コード品質・再現性(定性30%評価軸と重複)は既にrequirements.txt/pip freeze
   の運用ルールあり(README §7)
 
-### 2.17 「両提出を再現可能」の規約対応を完了 (2026-10-12)
+### 2.17 両提出の再現コード経路を整備・クリーン受入は未完了 (2026-10-12)
 
 主催者回答 (discussion 747960) の「選択した両方の提出を repo が再現
 できること」要件について、第2提出 `plain_mhsa_f2` の再現経路を整備:
 
 | 資産 | 状態 |
 |---|---|
-| Kaggle dataset `solar-filament-2026-weights` | **v2 公開** — `ablation_plain_mhsa_seed8407_fold2.pt` (282,089,497B, sha256 `b5f331e1…`) を追加。manifest 更新済み |
-| `run_test_submission.py --weights-dir` | 追加 — dataset ダウンロード先から yolo/refiner/scorer 重みを解決 (Drive 不要)。両バリアントでローカル疎通確認済み (CPU) |
+| Kaggle dataset `solar-filament-2026-weights` | **v2 公開という作者報告** — `ablation_plain_mhsa_seed8407_fold2.pt` (282,089,497B, sha256 `b5f331e1…`) を追加。manifest 更新済みという記録。外部公開状態・実物同一性は今回独立未確認 |
+| `run_test_submission.py --weights-dir` | 追加 — dataset ダウンロード先から yolo/refiner/scorer 重みを解決 (重みの Drive 依存を除く。test画像には Drive 相当の配置が必要)。両バリアントのローカル疎通は作者報告 (CPU) |
 | `solar_filament_submission_reproduction.ipynb` | `CFG.SUBMISSION_VARIANT` を追加 — `"plain_mhsa_f2"` で `MediSegPlainMHSAUNet` + dataset 重みに差し替え、`submission_plain_mhsa_f2.csv` を出力 (builder 再生成・AST 検証済み、本実行は F3 クリーンランで検証予定) |
 | `output/submission_weights_manifest.json` | Drive 側 manifest にも plain_mhsa エントリを追記 |
 
 残検証: 再現 kernel の再 push + 実行 (prod/variant 両経路) — F3
 (11/08 予定) のクリーン環境通し実行で実施する。コード経路は提出実績の
-ある `run_test_submission.py` と同一クラス・同一 ckpt ロード式のため
-リスクは低い。
+ある `run_test_submission.py` と同一クラス・同一 ckpt ロード式だが、
+これはモデル・入力・コードの同一性や現コード世代の実行成功を保証しない。
 
 ### 2.18 レポート確定版への統合 + レビュー対応 (2026-10-12)
+
+**2026-10-13 統合注記:** 以下§2.18–2.21はmainのPR #349/#351/#352から保持した作者の履歴であり、今回の独立再実行ではない。
+新たなhash・CSV・metadataの同梱は過去実行manifest未確認・489/707件の分割相違を解決しない。
+`a1_scorer_meta.json`の従来の「gate passed」や固定hashも履歴として保持するが、上流モデル非nestedのため独立OOF・採用許可の証拠として受け入れない。
+今回の修正済みコード世代について両バリアントのクリーン受入は未完了。
 
 `report/main.tex` を最終提出版に更新し、MiKTeX/latexmk のローカルビルドで
 **本文4p・謝辞+refs p5** を確認(従来はビルド未検証だった):
@@ -473,8 +489,7 @@ LB 上で直接検証するため `ablation_plain_mhsa_seed8407_fold2.pt`
 - §3.2 末尾に最終選択段落を追加 — prod + plain_mhsa_f2(両者 Public 0.39、
   best-match IoU 0.94/0.93)の2提出と選択根拠(refiner アーキテクチャ差による
   private 分散ヘッジ)、T4 ~1.1 s/img end-to-end、honest-tier 文脈
-  (0.55–0.63 帯は test アノテーション公開漏洩と整合、誠実系 0.36–0.45、
-  >0.35 は主催者精査対象 — §2.16 の所見を反映)
+  (スコア帯に関する当時の仮説は独立未確認で、今回の本文はその限界を明示)
 - §3.3 に too.foo dossier との独立合致を1文追加(soft label 逆効果・
   crop refiner は PQ に寄与せず・unproposed instances がボトルネック)
 - Future work 更新: plain-MHSA 再提出は実施済みのため削除、
@@ -525,15 +540,14 @@ category=COMPETITIONS + 複数検索語 union で全網羅、LB は
 
 | 帯域 | チーム数 | 解釈 |
 |---|---|---|
-| ≥0.55 | **78** (うち **ちょうど 0.55 が65チーム**) | 単一値プラトー = 同一リーク blend の署名。前日比 +~8 でまだ増殖中 (Sayandeep 0.62・Tarunkush019 0.62 等 10-11/12 投稿) |
+| ≥0.55 | **78** (うち **ちょうど 0.55 が65チーム**) | 作者が記録した同点プラトー。使用データ・分割・来歴は独立未確認で、違反や同一手法の証拠ではない |
 | 0.45–0.54 | 3 | Cac Cat 0.54・Thariq J 0.53・noisyislands 0.49 (未検証) — 想定した「laundering 帯」はほぼ空 |
-| 0.40–0.44 | 31 | **誠実系トップは 0.41** (Spag99・Salty Taro・trycat・supersede・Manurupan M・Swarup S.M. の6チーム)。tushhaaarrrr (Fususu fork)・JAB100・Ishan Sharma・Varad 等は 0.40 |
+| 0.40–0.44 | 31 | 作者が参照した0.41の6チームと0.40帯。各提出の来歴は独立未確認で、誠実性の分類や性能上限を示さない |
 | 0.35–0.39 | 332 | 我々の 0.39 は 53チーム同点の帯域先頭群 |
 
-→ 「0.55–0.63 クラスタ」の描写を精緻化: **正確に 0.55 に65チームが
-  収束するプラトー** は、同一の公開 test アノテーション CSV を同様に
-  ブレンドした結果としか説明がつかない定量的指紋。誠実系実効天井は
-  ~0.45 でなく **0.41** と判明。
+→ **0.55に65チームという作者のスナップショット**は保持する。
+  小数2桁の同点分布だけでは使用データや手法を識別できず、漏洩・違反や
+  誠実系の性能上限を結論できない。
 
 #### 新着公開 kernel (10-11 以降 + 境界の10-09/04 分)
 
@@ -548,15 +562,11 @@ category=COMPETITIONS + 複数検索語 union で全網羅、LB は
 #### 結論
 
 **prod + plain_mhsa_f2 の最終選択は不変**。新規採用レバーなし。
-一方で honest-tier 論証の外部証拠が強化された:
-(1) 0.55 プラトー ×65チーム = リークの定量指紋、
-(2) 誠実系フロンティアは 0.41、
-(3) 第三者による Fususu 複製 0.35・val→LB ギャップ 0.04-0.06 の複数一致。
-レポートの「0.55–0.63 帯は漏洩と整合・誠実系は 0.36–0.45」の記述は
-「誠実系実効天井 ~0.41・0.55 同一値プラトー65チーム」と
-より強い形に更新可能 (main.tex 更新は別途)。
+外部報告には同点分布、Fususu複製0.35、val→LB差0.04–0.06という記述がある。
+各報告の条件・来歴は今回独立未確認で、他者の違反や誠実性・性能上限の
+論証には用いない。main.texにもこの限界を保持する。
 
-### 2.20 両提出の決定的再現検証 + notebook 修正 (2026-10-13)
+### 2.20 両提出のCLI再現に関する作者記録 + notebook 修正 (2026-10-13)
 
 #### ローカル CPU 経路 — 両 variant byte-identical
 
@@ -593,7 +603,7 @@ Kaggle kernel v2 が `GROUPED_FOLDS_SHA256=""` で起動時エラー。
 #### 残存
 
 - notebook 完全版の Kaggle/Colab 通し実行は未実施 (F3 任意検証)。
-  CLI 経路が決定的再現の第一正本
+  CLI経路の過去の一致報告は、今回修正するコードのクリーン受入を代替しない
 - `dataset_upload/` staging: `C:/work/solar_run/dataset_upload/`
 
 ### 2.21 タイル推論 (native-resolution) — fold2 OOF で棄却 (2026-10-13)
@@ -649,14 +659,13 @@ cross-source NMS 後に同一パイプライン) も評価:
   refiner(0.45) を通るだけの形状を持ち TP に届かず FP 化
 - nms0.3 は TP 最大 (1965) だが FP 2788 で不届
 - 統制 base@0.195 も −0.009 → prod の 0.26 keep は適切だった裏付け
-- 全 arm が noise band (±0.002) を桁違いに超える負。fold0/1 の
-  独立検証は不要なほど明確な棄却
+- このfold2探索で全armが負のため、作者は追加foldを実行せず棄却した。
+  fold0/1への一般化や独立検証を済ませたという意味ではない。
 
 **構造的含意**: blind-FN 救出を収益化するには rescued-TP と tile-FP を
-分ける verifier が必須で、それは v64 で到達不能と確定済み。提案集合の
-不足は operating point の制約ではなく、**検出リコール系の未検証レバーは
-これで全滅**。残る天井は perfect verifier oracle (+0.046) のみで、
-実装手段が存在しない。
+分けるverifierを要するという作者の解釈。v64や今回のfold2探索で試した
+範囲では有効策を得られず、最終選択を変更しなかった。
+未試行手法の不存在や一般的な性能上限を証明する結果ではない。
 
 証跡: `output/tile_infer_probe/` (prod_rescue_recount_fold2.json 含む)、
 `output/tile_pipeline_oof/`、

@@ -26,6 +26,7 @@ GPU必須 (Colab L4 推奨、各run ≈1.5h)。fold 専用 OOF 評価は確定�
 """
 
 import argparse
+import ast
 import json
 from pathlib import Path
 
@@ -33,6 +34,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = (ROOT / "solar_filament" / "models" / "mediseg_models.py").read_text(encoding="utf-8")
 SOFT_TARGET = (ROOT / "solar_filament" / "pipeline" / "soft_target.py").read_text(encoding="utf-8")
+# Reuse the established standalone notebook split validator without importing
+# or executing another builder (its generated cells remain self-contained).
+FROZEN_FOLDS = next(
+    ast.literal_eval(node.value)
+    for node in ast.parse((ROOT / "scratch" / "build_v67_temporal_aug.py").read_text(encoding="utf-8")).body
+    if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+    and node.targets[0].id == "FROZEN_FOLDS"
+)
 
 
 def _embed_source(src: str) -> str:
@@ -76,6 +85,9 @@ near-miss(IoU 0.3〜0.5)を TP に押し上げるか」の検証。採用ゲー�
 fold{fold_num} OOF PQ vs 基準 {BASELINE_PQ[fold_num]}、さらに 3fold・両seed符号一致。
 
 GPU必須。
+実行前に学習モデルと同じ外部凍結分割のSHA256を `CFG.GROUPED_FOLDS_SHA256` に設定する。
+未設定・不一致なら画像展開前に停止する。既往結果の分割来歴を遡及的には保証しない。
+固定の基準PQとの差は探索的比較であり、このノートブックだけでは採用を判定しない。
 """
         ),
         code(
@@ -98,6 +110,8 @@ drive.mount("/content/drive")
 class CFG:
     SEED = {seed}
     FOLD = {fold_num}
+    N_FOLDS = 3
+    GROUPED_FOLDS_SHA256 = ""  # Independently frozen training split SHA256 required
     ARM = "{arm}"
     CLUSTER_IOU = 0.30
     DRIVE_ROOT = Path("/content/drive/MyDrive/solar_filament_v30")
@@ -141,7 +155,7 @@ print({{"GPU": torch.cuda.get_device_name(0), "arm": CFG.ARM, "seed": CFG.SEED}}
 """
         ),
         code(
-            """# [2/7] COCOとfoldを読み、前処理画像をローカルSSDへ展開
+            FROZEN_FOLDS + """# [2/7] COCOとfoldを読み、前処理画像をローカルSSDへ展開
 def find_dataset_root(base):
     matches = list(Path(base).rglob("MAGFiLO_1.0_Annotations_kaggle2026_train.json"))
     if not matches:
@@ -162,9 +176,8 @@ for image_id, info in images.items():
     file_to_ids[info["file_name"]].append(image_id)
 train_files = sorted(file_to_ids)
 
-fold_frame = pd.read_csv(CFG.ARTIFACT_ROOT / "grouped_folds.csv")
-fold_of_file = dict(zip(fold_frame["file_name"], fold_frame["fold"].astype(int)))
-assert all(name in fold_of_file for name in train_files), "fold未割当の観測がある"
+fold_of_file, frozen_fold_sha256 = load_frozen_folds(
+    CFG.ARTIFACT_ROOT / "grouped_folds.csv", train_files, CFG.N_FOLDS, CFG.GROUPED_FOLDS_SHA256)
 
 for name in tqdm(train_files, desc="前処理画像をSSDへ"):
     local = CFG.PREPROC_DIR / name
@@ -378,6 +391,9 @@ valid_ds = ClusterCropDataset(valid_files_fold, augment=False, repeat_factor=1.0
 assert not (set(train_files_fold) & set(valid_files_fold)), "fold分割が壊れている"
 print({{"fold": CFG.FOLD, "arm": CFG.ARM, "seed": CFG.SEED,
        "train_crops": len(train_ds), "valid_crops": len(valid_ds)}})
+training_config = {{"cluster_iou": CFG.CLUSTER_IOU, "repeat_factor": CFG.REPEAT_FACTOR,
+    "crop_size": CFG.CROP_SIZE, "crop_context": CFG.CROP_CONTEXT,
+    "epochs": CFG.REFINER_EPOCHS, "lr": CFG.REFINER_LR}}
 
 batch_size = choose_batch_size(train_ds)
 print("batch_size =", batch_size)
@@ -413,7 +429,9 @@ for epoch in range(CFG.REFINER_EPOCHS):
         best_state = {{k: v.detach().cpu().clone() for k, v in model.state_dict().items()}}
     torch.save({{"epoch": epoch, "model": model.state_dict(), "best_model": best_state,
                 "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(),
-                "best_dice": best_dice, "arm": CFG.ARM, "seed": CFG.SEED}}, checkpoint_path)
+                "best_dice": best_dice, "arm": CFG.ARM, "seed": CFG.SEED,
+                "fold": CFG.FOLD, "folds_sha256": frozen_fold_sha256,
+                "training_config": training_config}}, checkpoint_path)
     print(f"fold{{CFG.FOLD}} {{CFG.ARM}} s{{CFG.SEED}} epoch {{epoch + 1}}: crop Dice {{dice:.6f}} (best {{best_dice:.6f}})")
 
 best_crop_dice = best_dice
@@ -425,12 +443,16 @@ print({{"checkpoint": str(checkpoint_path), "best_crop_dice": best_crop_dice,
             f"""# [6/7] fold{fold_num} OOF(リークなし)を確定後処理で採点し、基準{BASELINE_PQ[fold_num]}と比較
 # refiner 閾値は 0.45 が主結果、{{0.35,0.40,0.45,0.50}} は事前宣言の補助掃引 (§7.2.4)
 !pip -q install ultralytics
+ckpt = torch.load(checkpoint_path, map_location="cuda", weights_only=False)
+expected_contract = {{"fold": CFG.FOLD, "arm": CFG.ARM, "seed": CFG.SEED,
+    "folds_sha256": frozen_fold_sha256, "training_config": training_config}}
+if any(ckpt.get(key) != value for key, value in expected_contract.items()):
+    raise ValueError("V82 checkpoint training contract is missing or mismatched")
 from ultralytics import YOLO
 
 yolo_model = YOLO(str(CFG.DRIVE_ROOT / "runs" / f"yolo_fold_{fold_num}" / "weights" / "best.pt"))
 
 refiner = MediSegUNet(3, 1, False).cuda().eval()
-ckpt = torch.load(checkpoint_path, map_location="cuda", weights_only=False)
 refiner.load_state_dict(ckpt.get("best_model") or ckpt["model"], strict=True)
 
 def result_masks(result):
@@ -613,6 +635,10 @@ def sha256_of(path):
 manifest = {
     "experiment_id": "v82_soft_target_refiner",
     "arm": CFG.ARM, "fold": CFG.FOLD, "seed": CFG.SEED,
+    "folds_sha256": frozen_fold_sha256,
+    "annotations_sha256": sha256_of(TRAIN_JSON),
+    "result_kind": "exploratory_historical_baseline_comparison",
+    "adoption_eligible": False,
     "cluster_iou": CFG.CLUSTER_IOU, "repeat_factor": CFG.REPEAT_FACTOR,
     "model": "MediSegUNet(3,1) — 現行 refiner と同一",
     "epochs": CFG.REFINER_EPOCHS, "lr": CFG.REFINER_LR,
@@ -621,7 +647,7 @@ manifest = {
     "oof_pq_by_threshold": report,
     "torch": torch.__version__, "gpu": torch.cuda.get_device_name(0),
     "checkpoint": str(checkpoint_path), "checkpoint_sha256": sha256_of(checkpoint_path),
-    "gate": "soft - hard_record が 3fold・両seedで正、pooled CI がゼロを除外",
+    "gate": "採用不可: 同一分割・入力来歴のpaired hard_record再評価とpooled CIが別途必要",
 }
 report_path = CFG.ARTIFACT_ROOT / f"v82_{CFG.ARM}_fold{CFG.FOLD}_s{CFG.SEED}_manifest.json"
 report_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

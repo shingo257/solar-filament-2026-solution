@@ -67,6 +67,18 @@ def test_transitive_clustering_across_records() -> None:
     assert len(clusters) == 1       # a–c and b–c links chain a and b together
 
 
+def test_cross_record_bridge_does_not_merge_same_record_instances() -> None:
+    left = _rect(10, 30, 10, 30)
+    right = _rect(10, 30, 30, 50)
+    bridge = _rect(10, 30, 15, 45)  # IoU > 0.3 with each distinct instance
+    clusters = cluster_gt_instances([[left, right], [bridge]])
+    assert len(clusters) == 2
+    assert sorted(member for cluster in clusters for member in cluster) == [
+        (0, 0), (0, 1), (1, 0),
+    ]
+    assert all(len({r for r, _ in cluster}) == len(cluster) for cluster in clusters)
+
+
 def test_same_record_never_co_cluster_via_transitive_link() -> None:
     a = _rect(10, 30, 10, 40)       # rec0 filament 1
     b = _rect(15, 35, 25, 55)       # rec0 filament 2 (IoU(a,b)=0.23, same record anyway)

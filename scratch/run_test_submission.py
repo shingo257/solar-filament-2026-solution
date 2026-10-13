@@ -157,7 +157,7 @@ def context_columns(final_rles, n_cand):
     return ctx
 
 
-def main() -> int:
+def _run_submission(local: Path) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("prod", "a1"), default="prod")
     parser.add_argument("--refiner", choices=tuple(REFINER_VARIANTS),
@@ -187,7 +187,6 @@ def main() -> int:
         test_files = test_files[:args.limit]
 
     # --- ローカル ASCII ステージング (非ASCII Drive パスを YOLO に渡さない) ----
-    local = Path(tempfile.gettempdir()) / f"solar_test_{args.mode}"
     local_img = local / "images"
     local_w = local / "weights"
     for d in (local_img, local_w):
@@ -214,9 +213,8 @@ def main() -> int:
     yolo_path = local_w / "yolo_fold2.pt"
     refiner_path = local_w / f"refiner_{args.refiner}.pt"
     for src, dst in ((yolo_src, yolo_path), (refiner_src, refiner_path)):
-        if not dst.exists() or dst.stat().st_size != src.stat().st_size:
-            print(f"copy {src.name} -> {dst}", flush=True)
-            shutil.copy2(src, dst)
+        print(f"copy {src.name} -> {dst}", flush=True)
+        shutil.copy2(src, dst)
 
     scorer_h = scorer_m = None
     if args.mode == "a1":
@@ -235,8 +233,6 @@ def main() -> int:
     # --- 前処理 (solar_three_channel を raw test JPEG に適用、q96) ------------
     for name in test_files:
         dst = local_img / name
-        if dst.exists():
-            continue
         gray = None
         for attempt in range(4):
             raw = None
@@ -376,6 +372,13 @@ def main() -> int:
                       "efficiency": efficiency, "code_sha": sha},
                      ensure_ascii=False, indent=2))
     return 0
+
+
+def main() -> int:
+    # Each invocation stages its own inputs; no previous Drive/code generation
+    # can leave same-sized weights or same-named preprocessed images behind.
+    with tempfile.TemporaryDirectory(prefix="solar_test_") as staging:
+        return _run_submission(Path(staging))
 
 
 if __name__ == "__main__":

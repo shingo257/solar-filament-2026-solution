@@ -52,6 +52,12 @@ def main() -> int:
 
     manifest = {
         "experiment_id": "v82_soft_target_refiner",
+        "result_kind": "reconstructed_printed_summary",
+        "adoption_eligible": False,
+        "provenance_limitations": [
+            "Printed metrics and current checkpoint hashes do not establish original run identity",
+            "Training split, input, code and paired baseline provenance are not verified",
+        ],
         "arm": arm, "fold": fold, "seed": seed,
         **CFG,
         "best_crop_dice": printed["best_crop_dice"],
@@ -59,7 +65,7 @@ def main() -> int:
         "oof_pq_by_threshold": printed["by_threshold"],
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256_of(checkpoint),
-        "gate": "soft - hard_record が 3fold・両seedで正、pooled CI がゼロを除外",
+        "gate": "採用不可: 印字ログからの復元は探索的記録のみ。来歴固定したpaired再評価が必要",
         "reconstructed_locally": True,
     }
     out = args.artifact_root / f"v82_{arm}_fold{fold}_s{seed}_manifest.json"
