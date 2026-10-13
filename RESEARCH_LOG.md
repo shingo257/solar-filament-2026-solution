@@ -672,3 +672,66 @@ cross-source NMS 後に同一パイプライン) も評価:
 `scratch/run_tile_{infer_probe,pipeline_oof}.py`、
 `scratch/recount_rescue_prod_conf.py`
 (cache npz は gitignore — 結果の CSV/JSON のみコミット)。
+
+### 2.22 v70 深層 verifier (crop CNN) — fold2 で棄却 (2026-10-13)
+
+§2.21 の構造的含意「rescued-TP と FP を分ける verifier が必要」に対し、
+v64 (静的特徴10個・HistGBM) とは別の仮説クラスとして、**画像そのものを
+見る CNN verifier** を検証。入力は提案クロップ RGB+mask の4ch
+(128x128, square_box context=1.65)、ラベルは「その観測の全GTとの
+best IoU>0.5」(= 公式PQのTP条件、境界値は陽性にしない)。GT は
+annotator 間で union (公式PQは annotator×image group 毎に採点;
+「提案がTPになり得るか」の対象として採用。別定義—例: 全 annotator
+一致—は未検証の変種として留保)。
+
+#### データセット (`scratch/build_verifier_dataset.py`)
+
+prediction_cache/oof の fold 別 OOF 提案 (conf≥~0.08) から構築。
+train=fold0 / select=fold1 / eval=fold2 (v64 と同型):
+
+| fold | crops | 陽性率 | conf 単独 AUC |
+|---|---|---|---|
+| 0 (train) | 2,594 | 55.6% | 0.798 |
+| 1 (select) | 2,555 | 54.1% | 0.802 |
+| 2 (eval) | 2,614 | 54.9% | 0.797 |
+
+#### 結果 (`scratch/train_verifier.py`, ImageNet resnet18・8epoch)
+
+初版レビューで前処理バグ2件 (BGRをRGBとして正規化・mask ch を /255 で
+0.0039に潰す) と境界ラベル (`>=0.5` で公式の `>0.5` と不整合、境界4行)
+が指摘され、修正パイプラインで再生成・再学習した。下記は修正版の数値
+(初版と同方向にさらに悪化したため、棄却は前処理バグ由来でない):
+
+| 指標 | fold1 | fold2 |
+|---|---|---|
+| conf 単独 AUC | 0.802 | **0.797** |
+| CNN verifier AUC | 0.664 | **0.638** |
+| logistic blend (conf+ver, fold1 fit) | — | 0.7934 |
+
+- fold0 の train loss 0.71→0.35 に対し fold1 AUC ~0.66 で平坦 =
+  fold0 への過学習で一般化しないパターン
+- blend は conf 単独 0.797 を改善せず (0.7934)
+  → verifier スコアは conf と相関0.51の劣化版で独立情報を持たない
+
+#### 判定: 棄却 (試した範囲では)
+
+分離性能が conf 単独を大きく下回るため、verifier として採用できる
+レベルにない。v64 (静的特徴)・v68 (磁気図特徴)・v70 (画像CNN) と
+3つの異なる特徴クラスで「+0.046 oracle を解放する分離情報」は
+**試した範囲では見つからなかった**。
+
+#### 制限 (正直な留保)
+
+- 2.6k crops は CNN 学習には小規模で、過学習パターンはデータ量に
+  由来し得る。より大きな提案コーパス・IoU回帰ラベル・自教師事前学習
+  (GONG無ラベル) は別の賭けだが、現時点の証拠では conf 0.80 を
+  大きく超える見通しは薄い
+- resnet18+flip aug のみ。別アーキ・大入力解像度は未検証だが、
+  AUC差 (0.64 vs 0.80) をひっくり返す期待は持ちにくい
+- 入力バグ修正後の値を報告。初版(BGR・mask潰れ・境界`>=`)は
+  fold2 AUC 0.659/blend 0.7975 で同じく棄却だったが、数値は修正版を
+  正とする
+
+証跡: `output/verifier_v1/` (gitignore — 再生成スクリプトと本表の数値が
+記録)、`scratch/build_verifier_dataset.py`、`scratch/train_verifier.py`、
+`tests/test_{build_verifier_dataset,train_verifier}.py`。

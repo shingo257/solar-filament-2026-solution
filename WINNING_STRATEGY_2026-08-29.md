@@ -1611,3 +1611,32 @@ prod conf≥0.26 に届くのは10件のみ(別提案の同時適合を数える
 証跡: `output/tile_infer_probe/`、`output/tile_pipeline_oof/`、
 `scratch/run_tile_{infer_probe,pipeline_oof}.py`、
 `scratch/recount_rescue_prod_conf.py` (P2訂正の再計算)。
+
+### 6.26 v70 深層verifier(crop CNN)— fold2 棄却確定(2026-10-13)
+
+§6.25の「rescued-TPとtile-FPを分けるverifierが必要」という帰結に対し、
+v64静的特徴とは別の仮説クラスとして画像を直接見るCNN verifierを検証。
+提案クロップ(RGB+mask4ch,128px)を入力、「best IoU>0.5の提案か」を
+2値分類。train=fold0/select=fold1/eval=fold2(v64と同型)。
+
+データ: OOF提案conf≥0.08から各fold約2,600crops(陽性率~55%)。
+
+| 指標 | fold1 | fold2 |
+|---|---|---|
+| conf単独 AUC | 0.802 | **0.797** |
+| CNN verifier AUC | 0.664 | **0.638** |
+| blend(conf+ver, fold1 fit) | — | 0.7934 |
+
+**判定: 棄却**。レビューで前処理バグ2件(BGR→RGB・mask /255潰れ)と境界
+ラベルを修正した上での再学習の値(初版0.659と同方向)。train loss半減に
+対しfold1 AUC ~0.66平坦=fold0過学習。blendもconf単独未満(0.7934)で
+独立情報なし(相関0.51の劣化版)。+0.046 oracleを解放する分離情報は、
+静的特徴(v64)・磁気図(v68)・画像CNN(v70)の
+**3クラス全ての試行範囲で見つからなかった**。
+
+留保: 2.6k cropsはCNN学習に小規模で過学習由来の可能性は排除しない。
+大規模コーパス・IoU回帰・GONG自教師事前学習は残るが、conf 0.80との差を
+覆す見通しは現時点の証拠では薄い。未試行手法の不存在証明ではない。
+
+証跡: `scratch/build_verifier_dataset.py`、`scratch/train_verifier.py`
+(生成物 `output/verifier_v1/` は gitignore)。
