@@ -1640,3 +1640,65 @@ v64静的特徴とは別の仮説クラスとして画像を直接見るCNN veri
 
 証跡: `scratch/build_verifier_dataset.py`、`scratch/train_verifier.py`
 (生成物 `output/verifier_v1/` は gitignore)。
+
+### 6.27 競合・ディスカッション再調査(2026-10-13)
+
+§6.23 以降の差分。kaggle CLI の leaderboard/kernels 一覧と公開カーネル
+本文から取得(discussion 本文は SPA 描画のため検索スニペット+引用経由)。
+
+#### LB 変動と主催者動向
+
+- チーム数 1016、我々は rank 148 @ 0.39
+- **トップが 0.55 プラトーから 0.63 へ上昇**(Tempest 0.63・他 0.62x3、
+  全て 10/8-14 の投稿)。メトリック修正(§733912)完了後の新規スコアなので
+  死んだ旧メトリックの残滓ではなく、test/train 重複 77% の GT コピー系が
+  最有力。主催者は「LB クリーンアップ」(discussion/740400)と
+  「高スコア提出の精査」(discussion/747399)を表明 — 上位失格の蓋然性は
+  依然として高い
+- too.foo の dossier が文脈を再解釈: **修正前の 0.55-0.75 帯の一部は
+  「再採点されない旧メトリック(Dice 誤設定、空提出で0.88-1.00)の亡霊」**
+  で、漏洩だけが説明ではなかった。ただし修正後の新規 0.6+ は同じ結論
+  (重複領域のコピー)に帰着する
+
+#### dariushafshar「Two Experts Agree at 0.34」(10/13、最重要カーネル)
+
+主催者配布の Self_Evaluation_Notebook を完全解像度で再実装した校正標準:
+
+| 基準点 | 値 |
+|---|---|
+| 人間 vs 人間の PQ (annotator 相互、296枚) | **0.340** (SQ 0.634・IoU>0.5 一致率 54%) |
+| 90枚 public half の SD | 0.0144 (同一予測でも ±0.03 揺れる) |
+| public↔private 半々の差 | SD 0.0205 (±0.04) |
+| 同一画像・別予測の差 | SD 0.0103 (±0.02) |
+| 10/12 Public LB 分位 (972チーム) | median 0.34 / p75 0.37 / p90 0.40 |
+
+- 「OOF で選べ」という我々の方法論全体を独立に裏付け。A1 の
+  OOF+0.0034→LB-0.02 反転は ±0.04 の public/private ノイズ帯内の
+  正常現象と確定的に説明できる
+- PQ/2 損益分岐 P(match)xE[IoU|match] > 0.5xPQ を再確認
+  (tushhaaarrrr 由来の同一則)。人間レベルでは <300px 除去は±0 (wash)
+- 清浄マスクの連結成分化損失は -0.0008 のみ (instance head の価値小)
+- 留保: 0.34 は天井ではなく「annotator 同意の物差し」。多数 annotator が
+  引くものを学んだモデルは 0.34 を超え得る(我々の 0.39/0.44 と整合)
+
+#### 誠実ティアの収束 — 3者が同型アーキに到達
+
+| カーネル | LB | 構成 |
+|---|---|---|
+| magfilo_v9 (Muhammad S. Altaf, 12票) | 未明記 | YOLO11s@1536 → UNet++/EffB4 crop refiner → conf 順 disjoint |
+| juanmirod Final Report (3票) | 0.37 | YOLO11m@1280 → resnet34 crop refiner (box-seed ch) → greedy disjoint |
+| pandadev0069 (0.36) | 0.36 | YOLO26s-seg full-res 2048 → CC分割 |
+| 我々 | 0.39 | fold2 YOLO11m@1280 → EdgeAttNet/plain-MHSA crop refiner → ownership |
+
+detector→crop refiner→disjoint ownership の収斂、及び棄却リストの一致
+(union target・ensemble・小フィラメント改善の難しさ)は独立3者で再現。
+juanmirod は「faint barbs の FN」「plage 縁の FP」という我々と同じ
+失敗モードを特定。我々の OOF 0.4442 は too.foo val 0.416・
+tushhaaarrrr 0.4597 とともに誠実系の先端帯に位置。
+
+#### 含意
+
+- 戦略変更の根拠になる新手法の公開は**なし**。我々の再現性・4p レポート
+  ・棄却列挙の厚さは依然として誠実ティア最強級の差別化点
+- 未検証の micro-variant として唯一残った示唆: <300px 面積フロアの
+  sweep (人間レベルでは wash、モデル精度では別途要 OOF — 優先度低)
