@@ -1702,3 +1702,15 @@ tushhaaarrrr 0.4597 とともに誠実系の先端帯に位置。
   ・棄却列挙の厚さは依然として誠実ティア最強級の差別化点
 - 未検証の micro-variant として唯一残った示唆: <300px 面積フロアの
   sweep (人間レベルでは wash、モデル精度では別途要 OOF — 優先度低)
+
+### 6.28 v71 min_area sweep — dead parameter 確定 (2026-10-15)
+
+§6.27 の留保 (<300px 面積フロアはモデル精度で別途要 OOF) を消化。
+`scratch/run_min_area_sweep.py` で fold2 OOF・prod 同一経路を
+min_area {0,5,10,20,50,100,300} で掃引 (RESEARCH_LOG §2.23)。
+
+- min_area 0–100: **bitwise 同一** (PQ 0.4442, TP/FP/FN 全一致) —
+  prod の最終排他マスクに <100px のものが存在しない。フロアは dead
+- 300: +0.0010 (TP−6/FP−26) — noise 内 wash、採用根拠なし
+- 結論: prod の全チューニングパラメータの検証が完結。
+  人間レベルの wash 予測 (dariushafshar) がモデルでも正確に再現

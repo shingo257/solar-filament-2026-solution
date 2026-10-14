@@ -34,6 +34,9 @@ output/tile_pipeline_oof/cache/
 # 深層verifierの生成物一式 (再生成可能。数値は RESEARCH_LOG §2.22 に記録)
 output/verifier_v1/
 
+# min_area sweep の提案/精緻化キャッシュ(npz、再生成可能。結果JSON/CSVのみコミット対象)
+output/min_area_sweep/cache/
+
 # LaTeXビルド副産物(main.tex/main.pdf/REPORT_NOTES.md はコミット対象)
 report/*.aux
 report/*.bbl

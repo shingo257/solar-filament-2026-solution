@@ -1,0 +1,93 @@
+{
+  "fold": 2,
+  "観測": 235,
+  "prod_min_area": 20,
+  "prod_pq": 0.4442282678851127,
+  "min_areas": {
+    "0": {
+      "pq": 0.4442282678851127,
+      "delta_vs_prod": 0.0,
+      "sq": 0.6799412263547643,
+      "rq": 0.6533333333333333,
+      "tp": 1715,
+      "fp": 750,
+      "fn": 1070,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "5": {
+      "pq": 0.4442282678851127,
+      "delta_vs_prod": 0.0,
+      "sq": 0.6799412263547643,
+      "rq": 0.6533333333333333,
+      "tp": 1715,
+      "fp": 750,
+      "fn": 1070,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "10": {
+      "pq": 0.4442282678851127,
+      "delta_vs_prod": 0.0,
+      "sq": 0.6799412263547643,
+      "rq": 0.6533333333333333,
+      "tp": 1715,
+      "fp": 750,
+      "fn": 1070,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "20": {
+      "pq": 0.4442282678851127,
+      "delta_vs_prod": 0.0,
+      "sq": 0.6799412263547643,
+      "rq": 0.6533333333333333,
+      "tp": 1715,
+      "fp": 750,
+      "fn": 1070,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "50": {
+      "pq": 0.4442282678851127,
+      "delta_vs_prod": 0.0,
+      "sq": 0.6799412263547643,
+      "rq": 0.6533333333333333,
+      "tp": 1715,
+      "fp": 750,
+      "fn": 1070,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "100": {
+      "pq": 0.4442282678851127,
+      "delta_vs_prod": 0.0,
+      "sq": 0.6799412263547643,
+      "rq": 0.6533333333333333,
+      "tp": 1715,
+      "fp": 750,
+      "fn": 1070,
+      "denominator": 2625.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "300": {
+      "pq": 0.4452255427766394,
+      "delta_vs_prod": 0.0009972748915266783,
+      "sq": 0.679691890640288,
+      "rq": 0.6550402453047145,
+      "tp": 1709,
+      "fp": 724,
+      "fn": 1076,
+      "denominator": 2609.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    }
+  },
+  "wall_s": 5685.8
+}

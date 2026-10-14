@@ -735,3 +735,29 @@ train=fold0 / select=fold1 / eval=fold2 (v64 と同型):
 証跡: `output/verifier_v1/` (gitignore — 再生成スクリプトと本表の数値が
 記録)、`scratch/build_verifier_dataset.py`、`scratch/train_verifier.py`、
 `tests/test_{build_verifier_dataset,train_verifier}.py`。
+
+### 2.23 v71 min_area sweep — 完全不感帯・dead parameter と確定 (2026-10-15)
+
+§6.27 の dariushafshar カーネルが「人間マスクでは <300px 除去は wash」と
+示したため、prod 唯一の未検証パラメータ `min_area` (ownership 内の
+排他面積フロア=20) を fold2 OOF で掃引 (`scratch/run_min_area_sweep.py`)。
+検出+refiner は prod 同一 operating point (YOLO@0.26・EdgeAtt fold2・
+thr 0.45) で1回走り、min_area だけ変えて ownership+公式PQ を再評価。
+sanity gate: min_area=20 arm が base PQ 0.444228 を厳密再現。
+
+| min_area | PQ | Δ vs prod | TP | FP | FN |
+|---:|---:|---:|---:|---:|---:|
+| 0 / 5 / 10 / **20** / 50 / 100 | 0.4442 | ±0.0000 | 1715 | 750 | 1070 |
+| 300 | 0.4452 | +0.0010 | 1709 | 724 | 1076 |
+
+- **0〜100 で結果が bitwise 同一** — prod 最終マスクに排他面積 <100px の
+  インスタンスが fold2 上ゼロ。refiner+drop_contained が小破片を事前に
+  消すため、フロアは operating range で dead parameter
+- 300 の +0.0010 は TP−6/FP−26 のトレードで noise band (±0.002) 内の
+  wash — 採用根拠なし。fold0/1 検証を行う価値もない
+- 含意: dariushafshar の人間レベル予測がモデルでも再現。§6.27 留保の
+  「別途要 OOF」を消化 — prod の全チューニングパラメータがこれで
+  検証済み (conf/閾値/drop/min_area/重み選択、残存パラメータなし)
+
+証跡: `output/min_area_sweep/` (gitignore — summary_fold2.json・
+per_obs_fold2.csv・cache/)。スクリプト `scratch/run_min_area_sweep.py`。
