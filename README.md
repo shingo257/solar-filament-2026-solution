@@ -104,7 +104,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 
 学習済み重みからの**推論のみ**の再現。前処理・学習を含む全段の公式再現は
 §5.0 の `solar_filament_submission_reproduction.ipynb` を参照。
-**選択候補2提出（prod + plain_mhsa_f2）の再現コード経路を整備済み**。現コード世代の両経路のクリーン環境受入は未完了。
+**選択候補2提出（prod + plain_mhsa_f2）の再現コード経路を整備済み**。2026-10-15 にクリーン環境（Kaggle kernel v3/v4、`solar_filament_submission_reproduction.ipynb` + 重み dataset 参照のみ）で両経路の提出 CSV が byte-identical に再現されることを受入済み（prod sha16 `84f1b89466f988d9`、plain_mhsa_f2 sha16 `7b3de4e78a543cf2`、ともに提出済み参照と一致）。
 2026-10-13の作者記録にはCLI両経路の180枚CSVバイト一致（PR #351）と、v69タイル推論のfold2棄却（PR #352）が追加された。
 最終選択はprod＋plain_mhsa_f2（作者報告はいずれもPublic 0.39）。これらは過去実行の履歴として保持し、独立受入とは区別する。
 

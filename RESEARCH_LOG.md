@@ -761,3 +761,26 @@ sanity gate: min_area=20 arm が base PQ 0.444228 を厳密再現。
 
 証跡: `output/min_area_sweep/` (gitignore — summary_fold2.json・
 per_obs_fold2.csv・cache/)。スクリプト `scratch/run_min_area_sweep.py`。
+
+### 2.24 F3 クリーンラン受入 — 両提出が byte-identical で再現 (2026-10-15)
+
+`solar_filament_submission_reproduction.ipynb` を Kaggle kernel
+(`shingo257/solar-filament-2026-reproduction`) へ push し、
+`shingo257/solar-filament-2026-weights` dataset + 競技データのみを参照する
+クリーン環境で両 variant を実行。
+
+| variant | kernel ver | wall | CSV sha16 | 提出済み参照 | 判定 |
+|---|---|---|---|---|---|
+| prod | v3 | ~4h | `84f1b89466f988d9` | `84f1b89466f988d9` | **一致** |
+| plain_mhsa_f2 | v4 | ~14.5h | `7b3de4e78a543cf2` | `7b3de4e78a543cf2` | **一致** |
+
+- 重み解決も確認: kernel 出力の `yolo_fold_2/best.pt`・`refiner_all_data.pt` が
+  dataset の `yolo_fold2_best.pt`・`refiner_all_data.pt` と SHA256 一致
+  (`40ec31fd2c6aa8e3` / `e9f0e8dd7ff104d9`) — 再学習フォールバックではなく
+  凍結重みをそのまま使用
+- plain_mhsa_f2 の `submission_efficiency.json`: T4 で 0.97 s/img
+  (report の ~1.1 s/img と整合)
+- v4 の wall ~14.5h は Kaggle 側の依存 install・データ DL・前処理が律速
+  (v3 の prod も ~4h)。推論そのものは ~3分
+- 含意: 主催者要件「選択した両提出を再現できること」を現コード世代で充足。
+  README/main.tex の「clean-run acceptance pending」記述を更新
