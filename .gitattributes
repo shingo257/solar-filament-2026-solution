@@ -1,0 +1,8 @@
+# このモジュール配下の SHA-256 検証対象ファイルは、checkout OS の
+# autocrlf 設定に依存せず byte-identical でなければならない
+# (solar_filament/s1 の frozen-hash チェックが Windows/Linux で一致するため)。
+# ルート .gitattributes にも同等の Solar スコープ規則があるが、git subtree
+# split でこのディレクトリ単体を standalone repo として切り出した際に
+# ルート側の規則は引き継がれないため、モジュール自身にも定義する。
+**/*.csv text eol=lf
+**/*.json text eol=lf
