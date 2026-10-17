@@ -37,6 +37,18 @@ output/verifier_v1/
 # min_area sweep の提案/精緻化キャッシュ(npz、再生成可能。結果JSON/CSVのみコミット対象)
 output/min_area_sweep/cache/
 
+# v72 GONG SSL: corpus 生成物一式は再生成可能 (取得パラメータ・除外規則・
+# 集計は RESEARCH_LOG §2.25 に記録)。dataset/kernel push 用のステージングも除外。
+output/gong_ssl_corpus/
+output/gong_ssl_smoke/
+output/gong_ssl/
+output/kaggle_ssl_dataset/
+output/kaggle_ssl_kernel/
+
+# v72 verifier-filter PQ 評価の生成物一式 (再生成可能。数値は RESEARCH_LOG
+# §2.25 に記録)
+output/verifier_filter/
+
 # LaTeXビルド副産物(main.tex/main.pdf/REPORT_NOTES.md はコミット対象)
 report/*.aux
 report/*.bbl

@@ -34,10 +34,21 @@ IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
 
-def build_model():
-    """ImageNet 事前学習 resnet18 を4ch入力化 (mask ch は RGB 重みの平均で初期化)。"""
+def build_model(init: str = "imagenet"):
+    """resnet18 を4ch入力化 (mask ch は RGB 重みの平均で初期化)。
+
+    init:
+      - "imagenet": ImageNet 事前学習 (従来どおり)
+      - "ssl:<path>": pretrain_gong_ssl.py の backbone state_dict で初期化
+        (GONG ドメイン SimCLR。fc=Identity 保存のため strict=False)。
+    """
     from torchvision.models import resnet18, ResNet18_Weights
-    model = resnet18(weights=ResNet18_Weights.DEFAULT)
+    if init.startswith("ssl:"):
+        model = resnet18(weights=None)
+        state = torch.load(init[4:], map_location="cpu", weights_only=True)
+        model.load_state_dict(state, strict=False)
+    else:
+        model = resnet18(weights=ResNet18_Weights.DEFAULT)
     conv = model.conv1
     new = nn.Conv2d(4, conv.out_channels, conv.kernel_size, conv.stride,
                     conv.padding, bias=conv.bias is not None)
@@ -101,6 +112,8 @@ def main() -> int:
     parser.add_argument("--device", type=str,
                         default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--init", type=str, default="imagenet",
+                        help="imagenet | ssl:<backbone ckpt path>")
     parser.add_argument("--out", type=Path, default=Path("output/verifier_v1"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -117,7 +130,7 @@ def main() -> int:
            "pos_rate": {f: round(float(labels[f].mean()), 3) for f in (0, 1, 2)}},
           flush=True)
 
-    model = build_model().to(args.device)
+    model = build_model(args.init).to(args.device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr,
                                   weight_decay=1e-4)
     criterion = nn.BCEWithLogitsLoss()

@@ -784,3 +784,79 @@ per_obs_fold2.csv・cache/)。スクリプト `scratch/run_min_area_sweep.py`。
   (v3 の prod も ~4h)。推論そのものは ~3分
 - 含意: 主催者要件「選択した両提出を再現できること」を現コード世代で充足。
   README/main.tex の「clean-run acceptance pending」記述を更新
+
+### 2.25 v72 GONG SimCLR 事前学習 → verifier init 交換 (2026-10-16)
+
+§2.22 の留保「2.6k crops では視覚特徴が学べない → 大規模ドメイン事前学習のみ残る」
+を検証する唯一残ったレバー。無ラベル GONG Hα 全日面アーカイブ
+(`gong2.nso.edu/ftp/HA/haf/`) で ResNet18 を SimCLR 事前学習し、v70 verifier の
+ImageNet init と差し替えて fold2 AUC を比較する。
+
+**データ契約** (`scratch/build_gong_ssl_corpus.py`):
+- 2011年の12月×8日×20枚を均等サンプル → **1,889 フレーム取得**（6サイト全て）
+- **漏洩ガード**: test 観測 (180枚) の timestamp ±360分のフレームを
+  site 不問で除外 → **30 フレーム除外**、train 観測の完全一致も除外
+- 各フレームの URL・UTC・sha256 を `output/gong_ssl_corpus/manifest.jsonl` に記録
+  （npz 本体は再生成可能なので gitignore）
+- 1 フレームのみ decode 失敗（npz から除外・manifest に不記載）
+
+**手法** (`scratch/pretrain_gong_ssl.py`): ResNet18 (weights=None) +
+projection head、NT-Xent (τ=0.2)、2-view = RandomResizedCrop(128, scale
+0.05–1.0) + flip + gain jitter。`train_verifier.py --init ssl:<ckpt>` で
+backbone を差し替え（conv1 RGB 3ch のみ移植、mask ch は従来どおり RGB 平均）。
+
+**評価**: Kaggle T4 kernel `solar-filament-v72-gong-ssl` で
+(i) ssl init と (ii) imagenet init の同一 seeds/epochs (8) を同一環境で比較。
+fold0 学習 → fold1 で epoch 選択 → fold2 で凍結評価 (v70 と同一プロトコル)。
+
+**棄却ゲート（事前固定）**: ssl init の fold2 AUC が imagenet init (0.638) を
+有意に上回らない、または blend が conf 単独 (0.797) を超えない → 棄却。
+
+**コーパス配布**: private dataset `shingo257/solar-gong-ssl` (corpus 231MB +
+コード) と `shingo257/solar-verifier-crops` (crops+labels 340MB) +
+`shingo257/solar-ssl-code` (コードのみ)。kernel v5 COMPLETE。
+
+**結果** (fold2 凍結評価、8 epoch、seed 固定・同一環境):
+
+| arm | verifier AUC (fold2) | blend AUC (fold2) |
+|---|---:|---:|
+| ImageNet init (v70 再現) | 0.6435 | 0.7939 |
+| **GONG SSL init** | **0.6993** | **0.8020** |
+| conf 単独 (参照) | — | 0.7973 |
+
+SSL 事前学習 40 epoch / 1,889 フレーム / T4 で約5分。verifier fold1 AUC
+0.7036 (best epoch 8)。**事前固定ゲートは通過**: fold2 AUC が ImageNet init を
++0.056 上回り、blend (0.8020) が conf 単独 (0.7973) を +0.0047 上回る —
+3つの特徴クラス全滅 (v64 静的・v68 磁気図・v70 ImageNet CNN) 後、初めて
+conf を超える分離情報を取得。
+
+ただし **AUC 改善 ≠ PQ 改善**。fold2 相関 ≈0.48 で verifier は conf と
+相補的だが、絶対ゲインは小さい。最終判断は prod operating point での
+直接測定に委ねる (`scratch/run_verifier_filter_eval.py`):
+conf≥0.26 かつ verifier prob ≥ t で提案を pre-filter し fold2 OOF PQ を
+t ∈ {0,0.2,...,0.7} で sweep。
+
+**PQ 評価結果 → 棄却** (235 obs、提案照合 1589/1589 = 100%):
+
+| verifier t | PQ | Δ vs フィルタ無し | TP/FP/FN |
+|---:|---:|---:|---|
+| 0 (gate) | 0.4483 | — | 1731/752/1054 |
+| 0.2 | 0.4467 | −0.0016 | 1687/686/1098 |
+| 0.3 | 0.4366 | −0.0117 | 1587/598/1198 |
+| 0.4 | 0.4088 | −0.0395 | 1368/449/1417 |
+| 0.5 | 0.3668 | −0.0815 | 1112/298/1673 |
+| 0.6 | 0.2942 | −0.1541 | 789/176/1996 |
+| 0.7 | 0.1893 | −0.2590 | 441/74/2344 |
+
+**全閾値で単調悪化**。最緩の t=0.2 (提案の ~4% 除去) でも −0.0016。
+verifier が低スコアと判定する提案には TP が FP より多く含まれ、FN の増加が
+FP 減少を常に上回る — conf との相関 0.48 で「conf が拾う本物を verifier は
+見逃す」構造。blend AUC +0.0047 の信号は PQ の TP/FP 分離には変換されない。
+
+gate PQ は 0.4483 で min_area sweep 再現値 0.4442 から +0.004 偏移
+(OOF npz 提案プール由来の微小差; 採否の結論は不変)。
+
+**結論**: SSL 事前学習は verifier の AUC を実質改善した (+0.056) が、
+**prod 統合の根拠となる PQ 改善には到達せず棄却**。verifier 構想は
+AUC レベル (v70) と PQ レベル (v72) の両方で終了。prod / plain_mhsa_f2 の
+最終提出構成は不変。
