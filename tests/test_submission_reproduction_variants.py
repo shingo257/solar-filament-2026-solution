@@ -62,7 +62,8 @@ def test_plain_dispatch_loads_exact_fold2_seed8407_model():
     kind, loaded, patterns = _dispatch("plain_mhsa_f2", checkpoint)
     assert kind == "plain"
     assert loaded == [checkpoint]
-    assert patterns == [checkpoint.name]
+    assert patterns == [checkpoint.name,
+                        "refiner_plain_mhsa_fold2_s8407.pt"]
 
 
 def test_missing_plain_attachment_stops_before_model_creation():

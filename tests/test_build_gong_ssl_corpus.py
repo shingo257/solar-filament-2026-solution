@@ -162,3 +162,123 @@ def test_manifest_only_dir_is_also_dirty(tmp_path):
     done, batch_idx, kept = prepare_output_dir(tmp_path, 250, resume=True)
     assert (done, batch_idx, kept) == (set(), 0, 0)
     assert (tmp_path / "manifest.jsonl").read_text() == ""
+
+
+@pytest.mark.parametrize("anchor_kind", ["train", "test"])
+def test_main_excludes_train_and_test_windows_across_sites(
+        tmp_path, monkeypatch, anchor_kind):
+    """Only candidates outside the inclusive window may enter the corpus."""
+    from datetime import timedelta
+    import sys
+
+    from scratch import build_gong_ssl_corpus as corpus
+
+    anchor = corpus.parse_stamp("20200101120000Mh.fits.fz")
+    other = "20200301120000Bh.jpeg"
+    anchor_name = "20200101120000Mh.jpeg"
+    test_dir = tmp_path / "test"
+    test_dir.mkdir()
+    (test_dir / (anchor_name if anchor_kind == "test" else other)).touch()
+    train_json = tmp_path / "train.json"
+    train_json.write_text(json.dumps({"images": [
+        {"file_name": anchor_name if anchor_kind == "train" else other}]}),
+        encoding="utf-8")
+    # Every candidate uses a different site from the anchor.
+    names = [(anchor + timedelta(seconds=seconds)).strftime("%Y%m%d%H%M%S")
+             + "Ch.fits.fz"
+             for seconds in (-21601, -21600, -60, 0, 60, 21600, 21601)]
+    monkeypatch.setattr(corpus, "list_day", lambda day:
+                        names if (day.month, day.day) == (1, 1) else [])
+    out = tmp_path / "corpus"
+    monkeypatch.setattr(sys, "argv", ["build_gong_ssl_corpus",
+        "--test-dir", str(test_dir), "--train-json", str(train_json),
+        "--year", "2020", "--days-per-month", "1", "--frames-per-day", "20",
+        "--out", str(out), "--dry-run"])
+
+    assert corpus.main() == 0
+
+    summary = json.loads((out / "corpus_summary.json").read_text())
+    assert summary["kept"] == 2  # +/-6h plus one second only
+    assert summary["skipped_observation_window"] == 5
+
+
+@pytest.mark.parametrize("images", [
+    [], [{"file_name": "unparseable.jpeg"}],
+    [{"file_name": "20200101120000Mh.jpeg"}, {"file_name": "bad.jpeg"}],
+    [{}], [{"file_name": "20200230120000Mh.jpeg"}],
+])
+def test_main_rejects_incomplete_train_anchors_before_listing(
+        tmp_path, monkeypatch, images):
+    import sys
+
+    from scratch import build_gong_ssl_corpus as corpus
+
+    test_dir = tmp_path / "test"
+    test_dir.mkdir()
+    (test_dir / "20200301120000Bh.jpeg").touch()
+    train_json = tmp_path / "train.json"
+    train_json.write_text(json.dumps({"images": images}), encoding="utf-8")
+    listed = []
+    monkeypatch.setattr(corpus, "list_day", lambda day: listed.append(day) or [])
+    monkeypatch.setattr(sys, "argv", ["build_gong_ssl_corpus",
+        "--test-dir", str(test_dir), "--train-json", str(train_json),
+        "--out", str(tmp_path / "corpus"), "--dry-run"])
+
+    with pytest.raises(SystemExit, match="train"):
+        corpus.main()
+    assert listed == []
+
+
+def test_main_rejects_negative_exclusion_window(tmp_path, monkeypatch):
+    import sys
+
+    from scratch import build_gong_ssl_corpus as corpus
+
+    test_dir = tmp_path / "test"
+    test_dir.mkdir()
+    (test_dir / "20200301120000Bh.jpeg").touch()
+    train_json = tmp_path / "train.json"
+    train_json.write_text(json.dumps({"images": [
+        {"file_name": "20200101120000Mh.jpeg"}]}), encoding="utf-8")
+    monkeypatch.setattr(corpus, "list_day", lambda day: [])
+    monkeypatch.setattr(sys, "argv", ["build_gong_ssl_corpus",
+        "--test-dir", str(test_dir), "--train-json", str(train_json),
+        "--exclusion-minutes", "-1", "--out", str(tmp_path / "corpus"),
+        "--dry-run"])
+    with pytest.raises(SystemExit, match="exclusion-minutes"):
+        corpus.main()
+
+
+def test_resume_rejects_legacy_exact_train_policy(tmp_path):
+    """Identical anchors/settings must not resume a pre-fix corpus."""
+    import hashlib
+    from datetime import datetime, timezone
+    from types import SimpleNamespace
+
+    from scratch.build_gong_ssl_corpus import IMG_SIZE
+
+    test = [datetime(2020, 3, 1, tzinfo=timezone.utc)]
+    train = {datetime(2020, 1, 1, tzinfo=timezone.utc)}
+    args = SimpleNamespace(year=2011, days_per_month=4, frames_per_day=12,
+                           exclusion_minutes=360, batch_size=3)
+    # Actual pre-fix fingerprint algorithm, intentionally without policy version.
+    legacy = hashlib.sha256()
+    for stamp in sorted(s.isoformat() for s in test):
+        legacy.update(stamp.encode())
+    for stamp in sorted(s.isoformat() for s in train):
+        legacy.update(b"train:" + stamp.encode())
+    legacy.update(json.dumps({
+        "year": args.year, "days_per_month": args.days_per_month,
+        "frames_per_day": args.frames_per_day,
+        "exclusion_minutes": args.exclusion_minutes,
+        "batch_size": args.batch_size, "img_size": IMG_SIZE},
+        sort_keys=True).encode())
+    old_fp = legacy.hexdigest()[:16]
+    _make_corpus(tmp_path, n_batches=1, batch_size=3, manifest_rows=3)
+    (tmp_path / "corpus_config.json").write_text(
+        json.dumps({"fingerprint": old_fp}), encoding="utf-8")
+    current_fp = corpus_config_fingerprint(test, train, args)
+
+    assert current_fp != old_fp
+    with pytest.raises(SystemExit):
+        prepare_output_dir(tmp_path, 3, resume=True, config_fp=current_fp)

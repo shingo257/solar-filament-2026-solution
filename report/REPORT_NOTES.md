@@ -8,7 +8,7 @@
 | 物 | 状態 | 作業 |
 |---|---|---|
 | 4ページ技術レポート(Overleafテンプレ必須) | **成熟原稿あり** `report/main.tex`(commit 140d8d62 由来、著者・所属・図・bib・謝辞定型文すべて完備)。2026-10-07 に Phase B の結果を統合済み | Overleaf の公式プロジェクト(read-only: `vjztpvrnbrdh`)を**自分のアカウントにコピー**してビルド確認。4p オーバーしていないか要計測(Phase B 追記で増量したため削る必要があるかも) |
-| 公開Git repo | 未整備 | モノレポの Solar_Filament_Segmentation を**独立公開repo**として切り出す方針が自然。重み・データ・成果物は外部(Drive)参照+SHA256 記録(ルール済) |
+| 公開Git repo | **作成済み(private)** `shingo257/solar-filament-2026-solution` (2026-10-19、抽出追従ブランチ `solar-solution-v4` = main@837eccc3、711 files) | 締切日に public 切替のみ。重み・データ・成果物は外部(Drive/Kaggle dataset)参照+SHA256 記録 |
 | requirements.txt(全パッケージ+バージョン) | 土台あり | `Solar_Filament_Segmentation/requirements.txt` は `>=` 指定。提出前に**最終inference runの `pip freeze` で固定値に置き換え**必須 |
 | 全パイプラインを示すJupyterノートブック | **作成済み** `solar_filament_submission_reproduction.ipynb`(2026-10-07) | master pipeline を派生。Kaggle/Colab 両対応(環境自動検出)、重みは添付dataset→Drive→再学習の順で解決、前処理キャッシュ無し環境ではinline計算、末尾に pip freeze+SHA256 記録。重みは公開 dataset `shingo257/solar-filament-2026-weights`(v2)にup済み — `VARIANT` で prod / plain_mhsa_f2 の**両最終提出**を再現可能。builder: `scratch/build_submission_reproduction.py` |
 
@@ -35,7 +35,9 @@ A1 の OOF/CI は上流モデルまで nested 化していない探索結果で�
 
 1. ~~**ページ数確認**~~ — **済**: MiKTeX/latexmk でローカルビルド。本文4p・
    謝辞+refsがp5に収まることを確認。Phase B 列挙は圧縮proseで収束
-   (表化は不要だった)
+   (表化は不要だった)。**再検証 2026-10-19 (#400)**: v72/v73 SSL 負結果を
+   追加しつつ本文が p5 へ流出していたため同節を圧縮し本文4pに復帰。
+   今後本文を追加する場合は毎回ビルドして本文末尾の頁位置を確認する。
 2. **Dice/IoU分布図** — ルーブリック定量項目だが4p予算いっぱいのため不採用
    (定性比較図Fig.2を優先)
 3. ~~**計算効率の数値**~~ — **済**: T4 ~1.1 s/img end-to-end を §3.2 に記載

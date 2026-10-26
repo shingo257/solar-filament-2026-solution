@@ -48,9 +48,13 @@ refiner 学習 → test 推論 → `submission.csv` 生成まで一通り通り�
 
 ## 重みの解決順序
 
-1. Kaggle にアタッチされた重み dataset(`*yolo*fold{N}*best*.pt`, `*refiner*all*data*.pt`)
-2. Drive artifacts(`solar_filament_v30/runs`, `artifacts/`)内の既存 checkpoint
-3. どちらも無ければ **フル再学習**(YOLO 3-fold + refiner 3-fold + all-data fine-tune、A100 で約6-8時間)
+1. **repo 同梱 `weights/`**(本 notebook と同じリポジトリに Git LFS で格納。
+   `weights_manifest.json` の SHA256 で検証。審査要件の第一経路)
+2. Kaggle にアタッチされた重み dataset(`*yolo*fold{N}*best*.pt`, `*refiner*all*data*.pt`)
+3. Drive artifacts(`solar_filament_v30/runs`, `artifacts/`)内の既存 checkpoint
+4. どれも無ければ **フル再学習**(YOLO 3-fold + refiner 3-fold + all-data fine-tune、A100 で約6-8時間)
+
+`SOLAR_WEIGHTS_DIR` 環境変数でも repo weights の場所を明示できます。
 
 ## 確定構成(V50/V52 提出と同一)
 
@@ -158,8 +162,57 @@ def find_dataset_root():
                             "Kaggleでは競技データをアタッチ、ColabではDriveに配置してください")
 
 
+def repo_weights_roots():
+    \"\"\"repo 同梱 weights/ の候補 (審査要件: weights stored in the repository)。
+
+    notebook が clone 済み repo 内で実行される標準ケースを cwd 起点で探す。
+    SOLAR_WEIGHTS_DIR 環境変数でも明示指定できる。
+    \"\"\"
+    cands = []
+    env = os.environ.get("SOLAR_WEIGHTS_DIR")
+    if env:
+        cands.append(Path(env))
+    cwd = Path.cwd()
+    cands += [cwd / "weights", cwd.parent / "weights",
+              cwd / "Solar_Filament_Segmentation" / "weights"]
+    return [c for c in cands if c.is_dir()]
+
+
+REPO_WEIGHTS = repo_weights_roots()
+
+
+def verify_repo_weight(path):
+    \"\"\"repo weights/ 由来のファイルを同梱 manifest の SHA256 で検証する。\"\"\"
+    manifest = path.parent / "weights_manifest.json"
+    if not manifest.exists():
+        return
+    entries = {w["file_name"]: w["sha256"] for w in
+               json.loads(manifest.read_text(encoding="utf-8"))["weights"]}
+    expected = entries.get(path.name)
+    if expected is None:
+        return
+    import hashlib
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if actual != expected:
+        raise ValueError(
+            f"repo weight sha256 mismatch: {path.name} "
+            f"(manifest={expected[:16]}..., actual={actual[:16]}...)")
+
+
 def resolve_pretrained(patterns):
-    \"\"\"添付データセット/Drive成果物から事前学習済み重みを探す。見つかれば Path を返す。\"\"\"
+    \"\"\"事前学習済み重みを探す。解決順序:
+
+    1. repo 同梱 weights/ (manifest sha256 検証付き — 審査要件の第一経路)
+    2. 添付 Kaggle dataset / Drive artifacts
+    3. 見つからなければ None (呼び出し側がフル再学習へフォールバック)
+    \"\"\"
+    for base in REPO_WEIGHTS:
+        for pattern in patterns:
+            hits = sorted(base.glob(pattern))
+            hits = [h for h in hits if h.is_file() and h.stat().st_size > 1_000_000]
+            if hits:
+                verify_repo_weight(hits[0])
+                return hits[0]
     for base in DATA_SEARCH_ROOTS if IS_KAGGLE else [CFG.RUNS_ROOT, CFG.ARTIFACT_ROOT]:
         for pattern in patterns:
             hits = sorted(base.rglob(pattern))
@@ -255,11 +308,16 @@ else:
 FOLD_CSV_STAGING = """\
 grouped_folds_path = CFG.ARTIFACT_ROOT / "grouped_folds.csv"
 if not grouped_folds_path.exists():
-    # 添付 dataset(Kaggle) / Drive artifacts(Colab) から凍結 fold CSV を解決。
-    # SHA256 が一致するコピーのみ採用し、不一致候補は永続領域に書き込まない。
+    # repo data/ → 添付 dataset(Kaggle) / Drive artifacts(Colab) の順に
+    # 凍結 fold CSV を解決。SHA256 が一致するコピーのみ採用し、
+    # 不一致候補は永続領域に書き込まない。
     import hashlib as _hashlib
-    fold_bases = (DATA_SEARCH_ROOTS if IS_KAGGLE
-                  else [CFG.ARTIFACT_ROOT, CFG.DATA_CACHE])
+    cwd = Path.cwd()
+    repo_data = [cwd / "data", cwd.parent / "data",
+                 cwd / "Solar_Filament_Segmentation" / "data"]
+    fold_bases = ([d for d in repo_data if d.is_dir()] +
+                  (DATA_SEARCH_ROOTS if IS_KAGGLE
+                   else [CFG.ARTIFACT_ROOT, CFG.DATA_CACHE]))
     fold_hits = sorted(h for base in fold_bases
                        for h in base.rglob("grouped_folds.csv") if h.is_file())
     chosen = next(
@@ -269,7 +327,8 @@ if not grouped_folds_path.exists():
     if chosen is None:
         raise FileNotFoundError(
             "凍結 fold CSV(grouped_folds.csv)が見つかりません。"
-            "Kaggle では重み dataset 同梱分を、Colab では Drive artifacts に配置してください")
+            "repo の data/、Kaggle の重み dataset 同梱分、または "
+            "Colab の Drive artifacts に配置してください")
     shutil.copy2(chosen, grouped_folds_path)
     print({"fold_csv_resolved": str(chosen)})
 
@@ -395,11 +454,12 @@ refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
     assert old_refiner in src12, "cell12 refiner anchor mismatch"
     src12 = src12.replace(old_refiner, """if CFG.SUBMISSION_VARIANT == "plain_mhsa_f2":
     plain_ckpt = resolve_pretrained(
-        ["ablation_plain_mhsa_seed8407_fold2.pt"])
+        ["ablation_plain_mhsa_seed8407_fold2.pt",
+         "refiner_plain_mhsa_fold2_s8407.pt"])
     if plain_ckpt is None:
         raise FileNotFoundError(
             "plain_mhsa_f2 の refiner 重みが見つかりません。"
-            "重み dataset をアタッチするか Drive artifacts に配置してください")
+            "repo weights/、重み dataset、または Drive artifacts に配置してください")
     refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
 elif CFG.SUBMISSION_VARIANT == "prod":

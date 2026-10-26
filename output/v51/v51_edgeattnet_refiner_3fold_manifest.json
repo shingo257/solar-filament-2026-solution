@@ -1,5 +1,5 @@
 {
-  "_provenance": "この成果物はGoogle Drive(solar_filament_v30/artifacts/)からの再取得ではなく、2026-08-29〜30のColabセッションで実際に印字された出力をこのセッションの記録から書き起こしたもの。数値は改変していないが、原本(Drive上のJSON)と機械的な差分検証は行っていない。監査上の限界として明記する(査読2026-08-30の指摘 #3への対応)。",
+  "_provenance": "この成果物はGoogle Drive(solar_filament_v30/artifacts/)からの再取得ではなく、2026-08-29〜30のColabセッションで実際に印字された出力をこのセッションの記録から書き起こしたもの。数値は改変していないが、原本(Drive上のJSON)と機械的な差分検証は行っていない。監査上の限界として明記する(査読2026-08-30の指摘 #3への対応)。 追記(2026-10-18): その後、Drive原本の実bytesを取得して転記値を照合した。PQ/deltaは小数6桁への丸めで一致し、CI・frac_positive・crop Dice・combined集計も一致した。検証の範囲と未解決事項は_source_verificationを参照。",
   "experiment": "v51_edgeattnet_refiner_3fold_validation",
   "architecture": "MediSegEdgeAttUNet (EdgeGuidedMHSA bottleneck attention, single block, 8 heads, +4.2M params vs MediSegUNet baseline; 35,240,157 vs 31,037,633 total params)",
   "methodology": "各foldでEdgeAttNet refinerを学習(他2foldで学習/該当foldで検証)、同一YOLO候補キャッシュ(solar_filament_v34/prediction_cache/oof/yolo_fold_{0,1,2})上で標準MediSegUNet refinerとペア比較、観測クラスタ・ブートストラップ(n=2000、cluster_bootstrap_ratio)でΔのCIを算出",
@@ -49,5 +49,30 @@
   "verdict": "CONFIRMED: 3-fold全結合(n=707)で95%CIがゼロを完全に除外(frac_positive=99.8%)。fold0単独は強いが、fold1/fold2単独は不確か(frac_positive 73-77%)。全fold同符号(正)であり、pseudo-labeling否定判定と対をなす肯定的結論として採用。",
   "gpu": "NVIDIA A100-SXM4-40GB",
   "torch_version": "2.11.0+cu128",
-  "known_gap": "各foldのTP/FP/FN/SQ/RQ分解は保存しておらず、pq/ci95/frac_positiveのみ。再取得するにはyolo_fold_{0,1,2}キャッシュに対しstandard/edge双方のrefinerで再採点しPanopticQuality.summary()のtp/fp/fnを記録する必要がある(report/main.tex Future Work参照)。"
+  "known_gap": "各foldのTP/FP/FN/SQ/RQ分解は保存しておらず、pq/ci95/frac_positiveのみ。再取得するにはyolo_fold_{0,1,2}キャッシュに対しstandard/edge双方のrefinerで再採点しPanopticQuality.summary()のtp/fp/fnを記録する必要がある(report/main.tex Future Work参照)。",
+  "_source_verification": {
+    "checked_date": "2026-10-18",
+    "scope": "transcribed metric corroboration only",
+    "drive_source_id": "1Z8LayuyJ8_b6uu9iHCyOHqxl03EmByo3",
+    "drive_source_bytes": 2525,
+    "drive_source_sha256": "de9e6cbc20423cb2334b892ef668d2f64da7090bceac2dee9255f248a8d86985",
+    "pq_delta_rounding_decimals": 6,
+    "exact_matches": [
+      "ci95",
+      "frac_positive",
+      "crop_dice renamed best_crop_dice",
+      "combined_2fold_01",
+      "combined_3fold_all"
+    ],
+    "non_verbatim_fields": [
+      "architecture",
+      "methodology",
+      "verdict",
+      "per-fold n_images added in transcript"
+    ],
+    "checkpoint_bytes_verified": false,
+    "checkpoint_to_split_binding_verified": false,
+    "new_performance_evaluation": false,
+    "audit_document": "../../docs/V73_PROVENANCE.md"
+  }
 }

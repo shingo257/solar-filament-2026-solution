@@ -73,7 +73,7 @@ TAU_GRID = tuple(round(0.16 + 0.02 * i, 2) for i in range(9))  # 0.16 … 0.32
 TREE_TAU_GRID = tuple(round(0.20 + 0.04 * i, 2) for i in range(13))  # 0.20 … 0.68
 YOLO_TAU_FIXED = 0.22  # hybrid の固定点 τ*≈PQ/2
 ARMS = ("prod", "yolo_scorer", "tree_only", "hybrid", "hybrid_oracle",
-        "hybrid_split")
+        "hybrid_split", "rescue")
 
 
 def arm_tau_grid(arm: str) -> tuple[float, ...]:
@@ -174,15 +174,23 @@ def _evaluate_image(bundle: dict) -> dict:
     n_tree = int(bundle["n_tree_nodes"])
     children = bundle["tree_children"]
     roots = bundle["tree_roots"]
-    out = {arm: {} for arm in ARMS}
+    active = bundle.get("arms", ARMS)
+    out = {arm: {} for arm in active}
 
-    for arm in ARMS:
+    for arm in active:
         util = np.asarray(bundle["u_true"] if arm == "hybrid_oracle" else bundle["u_hat"])
         yolo_ok = (source == 0) & usable & (conf >= SCORER_MIN_CONF)
         for tau in arm_tau_grid(arm):
             keep: list[int] = []
             if arm == "prod":
                 keep += list(np.where((source == 0) & usable & (conf >= PROD_CONF))[0])
+            if arm == "rescue":
+                # B1 (§2.36): conf>=0.26 は無条件維持し、conf∈[0.08,0.26) の
+                # 候補を û>τ で追加採用する strictly-additive rescue。
+                keep += list(np.where(
+                    (source == 0) & usable &
+                    ((conf >= PROD_CONF) |
+                     ((conf >= SCORER_MIN_CONF) & (util > tau))))[0])
             if arm in ("yolo_scorer", "hybrid", "hybrid_oracle"):
                 keep += list(np.where(yolo_ok & (util > tau))[0])
             if arm == "hybrid_split":
@@ -266,8 +274,19 @@ def main() -> int:
     parser.add_argument("--drop-features", type=str, default="",
                         help="カンマ区切りの除外特徴名(test 推論で計算不能な"
                              " prob_* を落とした提出経路の評価用)")
+    parser.add_argument("--arms", type=str, default="",
+                        help="評価する arm のカンマ区切り部分集合"
+                             " (既定: 全 arm)。B1 rescue の決定には"
+                             " 'prod,rescue' で十分 (mask decode が主コスト)")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    active_arms = tuple(a for a in ARMS
+                        if a in set(args.arms.split(","))) if args.arms else ARMS
+    unknown_arms = set(args.arms.split(",")) - set(ARMS) if args.arms else set()
+    if unknown_arms:
+        raise ValueError(f"未知の arm: {sorted(unknown_arms)}")
+    if args.arms:
+        print({"active_arms": list(active_arms)}, flush=True)
 
     started = time.perf_counter()
     drive = resolve_drive(args.drive)
@@ -424,9 +443,10 @@ def main() -> int:
         lo, hi = bundle["row_slice"]
         bundle["u_hat"] = u_hat[lo:hi]
         bundle["u_true"] = u_all[lo:hi]
+        bundle["arms"] = active_arms
 
     # ---- 3. 画像並列で (arm, τ) の PQ 寄与を集計 ------------------------------
-    counts = {arm: defaultdict(dict) for arm in ARMS}
+    counts = {arm: defaultdict(dict) for arm in active_arms}
     names = sorted(bundles)
     started_eval = time.perf_counter()
     work = [bundles[n] for n in names]
@@ -436,7 +456,7 @@ def main() -> int:
     else:
         results = [_evaluate_image(b) for b in work]
     for name, per_arm in zip(names, results):
-        for arm in ARMS:
+        for arm in active_arms:
             for t, c in per_arm[arm].items():
                 counts[arm][t][name] = c
     print(f"evaluate {len(names)}観測: {time.perf_counter() - started_eval:.0f}s", flush=True)
@@ -444,20 +464,36 @@ def main() -> int:
     # ---- 4. 集計: arm ごとの τ 掃引 → 固定点 τ* → fold 別・bootstrap ----------
     arm_pq = {
         arm: {t: pq_of(c.values()) for t, c in counts[arm].items()}
-        for arm in ARMS
+        for arm in active_arms
     }
-    for arm in ARMS:
+    for arm in active_arms:
         print(f"{arm}: " + "  ".join(
             f"τ={t:.2f}:{v:.4f}" for t, v in sorted(arm_pq[arm].items())))
-    fixed = min(TAU_GRID, key=lambda t: abs(t - arm_pq["hybrid"][t] / 2))
-    best_tau = max(TAU_GRID, key=lambda t: arm_pq["hybrid"][t])
-    split_tau = max(counts["hybrid_split"], key=lambda t: arm_pq["hybrid_split"][t])
+    # fixed/best/split tau は関連 arm が active の時だけ意味を持つ。
+    # --arms prod,rescue の B1 実行では rescue 系だけを確実に算出する。
+    if "hybrid" in active_arms:
+        fixed = min(TAU_GRID, key=lambda t: abs(t - arm_pq["hybrid"][t] / 2))
+        best_tau = max(TAU_GRID, key=lambda t: arm_pq["hybrid"][t])
+    else:
+        fixed = best_tau = YOLO_TAU_FIXED
+    if "hybrid_split" in active_arms:
+        split_tau = max(counts["hybrid_split"],
+                        key=lambda t: arm_pq["hybrid_split"][t])
+    else:
+        split_tau = 0.0
+    # B1 rescue: τ 掃引の max Δ を事前登録ゲートに対応させる
+    rescue_best_tau = (max(counts["rescue"],
+                           key=lambda t: arm_pq["rescue"][t])
+                       if "rescue" in active_arms else None)
 
     fold_names = {f: [n for n in names if bundles[n]["fold"] == f] for f in FOLDS}
-    star_tau = {arm: fixed for arm in ARMS}
-    star_tau["hybrid_split"] = split_tau
+    star_tau = {arm: fixed for arm in active_arms}
+    if "hybrid_split" in active_arms:
+        star_tau["hybrid_split"] = split_tau
+    if rescue_best_tau is not None:
+        star_tau["rescue"] = rescue_best_tau
     table = {}
-    for arm in ARMS:
+    for arm in active_arms:
         star = counts[arm][star_tau[arm]]
         row = {"pq": pq_of(star.values())}
         tp = sum(c[1] for c in star.values())
@@ -486,13 +522,20 @@ def main() -> int:
         ]
         return np.percentile(deltas, [2.5, 97.5])
 
-    ci = boot_ci("hybrid", fixed)
-    ci_split = boot_ci("hybrid_split", split_tau)
-    ci_yolo = boot_ci("yolo_scorer", fixed)
+    def ci_if(arm: str, tau: float):
+        return boot_ci(arm, tau) if arm in active_arms and "prod" in counts \
+            else (float("nan"), float("nan"))
+
+    ci = ci_if("hybrid", fixed)
+    ci_split = ci_if("hybrid_split", split_tau)
+    ci_yolo = ci_if("yolo_scorer", fixed)
+    ci_rescue = ci_if("rescue", rescue_best_tau) \
+        if rescue_best_tau is not None else (float("nan"), float("nan"))
 
     # per-image counts を保存 — arm/τ の再集計や別 bootstrap に再 decode 不要
     (args.out / "v80_counts.json").write_text(json.dumps(
-        {arm: {str(t): counts[arm][t] for t in counts[arm]} for arm in ARMS},
+        {arm: {str(t): counts[arm][t] for t in counts[arm]}
+         for arm in active_arms},
         ensure_ascii=False), encoding="utf-8")
 
     print(f"\n=== v80 hybrid candidates + expected-IoU scorer (τ*={fixed:.2f}, "
@@ -510,13 +553,34 @@ def main() -> int:
             "Frozen split identity and complete candidate-cache coverage are not verified",
             "Nested outer-fold upstream/cache refits or independent evaluation are required",
         ],
+        "active_arms": list(active_arms),
         "dropped_features": sorted(drop),
         "n_features": len(all_features),
-        "tau_fixed_point": float(fixed),
-        "tau_best_report_only": float(best_tau),
         "arm_tau_sweep": {a: {str(t): round(v, 6) for t, v in sorted(p.items())}
                           for a, p in arm_pq.items()},
-        "hybrid_split": {
+        "table": json.loads(table.round(6).to_json(orient="index")),
+        "runtime_sec": round(time.perf_counter() - started, 1),
+        "utc_completed": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    if "hybrid" in active_arms:
+        report.update({
+            "tau_fixed_point": float(fixed),
+            "tau_best_report_only": float(best_tau),
+            "delta_hybrid_vs_prod": float(table.loc["hybrid", "ΔPQ_vs_prod"]),
+            "bootstrap_ci95_hybrid_minus_prod": [float(ci[0]), float(ci[1])],
+        })
+    if "hybrid_oracle" in active_arms:
+        report["delta_oracle_vs_prod"] = float(
+            table.loc["hybrid_oracle", "ΔPQ_vs_prod"])
+    if "yolo_scorer" in active_arms:
+        report.update({
+            "delta_yolo_scorer_vs_prod": float(
+                table.loc["yolo_scorer", "ΔPQ_vs_prod"]),
+            "bootstrap_ci95_yolo_scorer_minus_prod":
+                [float(ci_yolo[0]), float(ci_yolo[1])],
+        })
+    if "hybrid_split" in active_arms:
+        report["hybrid_split"] = {
             "tree_tau_used": float(split_tau),
             "yolo_tau_fixed": YOLO_TAU_FIXED,
             "delta_vs_prod": float(table.loc["hybrid_split", "ΔPQ_vs_prod"]),
@@ -525,19 +589,27 @@ def main() -> int:
                 - table.loc["prod", f"pq_fold{f}"]) for f in FOLDS},
             "bootstrap_ci95_vs_prod": [float(ci_split[0]), float(ci_split[1])],
             "note": "tree tau は pooled PQ 上の事後最適(探索的 arm であり採否判定はしない)",
-        },
-        "table": json.loads(table.round(6).to_json(orient="index")),
-        "delta_hybrid_vs_prod": float(table.loc["hybrid", "ΔPQ_vs_prod"]),
-        "delta_oracle_vs_prod": float(table.loc["hybrid_oracle", "ΔPQ_vs_prod"]),
-        "delta_yolo_scorer_vs_prod": float(table.loc["yolo_scorer", "ΔPQ_vs_prod"]),
-        "bootstrap_ci95_hybrid_minus_prod": [float(ci[0]), float(ci[1])],
-        "bootstrap_ci95_yolo_scorer_minus_prod": [float(ci_yolo[0]), float(ci_yolo[1])],
-        "gate": adoption_gate(
-            [float(table.loc["hybrid", col] - table.loc["prod", col]) for col in fold_cols],
-            float(ci[0]), float(table.loc["hybrid_oracle", "ΔPQ_vs_prod"])),
-        "runtime_sec": round(time.perf_counter() - started, 1),
-        "utc_completed": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
+        }
+    if "rescue" in active_arms:
+        report["rescue"] = {
+            "definition": "keep conf>=PROD_CONF or (conf in [SCORER_MIN_CONF,PROD_CONF) and u_hat>tau)",
+            "tau_sweep": {str(t): round(v, 6)
+                          for t, v in sorted(arm_pq["rescue"].items())},
+            "best_tau": float(rescue_best_tau),
+            "delta_vs_prod": float(
+                arm_pq["rescue"][rescue_best_tau] - table.loc["prod", "pq"]),
+            "bootstrap_ci95_at_best_tau": [float(ci_rescue[0]), float(ci_rescue[1])],
+            "b1_gate": ("promote_candidate_requires_nested_reverification"
+                        if arm_pq["rescue"][rescue_best_tau] - table.loc["prod", "pq"]
+                        >= 0.005 else
+                        "reject_noise" if arm_pq["rescue"][rescue_best_tau]
+                        - table.loc["prod", "pq"] >= 0 else "reject"),
+        }
+    if "hybrid" in active_arms and "hybrid_oracle" in active_arms:
+        report["gate"] = adoption_gate(
+            [float(table.loc["hybrid", col] - table.loc["prod", col])
+             for col in fold_cols],
+            float(ci[0]), float(table.loc["hybrid_oracle", "ΔPQ_vs_prod"]))
     (args.out / "v80_scorer_eval.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k not in ("table", "tau_sweep")},

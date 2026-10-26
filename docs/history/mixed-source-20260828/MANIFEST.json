@@ -1,0 +1,446 @@
+{
+  "schema_version": 1,
+  "scope": "25 Solar paths changed in the retained mixed source; no other modules or refs",
+  "source_commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+  "current_snapshot_commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+  "source_branch_label": "20260828",
+  "classification_counts": {
+    "evolved_readme": 1,
+    "hash_reference_text_difference": 6,
+    "fingerprint_leaf_difference": 16,
+    "previously_ported_code_with_guard_corrections": 2
+  },
+  "fingerprint_method": "Git show raw blob bytes, without checkout newline conversion or normalization; blob is Git object ID, sha256 hashes payload bytes, bytes is payload length.",
+  "preservation": "Fingerprint index only. No old source, contract, report, specification or generated output payload is captured by this index.",
+  "scientific_provenance_equivalence_established": false,
+  "runtime_equivalence_established": false,
+  "registration_or_fit_authorized": false,
+  "whole_mixed_branch_reconciled": false,
+  "entries": [
+    {
+      "path": "Solar_Filament_Segmentation/README.md",
+      "classification": "evolved_readme",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "2e6b2ebc8fd90be2d6b20a4166c2a6608e43e407",
+        "sha256": "6a0dab58068dfd47377dac85686297ce1100f1c586c61010b65ca3a7f0d19cde",
+        "bytes": 57022
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "f3f092f7d8af4dd1f6ac54a6d919586ae61712a2",
+        "sha256": "b00cebc6af6c8962345c851f0b8221893b617106ec92075e0bb0de0b25108a8a",
+        "bytes": 76991
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/S1_ENDPOINT_REGISTRATION_DRAFT_2026-08-24.md",
+      "classification": "hash_reference_text_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "1691ebd00bda098f40e08b96bb62764d5e074ef5",
+        "sha256": "bd573fa277e0f97f7461343390e299316751aa253bbe547e838e5cd9c81385df",
+        "bytes": 18771
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "d43eaf794e3df3a0b7d886e0bd9d53e15024fa8f",
+        "sha256": "2bef2e997ae2ea6f62ce0aa898071fb8a0e5e92b8930c28e3b574d8fd1b1c0de",
+        "bytes": 18771
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/S1_HARM_FIRST_MODEL_SPEC_2026-08-24.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "5e1d99791fd10fd95d52179d5bbe3bf4ed856c48",
+        "sha256": "53ab6ba321f4204bc4ec9ba65050be4eaf0fe1640a63c29c9777f64c1235ea65",
+        "bytes": 6546
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "51205a1d42f2bd63083aa17ebaab8e65e306eaea",
+        "sha256": "d65e0520dfef3a99d2448b0fee6a39bb003e3241a63379b8bae76a7d03c3177f",
+        "bytes": 6546
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/docs/history/POST_V42_EXPERIMENT_PLAN_2026-08-22.md",
+      "classification": "hash_reference_text_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "3f502a84cf886aefc647079615b3edab308b2203",
+        "sha256": "ddae3646dd9865486f67740dface68660eb843083607f8e0060f1787f38b9e08",
+        "bytes": 30236
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "87adb757612bb59be18cd6e94fca7ab878c1ab8d",
+        "sha256": "9bc19598202ef74dadc118a956f92f575ce11b7053872210a8448916efa221c0",
+        "bytes": 30236
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/docs/history/S0_SCIENCE_RESCORE_REPORT_2026-08-24.md",
+      "classification": "hash_reference_text_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "7335669ea9edc71b4710802b30b018e23a1f0da2",
+        "sha256": "c487c97b6b4955ec81c42261112bf4bd66a8b7168f670294e5f6912928dd31e5",
+        "bytes": 15376
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "8a07fccecd4ad0650d7cd01d3c366f9f71962516",
+        "sha256": "461b310a9f22e6df507e639d285d16e1c7e4ce7bbd03120f0d1e2e7e6eb5cbdb",
+        "bytes": 15376
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/docs/history/SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md",
+      "classification": "hash_reference_text_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "994b045cf4053641baf7d3e327c9285a097e5aac",
+        "sha256": "a5529bc805dce13e5e1d5549ff59c327f220da601ac7c1df7b27e8e2e74fbd53",
+        "bytes": 175109
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "8fc2be3766eca239195eaed8c0f5561ed6e73c20",
+        "sha256": "0dbc8ce5ee0d417ed2511f4ddf2aa142eee44149774fa83980b42c1f66e8d530",
+        "bytes": 175109
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/docs/s1/S1_GROUPED_NESTED_SPLIT_CONTRACT_2026-08-24.md",
+      "classification": "hash_reference_text_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "a8eb995069f8b8a10a3d0ad93db3e780f6ee3933",
+        "sha256": "0ec7fbd19e7328355f94f8e573e019d15252c08ee6a38c54f7641da37c86bc6f",
+        "bytes": 5150
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "c10cc0790b4b88369d57730a35cbab24ea3aced2",
+        "sha256": "4ba81aa8f4925717794e4ca74ae552857edf63605bce12682d1a2f5c7ea92f3a",
+        "bytes": 5150
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/docs/s1/S1_HARM_FIRST_MODEL_SPEC_REPORT_2026-08-24.md",
+      "classification": "hash_reference_text_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "e4dcdafe80902c042fda58a0885587873b361329",
+        "sha256": "2d3ef7e240834f8dfda5acea5b273c0dc3828713d95b95a93338235c9d00a8fe",
+        "bytes": 5470
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "c9eea657ebb75f30bca1505c20d5fcbed2d2e145",
+        "sha256": "041cfac40272e4fb8c5d88e98477fb8aa18ad26b76a7a260885b36e150ded2dd",
+        "bytes": 5470
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/provenance_manifest.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "541a5176cf881fcc1a452fe07c5c8275f456a381",
+        "sha256": "c2f2d1c3e8d67ee8d6ac64b23fdd5ff90cccc9c16e3c0afe7083f920c59ffdec",
+        "bytes": 9243
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "4fa070aa04989f284b62420b16f5faaa691cf629",
+        "sha256": "ca14c5c403d9220ae55075c1a8db7782eb31a038236e009b304442b71004e242",
+        "bytes": 9243
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_conditional_rescue_headroom.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "be5ddb9f5d5800dc14a6845c6fcd230fcb5d2528",
+        "sha256": "f4cfe28a79865996d7e2f980d127a2f9b2c5ffb86cc64b37d78f8eca7f17ed80",
+        "bytes": 148383
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "a15f95f285c7a40925cd48d29d2d255f9cb2fe3d",
+        "sha256": "192f7ec8daaeb65349814f7309408c5974366c966c99e0a42aff61b8d950d8a2",
+        "bytes": 148383
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_endpoint_margin_calibration.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "d98142ea2fd552f618f1020bbf5417ce74564c39",
+        "sha256": "9a570c287a726c5e209484549865e358ebfe6280647254536289efd8fbbae0e5",
+        "bytes": 76423
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "1d1f85418241efa9d64eaf83de3e725486f5ffba",
+        "sha256": "5c49368843704973fb507ceac94db9499619ab1b960cc7e072431055fcc3f51a",
+        "bytes": 76423
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_grouped_nested_split_registry.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "906ae6b4a2dfac1a41f63c4a892ac954c911793e",
+        "sha256": "32caad87c7b7fa5464201545d0793851a30e479c62f8087b42a11c4e55927778",
+        "bytes": 8806
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "c14f8955130a7ff2c07bb43f7712687c515cdc01",
+        "sha256": "63095c2683c663e069b13c87a53b45e9e69e53031238b697cee8134e0c91264d",
+        "bytes": 8806
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_harm_first_model_spec_readiness.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "8b34462ce99b87e467b696780d24992c951d5158",
+        "sha256": "3a000a21ab7ba63a5217a323465ef600b8e133e711baa3548e53d16eb7b27a8a",
+        "bytes": 3386
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "7c9e159a8b019ee1d392d686cd7c239556622237",
+        "sha256": "0895d32ab8f20fae3e310bfe4afbc10ba055060d1d9e1ffb4737b4ce0875ef31",
+        "bytes": 3386
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_harm_target_feasibility.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "21604d332b68ada17db6140049da0402de16d842",
+        "sha256": "086ae5c8bea66c93f3e2cbe1a6831efaea853cbdbdd0770d6c2a57746fc39858",
+        "bytes": 14554
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "ff70ef9fe8fda44cc84cc3d1937d6aac05e8d4f7",
+        "sha256": "c080a940f8345a3f9f571f8db4690e211cd653a2d1a96c248a1830748e16238f",
+        "bytes": 14554
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_nested_oof_execution_plan.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "e53132d10d05a594457f21eb902d889314cb579d",
+        "sha256": "37b6ef681b21aeda5c6b3815fad764370c55d5ec32b271d0a4836b75504297d2",
+        "bytes": 217166
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "e6771df481d83159a06e40350f988daaef68acd8",
+        "sha256": "f615cae238c82fd7f005ec29841090ac7138d8c2dcfb9c5ab687af23bb7b18ea",
+        "bytes": 217166
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_prediction_geometry_gate.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "6c7fa8f070f0ae339ddcf1cf9a34ad35167f3362",
+        "sha256": "decb8f84fd56a8118f37b22527c69583da990f0471b140adb828dc0d84251b89",
+        "bytes": 521600
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "922b69d49df5d6643938c05789ce5c7c7b6ef4fc",
+        "sha256": "5b1613a9aadb9ea4ff79520371061c5e303242ecc86c3f7096ab330271bce10b",
+        "bytes": 521600
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_proposal_marginal_utility_pilot.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "4a88c20a7bbef36786c186400b6ba5348836fa27",
+        "sha256": "5c92a4eb1872f0a41ea00230af52c06b3dcef5591cd8433bb4291b29ee2f1ee4",
+        "bytes": 5089
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "bf60ac65815bf19e78815458f3f32f334c0f7f80",
+        "sha256": "00c84316cc947d7136625fe732ab082a076498517ac60a66486b436a4b75159c",
+        "bytes": 5089
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/s1_set_context_features.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "038543009d2bdf9fb056107478f73ec7044463cc",
+        "sha256": "29f0577840a5c3cd6bdb90b0d9bdfe949a3b4002d4bf73a24498b8f188895839",
+        "bytes": 9182
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "5076716bdab5290ac48d45902a74fd61cc2b5565",
+        "sha256": "84007c51f82184582ee992e22d832c4d92fa932bb608ce9e1dc63de52ae12d77",
+        "bytes": 9182
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/science_rescore_manifest_v2_limit1.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "7ad527d6bfaba7d669398ae5955a3bd6d3cb08c3",
+        "sha256": "67ece270faba4df39cc0ad9c852bf62eab4e6594010c167c4ff4e39ebc9b40c6",
+        "bytes": 2371
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "bff5d64fa665a59f32c05ab31ca2ec568a6a0962",
+        "sha256": "3492460d683b649772993b6316f266413bdfea6d9e5a7dbd81d2e2d0e7e5bdb0",
+        "bytes": 2371
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/science_rescore_manifest_v2_limit6.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "7722e11285647efc13316e9753155ca7500e3e94",
+        "sha256": "662c33bc5d98eb7ede238bc29c09034db6740284dbb4da4416d3dcef994f7889",
+        "bytes": 3031
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "201a620e26719783344410b90fea082a6c3d2869",
+        "sha256": "4427f37c58b2f4d0c9c102ecd7d2d7da4e2d2f11e06f6253e171b474dcbdea6f",
+        "bytes": 3031
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/science_rescore_manifest_v3.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "107ad54dfdd2d00b9a58f48edc7fefd25272c1af",
+        "sha256": "00142466b2a2d02cb14642e2cf34b64bc3a3f91bff798160ca43c40e47714bb6",
+        "bytes": 3136
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "9588e306630bae1ef7641fc6ca2514fd14b6f2a5",
+        "sha256": "3cabfef15eecd6491d05a890cb257a64cbdbfd2009209b8e590cd438806ea030",
+        "bytes": 3136
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s0/science_rescore_provenance_reconciliation_2026-08-24.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "c58f603222ac92a2baa5037e4461bfd3445ea851",
+        "sha256": "881108ab3f370b02bc3a3c785c924965478461063c349820a278d825eff6b730",
+        "bytes": 1722
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "9e2f8b6d9345d06370a2bce73509b829279cd360",
+        "sha256": "ed31cfb5ef6bf76fa6ee0036692a11740cfb54f91380bf2c610ffb1e8d766824",
+        "bytes": 1722
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/output/s1/full_development_set_context_features.json",
+      "classification": "fingerprint_leaf_difference",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "aca3f7a00f3762c394489b90b8fb43c5f718cd2e",
+        "sha256": "161e00d6b2d89c541c592c80da7e91c96e60e815e32c94e70ed02cee1b9057f9",
+        "bytes": 5178
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "cb2618c426f4e3e5211e3ac68ef581e74387a0f1",
+        "sha256": "54acf57a2943e3c75fb72973e47bcf878545b583532e933e41ee314036924e88",
+        "bytes": 5178
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/scratch/evaluate_s1_prediction_geometry_gate.py",
+      "classification": "previously_ported_code_with_guard_corrections",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "83479d887f90a86c7e8df9f5144a521d3915d792",
+        "sha256": "61b21be319a0e16bfd4886cc390e2c85b8b97c7856f109980cba330355e19afd",
+        "bytes": 17596
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "6960ac40062c06f2ae4a054e0f1136aa8b758614",
+        "sha256": "ea32db8d236003ebfa3db52377911837e17eae6c13c9d50f1025ada127743e35",
+        "bytes": 17662
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    },
+    {
+      "path": "Solar_Filament_Segmentation/solar_filament/s1/set_context_features.py",
+      "classification": "previously_ported_code_with_guard_corrections",
+      "source": {
+        "commit": "a49c1adc5c6ef2e3a02ce76d050399056fee1243",
+        "blob": "15c90a8ee78a1d3f40e452001d27bd97e970381c",
+        "sha256": "bf584bd61ff7e133f2b38f615c4ef35337c2507df870e6652eeee5d05d362bd1",
+        "bytes": 21323
+      },
+      "current_snapshot": {
+        "commit": "c2c4098d972beda92805a52e714a4df08144ccdd",
+        "blob": "a0de28b46e666b47cab79af534d565b5a8672d27",
+        "sha256": "be41ad542b317080d64387547ca36931fa0e0042c30833ca69fbb832cb5ba430",
+        "bytes": 21352
+      },
+      "preservation": "fingerprints_only_no_payload_capture"
+    }
+  ]
+}

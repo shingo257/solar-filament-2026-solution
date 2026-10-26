@@ -5,11 +5,11 @@ conf (0.797) に届かなかった。仮説の一つは「2.6k crops では視�
 学べない」で、残るレバーはドメイン事前学習。GONG アーカイブは
 公開・無料 (competition rule §6a の「全員が無償でアクセス可能」を満たす)。
 
-漏洩ガード: test 観測 (180枚) の timestamp/site に近いフレームは
-**±exclusion_minutes (既定360分) 内を全棄却**。train 観測はラベル済み
-訓練データであり混入しても漏洩にならないが、同一 timestamp の完全一致は
-除外する (冗長性回避)。site はフィラメントが日面上で同一なので
-site を跨いでも時間近接は除外する。
+漏洩ガード: competition train/test の全観測から
+**±exclusion_minutes (既定360分、境界を含む) 内を全棄却**。
+train に含まれる verifier select/eval fold も保護するため、ラベルの使用有無に
+かかわらず同じ時間窓を適用する。site を跨いでも時間近接は除外する。
+旧ポリシーのコーパスは指紋不一致として resume を拒否する。
 
 出力: gray 512x512 uint8 npz (batch 毎) + manifest.jsonl
 (URL・sha256・時刻・site の完全な追跡情報)。前処理は raw gray を保存し、
@@ -40,6 +40,7 @@ TIMEOUT = 30
 NAME_RE = re.compile(r"([0-9]{14})([BCLMTUbclmtu])h\.fits\.fz")
 FILE_RE = re.compile(r'''href=["']([0-9]{14}[BCLMTUbclmtu]h\.fits\.fz)["']''')
 IMG_SIZE = 512
+GUARD_POLICY_VERSION = "train-test-temporal-v2"
 
 
 def parse_stamp(name: str) -> datetime:
@@ -79,24 +80,35 @@ def batch_frame_count(path: Path) -> int:
     raise ValueError(f"frame array not found in {path}")
 
 
-def corpus_config_fingerprint(test_stamps, train_exact, args) -> str:
+def corpus_config_fingerprint(test_stamps, train_stamps, args) -> str:
     """corpus 定義入力の指紋 (漏洩ガード境界 + サンプリング規則)。
 
     resume 時に --test-dir/--train-json/--exclusion-minutes/年度/サンプリング
     設定が変わっていた場合、旧境界で採用したフレームが混入するのを防ぐ。
     """
     h = hashlib.sha256()
-    for stamp in sorted(s.isoformat() for s in test_stamps):
+    for stamp in sorted({s.isoformat() for s in test_stamps}):
         h.update(stamp.encode())
-    for stamp in sorted(s.isoformat() for s in train_exact):
+    for stamp in sorted({s.isoformat() for s in train_stamps}):
         h.update(b"train:" + stamp.encode())
     h.update(json.dumps({
+        "guard_policy": GUARD_POLICY_VERSION,
         "year": args.year, "days_per_month": args.days_per_month,
         "frames_per_day": args.frames_per_day,
         "exclusion_minutes": args.exclusion_minutes,
         "batch_size": args.batch_size, "img_size": IMG_SIZE},
         sort_keys=True).encode())
     return h.hexdigest()[:16]
+
+
+def corpus_config(test_stamps, train_stamps, args) -> dict:
+    """Persist the inputs needed to independently recompute the temporal guard."""
+    return {"fingerprint": corpus_config_fingerprint(test_stamps, train_stamps, args),
+            "guard_policy": GUARD_POLICY_VERSION, "img_size": IMG_SIZE,
+            **{key: getattr(args, key) for key in (
+                "year", "days_per_month", "frames_per_day", "exclusion_minutes", "batch_size")},
+            "train_stamps": sorted({s.isoformat() for s in train_stamps}),
+            "test_stamps": sorted({s.isoformat() for s in test_stamps})}
 
 
 def prepare_output_dir(out: Path, batch_size: int, resume: bool,
@@ -199,6 +211,8 @@ def main() -> int:
     parser.add_argument("--resume", action="store_true",
                         help="既存の --out dir の続きから再開する")
     args = parser.parse_args()
+    if args.exclusion_minutes < 0:
+        raise SystemExit("--exclusion-minutes must be non-negative")
     args.out.mkdir(parents=True, exist_ok=True)
 
     # 除外集合: test 観測の timestamp (±window) — site 不問で時間近接を除外
@@ -209,26 +223,38 @@ def main() -> int:
             test_stamps.append(parse_stamp(m.group(0)))
     if not test_stamps:
         raise SystemExit(f"test 観測が読めません: {args.test_dir}")
-    # train 観測は完全一致だけ除外 (同一画像の重複を避ける程度)
+    # 全 train 観測を時間窓で除外し、verifier の select/eval fold も保護する。
     with open(args.train_json, encoding="utf-8") as handle:
         coco = json.load(handle)
-    train_exact = {parse_stamp(n["file_name"].replace(".jpeg", ".fits.fz"))
-                   for n in coco["images"] if NAME_RE.match(
-                       n["file_name"].replace(".jpeg", ".fits.fz"))}
-    print({"test_excl_anchors": len(test_stamps), "train_exact": len(train_exact),
-           "exclusion_min": args.exclusion_minutes})
+    images = coco.get("images") if isinstance(coco, dict) else None
+    if not isinstance(images, list) or not images:
+        raise SystemExit("train observations must be a non-empty images list")
+    try:
+        train_stamps = {parse_stamp(image["file_name"].replace(".jpeg", ".fits.fz"))
+                        for image in images}
+    except (KeyError, TypeError, AttributeError, ValueError) as error:
+        raise SystemExit("train observation timestamp is missing or invalid") from error
+    observation_stamps = set(test_stamps) | train_stamps
+    print({"test_excl_anchors": len(test_stamps),
+           "train_excl_anchors": len(train_stamps),
+           "exclusion_min": args.exclusion_minutes,
+           "guard_policy": GUARD_POLICY_VERSION})
 
-    def near_test(stamp: datetime) -> bool:
-        return any(abs((stamp - t).total_seconds()) <= args.exclusion_minutes * 60
-                   for t in test_stamps)
+    def near_observation(stamp: datetime) -> bool:
+        return any(abs(stamp - t) <= timedelta(minutes=args.exclusion_minutes)
+                   for t in observation_stamps)
 
     manifest = args.out / "manifest.jsonl"
-    config_fp = corpus_config_fingerprint(test_stamps, train_exact, args)
+    config_fp = corpus_config_fingerprint(test_stamps, train_stamps, args)
     done, batch_idx, kept = prepare_output_dir(
         args.out, args.batch_size, args.resume, config_fp=config_fp)
+    (args.out / "corpus_config.json").write_text(
+        json.dumps(corpus_config(test_stamps, train_stamps, args), indent=2),
+        encoding="utf-8")
     if done:
         print(f"resume: {kept} フレーム取得済み・batch {batch_idx} から再開",
               flush=True)
+    done_stamps = {parse_stamp(name) for name in done}
     frames: list[np.ndarray] = []
     skipped = failed = 0
     days_per_month = args.days_per_month
@@ -254,11 +280,13 @@ def main() -> int:
             picked = eligible[::step][:args.frames_per_day]
             for name in picked:
                 stamp = parse_stamp(name)
-                if near_test(stamp) or stamp in train_exact:
+                if near_observation(stamp):
                     skipped += 1
                     continue
                 if name in done:
                     continue  # resume: 既に batch npz + manifest に収録済み
+                if stamp in done_stamps:
+                    continue
                 url = f"{BASE}/{day:%Y%m}/{day:%Y%m%d}/{name}"
                 if args.dry_run:
                     kept += 1
@@ -271,12 +299,14 @@ def main() -> int:
                     tqdm.write(f"DL/decode失敗 {name}: {error}")
                     continue
                 frames.append(gray)
+                done_stamps.add(stamp)
                 kept += 1
                 with manifest.open("a", encoding="utf-8") as fh:
                     fh.write(json.dumps({
                         "file": name, "url": url,
                         "utc": stamp.isoformat(),
                         "sha256": hashlib.sha256(payload).hexdigest(),
+                        "frame_sha256": hashlib.sha256(gray.tobytes()).hexdigest(),
                         "bytes": len(payload)}) + "\n")
                 if len(frames) >= args.batch_size:
                     np.savez_compressed(
@@ -290,9 +320,10 @@ def main() -> int:
     if frames:
         np.savez_compressed(args.out / f"batch_{batch_idx:03d}.npz",
                             np.stack(frames), batch_size=args.batch_size)
-    summary = {"kept": kept, "skipped_test_window": skipped, "failed": failed,
+    summary = {"kept": kept, "skipped_observation_window": skipped, "failed": failed,
                "img_size": IMG_SIZE, "dry_run": args.dry_run,
-               "exclusion_minutes": args.exclusion_minutes}
+               "exclusion_minutes": args.exclusion_minutes,
+               "guard_policy": GUARD_POLICY_VERSION}
     (args.out / "corpus_summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))

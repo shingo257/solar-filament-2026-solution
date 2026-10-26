@@ -6,6 +6,7 @@ Filaments** への取り組み。GONG の H-Alpha 全面画像（2048×2048）�
 
 - コンペ: <https://www.kaggle.com/competitions/filament-segmentation-2026>
 - データ: MAGFiLO（Manually Annotated GONG Filaments from H-Alpha Observations）
+- Historical mixed-source fingerprints: [inactive 25-path index](docs/history/mixed-source-20260828/README.md) (no research acceptance)
 - 締切: 2026-11-15
 - 優勝を狙うための実験計画: [`WINNING_STRATEGY_2026-08-29.md`](WINNING_STRATEGY_2026-08-29.md)
   （トップ層手法・外部文献・公式ルールの調査に基づく優先順位付き計画）
@@ -127,6 +128,15 @@ python scratch/run_test_submission.py --mode prod \
   `ablation_plain_mhsa_seed8407_fold2.pt`（第2提出用）+ `a1_scorer_*`、
   sha256 manifest 同梱）。ローカルでは Drive `solar_filament_v30/artifacts/` の
   実績パスを既定参照
+- **fold 分割の provenance（2026-10-18 記録）**: 同 dataset に
+  `grouped_folds_train.csv`（sha256 `febb3f67237a058fa8a71f188fac262035048b55d860c0e4509514877f6af67e`）を
+  追加同梱した。これが全 v30+ 実験・OOF キャッシュ・fold ckpt が実際に使った
+  実験分割。一方、従来同梱の `grouped_folds.csv`
+  （sha256 `24367120279820997396f7063b1ae5b235a442fd1c92617e1e8941d472504c3b`、
+  提出再現パッケージの `GROUPED_FOLDS_SHA256` ピン対象）はパッケージング時に
+  再生成された別分割であり、489/707件で割当が異なる。**推論再現は影響なし**
+  （凍結重みを読むだけで fold を参照しない）が、**fold ckpt の再学習には
+  `grouped_folds_train.csv` を使うこと**（検証経緯は RESEARCH_LOG §2.26 に記録）。
 - **Colab 再現 notebook**: [`solar_filament_prod_repro_colab.ipynb`](solar_filament_prod_repro_colab.ipynb)
   （3セル直列・Drive経由・A100で223秒という作者報告）。2026-10-11 の記録では、ローカル生成CSVと
   **1172/1172 filament が IoU>0.5 で一致（99.91% IoU=1.0）**

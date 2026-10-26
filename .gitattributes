@@ -8,7 +8,11 @@
 **/*.json text eol=lf
 **/*.ipynb text eol=lf
 
-# weights/ は Git LFS 管理 (2026-10-23 主催者要件: weights stored in
-# the repository)。monorepo 側 .gitattributes にも同一規則があり、
-# subtree sync 後もこのファイルへ再適用される。
+# Inactive provenance index; JSON is already pinned above.
+docs/history/mixed-source-20260828/README.md text eol=lf
+
+# standalone 公開 repo の weights/ は Git LFS 管理 (2026-10-23 主催者要件:
+# weights stored in the repository)。monorepo 側では weights/ を生成しない
+# (§2.3 の重み非コミット規約) ためこの規則は monorepo では不活性であり、
+# subtree sync で standalone repo へ伝播してそこでのみ効果を持つ。
 weights/*.pt filter=lfs diff=lfs merge=lfs -text

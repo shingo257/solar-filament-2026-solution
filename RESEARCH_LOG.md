@@ -787,6 +787,14 @@ per_obs_fold2.csv・cache/)。スクリプト `scratch/run_min_area_sweep.py`。
 
 ### 2.25 v72 GONG SimCLR 事前学習 → verifier init 交換 (2026-10-16)
 
+**履歴上の結果に関する留保 (2026-10-17 独立レビュー)**:
+以下は旧 corpus guard による実験の記録。旧実装は competition test にのみ
+±360分を適用し、train は完全一致時刻だけ除外していた。train に含まれる
+verifier select/eval fold の時間近接フレームが SSL に入り得るため、
+fold2 の独立した凍結評価とは扱えない。実 corpus の近接重複は未監査であり、
+実際に混入したと断定するものではない。数値は歴史的な棄却結果として保持し、
+独立性能の改善や本番採用の根拠にはしない。再学習・held-out 再評価は行っていない。
+
 §2.22 の留保「2.6k crops では視覚特徴が学べない → 大規模ドメイン事前学習のみ残る」
 を検証する唯一残ったレバー。無ラベル GONG Hα 全日面アーカイブ
 (`gong2.nso.edu/ftp/HA/haf/`) で ResNet18 を SimCLR 事前学習し、v70 verifier の
@@ -816,7 +824,7 @@ fold0 学習 → fold1 で epoch 選択 → fold2 で凍結評価 (v70 と同一
 コード) と `shingo257/solar-verifier-crops` (crops+labels 340MB) +
 `shingo257/solar-ssl-code` (コードのみ)。kernel v5 COMPLETE。
 
-**結果** (fold2 凍結評価、8 epoch、seed 固定・同一環境):
+**当時の結果** (fold2 評価、8 epoch、seed 固定・同一環境):
 
 | arm | verifier AUC (fold2) | blend AUC (fold2) |
 |---|---:|---:|
@@ -825,7 +833,7 @@ fold0 学習 → fold1 で epoch 選択 → fold2 で凍結評価 (v70 と同一
 | conf 単独 (参照) | — | 0.7973 |
 
 SSL 事前学習 40 epoch / 1,889 フレーム / T4 で約5分。verifier fold1 AUC
-0.7036 (best epoch 8)。**事前固定ゲートは通過**: fold2 AUC が ImageNet init を
+0.7036 (best epoch 8)。**当時の数値比較上はゲート通過と記録**: fold2 AUC が ImageNet init を
 +0.056 上回り、blend (0.8020) が conf 単独 (0.7973) を +0.0047 上回る —
 3つの特徴クラス全滅 (v64 静的・v68 磁気図・v70 ImageNet CNN) 後、初めて
 conf を超える分離情報を取得。
@@ -860,3 +868,909 @@ gate PQ は 0.4483 で min_area sweep 再現値 0.4442 から +0.004 偏移
 **prod 統合の根拠となる PQ 改善には到達せず棄却**。verifier 構想は
 AUC レベル (v70) と PQ レベル (v72) の両方で終了。prod / plain_mhsa_f2 の
 最終提出構成は不変。
+
+**後続の corpus 構築ガード (2026-10-17)**: 新規構築では全 competition
+train/test 観測の ±exclusion_minutes（境界を含む）を site 不問で除外する。
+train の全時刻を保護するため split に依存せず verifier select/eval fold も
+包含する。train の空・不正な時刻集合は listing 前に停止する。
+guard policy の世代を設定指紋に含め、旧 corpus の resume は拒否する。
+このガード修正で過去の実験結果の独立性が遡って保証されることはない。
+
+
+### 2.26 v73 GONG SimCLR → refiner encoder init 交換 (設計 2026-10-18)
+
+v72 は無ラベル GONG 事前学習を **verifier** (RQ 側の提案選択) にだけ
+適用して棄却された。残る未試行レーンとして、同じ SSL を **prod refiner
+(`MediSegEdgeAttUNet`) のエンコーダ部** (inc/down1-4, SQ 側のマスク品質)
+に適用する効果を検証する。encoder のキー構造は MediSegUNet と同一で、
+decoder/edge_attn は従来どおりランダム初期化。
+
+設計 (scratch/train_refiner_fold.py + pretrain_unet_encoder_ssl.py):
+  - SSL 入力は solar_three_channel 適用後の 3ch (下流 crop と同一表現)、
+    正方形 RRC → 320px、h/v flip + ch0/1 gamma jitter
+  - 学習は v35/v51 と同一レシピ (record 単位 crop、14 epoch、seed 3407)
+  - arm は `scratch` と `ssl:` の同 seed ペア + 既存
+    `mediseg_edgeattnet_refiner_fold2_resume.pt` を参照 arm として
+    同一 YOLO 提案・同一後処理で採点 (paired)
+
+事前固定ゲート: fold2 OOF PQ で ssl−scratch >= +0.010 なら別 fold・別
+seed の確認実験へ進む。0〜+0.010 はノイズ帯として棄却、<0 も棄却。
+sanity: baseline ckpt の fold2 PQ が ~0.448 付近であること (同じ pipeline
+の既知値との一致確認)。
+
+#### 副次発見: fold registry の provenance 不整合 (要修正)
+
+調査中に `grouped_folds.csv` が2系統存在することが判明:
+
+  - `solar_filament_v30/artifacts/grouped_folds.csv` (2026-08-14,
+    sha256 `febb3f67...`) — OOF cache `prediction_cache/oof/yolo_fold_*`
+    (2026-08-15 生成) のファイル割当と 236/236/235 完全一致。
+    OOF cache のファイル割当はこの分割と一致する。**元チェックポイントの学習分割との結び付けは未確認**。
+  - weights dataset / repo kernel_run の `grouped_folds.csv`
+    (sha256 `24367120...`, 2列) — **489/707 で fold 割当が異なる別分割**。
+    `build_submission_reproduction.py` の `GROUPED_FOLDS_SHA256` ピンと
+    weights dataset 同梱分は後者。推論再現には影響しない (重みは同梱済で
+    fold は使わない) が、学習再現を試みる第三者は実験と異なる分割を引く。
+
+対応: v73 は実験で使われた分割 (febb3f67) を `solar-v73-assets` dataset に
+`grouped_folds_train_split.csv` として同梱して使用する。weights dataset /
+reproduction notebook 側の CSV を実験分割に差し替える修正は提出パッケージの
+凍結済み部分に触れるため、本 PR では扱わず別途判断を求める (影響は
+「学習再現時の分割」だけで、byte-identical 推論再現は済)。
+
+報告された結果 (2026-10-19、fold2 OOF・235ファイル・conf0.26。独立照合は未完了):
+
+| arm | ckpt sha256 | PQ@0.45 | best_crop_dice |
+|---|---|---|---|
+| baseline (v51) | `b1c0f353...` | 0.444228 | 0.7930 |
+| scratch | `c43b27ba...` | 0.445390 | 0.7964 |
+| ssl-init | `c04ae6c5...` | 0.441192 | 0.7842 |
+
+判定: **delta ssl−scratch = −0.004198 → 棄却** (事前固定ゲート <0)。
+報告上は確認実験には進まない。baseline が既知値に近いだけで pipeline の独立受入は確定しない。
+scratch と baseline の報告差は約 +0.0012。独立照合や seed 間の変動評価は未完了であり、昇格根拠にはしない。
+
+収集: SSL encoder `bbdfdd66...` (75MB・60ep)、`v73_eval.json`
+`2b0f2c50...`、`v73_summary.json` `019662e5...`。DL した両 refiner ckpt の
+sha256 は報告上 eval 記録値と一致。報告された corpus provenance は
+`train-test-temporal-v2`・1,707 frames、観測 digest `ee9354dc/a3dc309d`
+(監査ピン値と一致)。
+
+暫定解釈: 今回報告された fold2・単一 seed の比較では SSL init が scratch を下回ったため、不採用とする。
+ドメイン全体への一般化や独立性能の受入を示すものではない。
+
+
+独立照合の制限 (2026-10-19): 確認したローカル保存先では、新しい評価 JSON・
+学習履歴・重みの本体を発見できず、新しい値とハッシュは報告値として扱う。
+元の学習分割との結び付け、corpus 原典の受入、実行成果物の独立照合は未完了。
+runtime の manifest ピン一致は独立承認を代替しない。
+
+
+マージ状態の追記 (2026-10-19): 文書修正 #397 の後、別の操作で #388 は main に
+マージされた (fd7d134a、09:00:16 UTC)。これは未確認成果物・manifest・
+元の学習分割や原典に対する独立受入の完了を意味しない。実際のマージ状態と
+証拠の受入状態を分けて記録する。
+
+
+実行JSONの追加照合 (2026-10-19): 既存 COMPLETE の Kaggle v73 kernel から
+評価・summary・SSL履歴等を取得し、記録済みの SHA256 と一致を確認した。
+PQ の完全精度差は SSL−scratch = −0.004198331766480823。
+summary/eval と PQ/SQ/RQ/件数の計算整合性も確認でき、不採用継続を支持する。
+予測の再採点・新しい重み本体の再ハッシュや学習分割の独立受入ではない。
+
+runtime corpus 設定は SHA256 ebf1c607... / 指紋 e1e66a843bc3e2d1、
+監査済みv3と現在取得できた設定は 2a1ae10d... / a1f436fea3f26380 で異なる。
+フレーム manifest・観測 digest・1,707枚・除外360分は一致するが、
+既知の過去/現行の指紋計算でも runtime 値は再現せず、空白や改行だけの差では
+説明できない。当時の設定原本・固定入力版・実行コードの照合を要する。
+Gドライブの同期コピーの所在地は未確認。詳細は docs/V73_PROVENANCE.md を参照。
+今回の調査で新しい学習・GPU実行や原典への再アクセスは行っていない。
+
+### 2.27 v74 — v73 SSL refiner init 棄却の確定実験 (設計・事前登録 2026-10-19)
+
+v73 (§2.26) で ssl encoder init − scratch = **-0.004198** (fold2 OOF PQ@0.45,
+seed 3407) と判定され不採用になった負結果について、残る2つの反論を同じ
+reviewed pipeline・同じ入力で潰す確認実験。Colab notebook
+`solar_filament_v74_ssl_confirm_colab.ipynb` (builder:
+`scratch/build_v74_ssl_confirm_colab.py`)。
+
+**アーム** (全て fold2 OOF・同一 YOLO 提案・同一後処理・edgeatt・14ep):
+
+| arm | init | seed | 由来 |
+|---|---|---|---|
+| baseline | prod ckpt | — | Drive v30 (sanity) |
+| scratch | scratch | 3407 | v73 ckpt 再利用 (`solar-v73-results`、sha `c43b27ba...` 検証) |
+| ssl | SSL-60ep | 3407 | v73 ckpt 再利用 (sha `c04ae6c5...` 検証) |
+| scratch_s8407 | scratch | 8407 | 新規学習 |
+| ssl_s8407 | SSL-60ep (v73 encoder sha `bbdfdd66...` 再利用) | 8407 | 新規学習 |
+| ssl200_s3407 | SSL-200ep (同 corpus・同 solar3 変換・新規事前学習) | 3407 | 新規学習 |
+
+**潰す反論**:
+- A. seed 依存: ssl_s8407 − scratch_s8407 でも負なら v73 の棄却は seed ノイズではない。
+- B. 事前学習不足: 60ep SimCLR は小規模。200ep に延長した arm が scratch_s3407 を
+  上回るかを検証 (同じ corpus/変換/損失・延長のみ変更)。
+
+**事前固定ゲート** (v73 と同一形式):
+- 各比較 delta = ssl系 − 同seed scratch の fold2 OOF PQ@0.45 で
+  `>= +0.010` → 別 fold 確認実験へ / `0 <= delta < +0.010` → ノイズ棄却 /
+  `delta < 0` → 棄却
+- sanity: baseline PQ が v73 実績 `0.444228` 近傍 (|diff| < 0.01)
+- reproduction check: 再利用 arm (baseline/scratch/ssl) の PQ が
+  `v73_eval.json` 記録値と |diff| < 1e-4 → pipeline 決定性の検証
+  (YOLO 提案生成の実行環境差を含めて観測する)
+
+**入力は v73 と同一 reviewed セット**: provenance pin
+`V73_PROVENANCE_SHA256` (manifest `2c954685...`)、folds CSV sha `febb3f67...`、
+corpus `train-test-temporal-v2` (1,707 frames)、同じ YOLO/baseline ckpt。
+学習・評価スクリプトは `solar-v73-code` 版を変更せず再利用
+(`--seed`/`--init ssl:`/`--epochs` 引数のみ)。v73 成果物は
+`solar-v73-results` dataset から **sha256 ピン検証付き**で取得し、
+dataset 同梱の `sha256_manifest.json` との二重照合も行う。
+結果・重みは Drive `solar_filament_v74/work/latest/` へ sha256 検証付き
+増分ミラー (各長時間 cell 後)。
+
+**v74 結果 (2026-10-19/20, Colab T4 完走 ~4.5h, Drive ミラー sha256 検証済み)**
+
+| arm | PQ@0.45 | 備考 |
+|---|---|---|
+| baseline | 0.444238 | sanity ✓ (v73: 0.444228) |
+| scratch (v73 再利用) | 0.445579 | v73 記録 0.445390 との差 +0.000189 |
+| ssl (v73 再利用) | 0.441567 | v73 記録 0.441192 との差 +0.000375 |
+| scratch_s8407 | 0.444912 | — |
+| ssl_s8407 | 0.444661 | **delta = -0.000251 → 棄却** |
+| ssl200_s3407 | 0.423852 | **delta vs scratch_s3407 = -0.021727 → 棄却** |
+
+- **seed 頑健性 (反論A)**: ssl_s8407 < scratch_s8407 (-0.0003)。v73 の棄却は
+  seed ノイズではない。2seed とも ssl は scratch を下回る (s3407: -0.004,
+  s8407: -0.0003)。
+- **事前学習不足 (反論B)**: 200ep に延長すると PQ 0.4239 と大幅悪化
+  (-0.022)。SimCLR 事前学習を伸ばすほど悪い — under-pretraining 説は棄却。
+  refiner への GONG SSL 適用は決定的に不採用 (v72 verifier に続き3回目の
+  同結論)。
+- **reproduction check**: 再利用 arm の PQ drift は +0.00001/+0.000189/
+  +0.000375 (baseline/scratch/ssl)。私が設定した |diff|<1e-4 ゲートは
+  scratch/ssl でわずかに超過 — Kaggle kernel と Colab の環境差
+  (CUDA/ライブラリ版) による提案生成の微小差と解釈。v73 の順序関係・符号・
+  delta 規模 (-0.0040 vs -0.0042) は完全に再現しており pipeline の
+  健全性は確認できた。ゲート閾値の経験値として ~4e-4 が環境差ノイズ帯。
+
+成果物: `edgeatt_scratch_s8407_fold2.pt` `868a8441...`、
+`edgeatt_ssl_s8407_fold2.pt` `df968e64...`、
+`edgeatt_ssl200_s3407_fold2.pt` `b1f3a854...`、
+`unet_encoder_ssl200.pt` `d18b4817...`、`v74_eval.json` `4fac918d...`、
+`v74_summary.json` `696d2abc...` (Drive `solar_filament_v74/work/latest/`、
+全 sha256 照合 OK)。Kaggle dataset `shingo257/solar-v74-results` にも永続化。
+
+### 2.28 discussion/LB 再調査 — 第3回リフレッシュ + sparse-label 説の独立検証 (2026-10-20)
+
+§2.19 から8日後の再取得 (kagglesdk `DiscussionApi.ListTopics` search union で
+24スレッド確認、LB は `competitions leaderboard --download` の全1,103チーム
+CSV を解析)。
+
+#### Discussion: 新着2件 + 未回答の重要質問1件
+
+- **748498** (10-12, 回答0件): Esraa Khaled「KSO/Meudon/BBSO の無ラベル
+  Hα を SSL 事前学習に使えるか」— test と**同日付の別天文台画像**を含むか
+  ±N日除外すべきかを主催者に確認中。我々の GONG-only SSL (v72-v74) の
+  拡張方向そのもの。回答が出たら記録要
+- **749225** (10-15, 3コメント): GONG archive の一括 DL が 403 → Vedran が
+  「2並列+1s間隔+VPN、banは~12hで解除」と回避策報告、主催者 Azim が
+  GONG IT のボット対策を確認済みと回答。我々の corpus は取得済みで影響なし
+- 既知裁定 (746318 外部GT禁止 / 744047・748045 GONG無ラベル可+時間除外 /
+  743521 磁気図可 / 747960 両提出再現) に変更・訂正はなし
+
+#### LB スナップショット (1,103チーム・ERS rank 176 / 0.39)
+
+| 帯域 | 10-12 | 10-20 | Δ |
+|---|---|---|---|
+| 総チーム | 983 | 1,103 | +120 |
+| ≥0.55 | 78 | 87 | +9 (うちちょうど0.55が70) |
+| 0.45–0.54 | 3 | 3 | 0 |
+| 0.40–0.44 | 31 | 42 | +11 |
+| 0.35–0.39 | 332 | 400 | +68 |
+
+- トップ2が 0.64 に更新: **IONode Online (12 subs)**・**Tempest (123 subs)**。
+  0.55–0.63 帯の使用データ・分割・来歴は引き続き独立未確認 — スコア帯だけで
+  違反や誠実性は判定しない (§2.16 と同じ原則)
+- 誠実想定帯 0.40–0.44 が 31→42 に増加 — 誠実系フロンティアは緩やかに前進
+- ERS は rank 136→176: スコア不変 (0.39)・新規参入120チームによる純粋な
+  分母増加
+
+#### 新着 kernel: dariushafshar の sparse-label 説 (最重要)
+
+`solar-filament-u-net-oof-0-45-vs-public-0-39` (10-17, 5票) — 検証済み
+receipt・folds・keep-rule グリッドを全公開した誠実系 dossier:
+
+| 項目 | 内容 |
+|---|---|
+| 構成 | smp U-Net ×10 (5fold ResNet34 + 5fold EffNetV2-S) 平均・full-res 2048²・D4 TTA8view・annotator 平均 soft target・連結成分 keep rule (t_lo .35/peak .99/area 200/meanp .85) |
+| 成績 | nested OOF 0.4502 (707画像・1154 annotator-set pooled) → public 0.39 — **我々と同水準 (OOF 0.445→LB 0.39)** |
+| sparse-label 説 | test ラベルは学習ラベルより疎 — train annotator が描く filament が確率 r で test ラベルに残ると仮定し `PQ' = rΣIoU/(r·TP + ½FP + ½(1-r)TP + ½r·FN)`。**v3 で r=0.77 を fit → v5/v6 の LB を提出前に的中** |
+| annotator 間 PQ | **0.3399** (296画像・別 kernel 実測) — 我々の 0.3398 とほぼ同一の独立収束 |
+| 姿勢 | 「fit する説であって証明ではない」と明記・全数値を receipt に sha256 付き公開 — 我々と同じ証跡文化 |
+
+**独立検証 (我々の pooled counts に r=0.77 を適用)**:
+
+| arm (v74 fold2 @thr .45) | OOF | PQ'@r=0.77 |
+|---|---|---|
+| baseline (prod 相当) | 0.4442 | **0.3896 ≈ 実績 0.39** |
+| scratch | 0.4456 | 0.3907 |
+| ssl | 0.4416 | 0.3871 |
+
+- 彼が自分のデータで fit した r=0.77 が、**別パイプライン (detector+refiner)
+  の我々の OOF→LB 差をそのまま説明** (0.3896 vs 実績 ~0.39、表示精度内一致)
+- 707画像 pooled counts (report Table) でも同程度: TP 5082/FP 2286/FN 3117・
+  SQ 0.678 → PQ'@0.77 ≈ 0.388
+- 意味: OOF→LB 差 ~0.05-0.06 は「test ラベル疎化 ~23%」で両チーム共通に
+  説明可能 — 我々の「未説明の乖離」(report §weaknesses) への**実用仮説**。
+  彼自身も証明でないと明記しており、我々も「説明可能な仮説の1つ」として
+  記録に留める (真の test ラベル密度は非公開)
+- 含意: sparse-label 下では keep-rule 最適化の利得はほぼ消える (彼の grid
+  解析でも同結論) — 後処理側の微調整を追わない判断を補強
+
+#### 取り込み判断
+
+- **採用レバーなし**: 彼の keep-rule グリッドは我々の threshold sweep 棄却と
+  同型・同結論。10model ensemble の OOF +0.005 程度は LB 分解能以下
+- **継続監視**: 748498 の主催者回答 (別天文台 SSL の可否 + 同日付除外要否)、
+  LB 0.55+ 帯の動向、次回以降の periodic refresh で追跡
+- 結論: **prod + plain_mhsa_f2 維持**。外部手法で採用に値する新規定量レバー
+  なし — むしろ OOF→LB 乖離の主要仮説 (sparse test labels) と annotator
+  ceiling 0.34 が独立系で再現され、評価系の解釈が補強された
+
+### 2.29 discussion/LB 再調査 — 第4回リフレッシュ：主催者回答3件・LB 0.69・Fususu 手法公開 (2026-10-21)
+
+§2.28 から1日後。今回は `competition_list_topics`（公式 enumeration、
+41 topics 全件）で取得 — 前回の search-union 方式は 24 件しか拾えて
+いなかったため、以後こちらを正本とする。LB は全1,104チーム CSV。
+
+#### Discussion: 主催者の新規回答（重要度順）
+
+- **735256**（注釈抜け、主催者回答済）: 「train 注釈が visible filament を
+  一部描いていない」指摘に対し主催者は「全 filament の検出が目的、FP は
+  PQ で罰されるが、審査では many-to-many 関係の分布も見る（Self
+  Evaluation notebook のプロット参照）」と回答 — **sparse-label 仮説と
+  整合する主催者レベルの証言**（train 側の注釈漏れは公式に確認済み）
+- **749526**（計算効率）: end-to-end efficiency は**定性評価のフィルタ
+  のみ**（極端に遅い/メモリリークする pipeline の除外用）でありスコア
+  競争因子ではないと主催者回答 — 我々の ~1.1s/image は問題なし
+- **749524**（フォーム PDF 差替不可）: 主催者が修正済み — 最終提出
+  フォームは**再提出可能（最大10ファイル）**。レポート更新が必要に
+  なった場合に対応可
+- **747960**（両提出の再現）: 「戦略が有意に異なるなら両方の再現を
+  要求、可能なら統合を推奨」— 我々の repo は prod と plain_mhsa_f2 の
+  両方をバイト一致再現済みなので適合
+- **748498**（別天文台 KSO/Meudon/BBSO の無ラベル Hα SSL 可否）:
+  **依然として回答なし**（質問のみ）。外部 SSL 拡張は保留継続
+- **724503**（Organizers' Remarks、8-20 更新）: 「システムを hack する
+  参加者がいるのは明白。誠実な参加者は他者スコアと比較せず作業を続けて
+  ほしい。**0.3 を超える PQ は価値がある**」と公式見解 — 我々の 0.39 は
+  この誠実帯の上位
+
+#### LB スナップショット（1,104 チーム・ERS rank 178 / 0.39）
+
+| 帯域 | 10-20 | 10-21 | Δ |
+|---|---|---|---|
+| 総チーム | 1,103 | 1,104 | +1 |
+| ≥0.55 | 87 | 89 | +2（ちょうど0.55が**72**） |
+| 0.45–0.54 | 3 | 3 | 0 |
+| 0.40–0.44 | 42 | 42 | 0 |
+| 0.35–0.39 | 400 | 402 | +2 |
+
+- トップが急伸: **IONode Online 0.69**（前日0.64、本日も提出継続・15 subs）、
+  Tempest 0.64、Sayandeep Dutta 0.62（99 subs）等。**0.56–0.69 は全て異なる
+  値**で plateau ではない — トップ層は継続的に改善中（または新規 exploit）。
+  一方でちょうど 0.55 に 72 チームが停滞
+- 745880 の議論より: コミュニティの認識は「**0.55 csv**（共有提出ファイル）
+  とデータリークで plateau が形成、誠実系の最上位は noisyislands の 0.49
+  あたり」。我々の sparse-label 分析・annotator ceiling と整合
+- ERS rank 176→178、score 0.39 不変（分母増・純粋な順位変動）
+
+#### 上位手法の公開物調査
+
+- **phuongncn/lb-0-70-topology-safe-solar-filaments-handoff**: Fususu の
+  「合法・再現可能」提出の詳細 handoff — **Mask R-CNN detector +
+  ResNet18 U-Net crop refiner + flip-4 TTA（topology ガード付）**。
+  我々と同型の detector→crop refiner 構造。8-5 時点の scored refs
+  55027846/55033541 で 0.70 を記録（旧メトリック期）。topology ガード
+  （面積・連結成分数・重複の保存条件）・crowding 時の split 抑制など
+  後処理設計が詳述 — **詳細が公開された唯一のトップ系手法**
+- `rokaiyasomapti/lb-1st-...` はタイトル詐称の generic ResNet34 U-Net
+  baseline（現トップの IONode とは無関係）
+- 現 LB 上位チーム（ionodeonline・tempest 構成員・duttasam 等）は
+  **公開 kernel なし** — 0.56+ 帯の手法は非公開
+- `muhammadshoaibaltaf/magfilo-v1-...`: observation-level split・
+  Tversky loss（FN 重視）・YOLO det + crop seg — 誠実系の詳細 pipeline
+- `vmerckle/simple-dark-filament-segmentation-0-46`: 学習なし古典 CV
+  （disk 推定→背景減算→暗部 threshold→連結成分）で 0.46 — 誠実下限参照
+- dariushafshar: 前回調査以降の新規 solar kernel なし
+
+#### 取り込み判断
+
+- **採用レバーなし**: Fususu 手法は我々と同型だが TTA4+topology ガードは
+  我々の TTA-consensus 棄却（+0.0007 で不移植）と同系統。flip-TTA の
+  「topology 保存条件付き」という改良点は興味深いが、彼ら自身も
+  「多数の variant が 0.70 でタイ」と記しており LB 分解能以下の効果
+- 主催者回答3件は提出要件の明確化に有用（再提出可・efficiency は定性
+  のみ・両提出再現の確認済み適合）
+- **prod + plain_mhsa_f2 維持**。sparse-label 仮説は 735256 の主催者証言
+  （注釈漏れの存在）でさらに裏付けられた — ただし test 側密度は依然非公開
+
+### 2.30 v75 設計: refiner flip-4 TTA + topology guard (事前登録, 2026-10-21)
+
+§2.29 で発見した Fususu handoff (phuongncn, Mask R-CNN + ResNet18 U-Net
+refiner + flip-4 TTA with topology guards、旧メトリック期 0.70) の TTA
+機構を、我々の reviewed pipeline で検証する**推論のみの実験**。
+学習なし・prod ckpt 据え置き — 後処理 variant のみを変えた paired
+comparison。我々の v65 TTA-consensus (detector 信頼度 consensus filter,
++0.0007 で不移植) とは別機構: これは refiner 確率マップの4view反転平均
++ topology 保存ガード。
+
+**arm** (fold2 OOF 235ファイル・frozen operating point
+conf0.26/minarea20/drop0.90・同一 YOLO 提案・同一 baseline ckpt):
+
+| arm | prob map | 意味 |
+|---|---|---|
+| baseline | single-view (prod 経路) | sanity ≈ v74 実績 0.444238 |
+| tta4 | flip4 平均 (guard なし) | TTA 平滑化効果そのもの |
+| tta4g | flip4 平均 + topology guard | Fususu 型 guard の寄与 |
+
+**topology guard (事前固定)**: crop 320² の 0.5 二値マップで
+① 面積比 tta/single ∈ [0.85, 1.15] ② 連結成分数 (>=16px) 差 <=1
+③ IoU(single, tta) >= 0.85 — 全条件を満たす時のみ TTA マップ採用、
+違反時は single-view にフォールバック。Fususu は fallback ~0.7%
+(1261/1270 採用) を報告。
+
+**事前固定ゲート**:
+- primary delta = PQ(tta4g) − PQ(baseline) @0.45:
+  - >= +0.005 → 昇格候補 (別 fold/LB での確認実験がさらに必要)
+  - [0, +0.005) → ノイズとして棄却 / <0 → 棄却
+- secondary delta = tta4 − baseline で guard の load-bearing 度を分離
+  (guard なしで改善するなら guard 不要、悪化するなら guard が本質)
+- sanity: baseline PQ@0.45 が v74 実績 0.444238 ±0.001 (eval path は
+  run_fold_oof_eval と同一 helpers を import 共有)
+- 副次記録: fallback 率 (guard の発火頻度)
+
+**実装**: `scratch/run_fold_oof_eval_tta.py` — run_fold_oof_eval の
+helpers/provenance 検証を import 共有し `name=path[:mode]` arm 指定。
+notebook `solar_filament_v75_tta_guard_colab.ipynb` は同スクリプトを
+embedded 書き出し (repo file と byte 一致を test で担保)、solar-v73-code
+の shared helpers を利用。新規 dataset 不要・新規学習なし。
+
+**入力 pin**: V73_PROVENANCE_SHA256 (v73/v74 と同一 manifest)、folds
+`febb3f67...`、Drive v30 baseline/YOLO ckpt。想定所要 ~1.5h
+(proposals ~10min + baseline ~8min + tta4/tta4g 各 ~32min)。
+
+**修正 (2026-10-23, Colab 初回実行で発覚)**: arm 名 `tta4`/`tta4g` は
+manifest の checkpoint role ではないため `validate_checkpoint_binding`
+が `checkpoint provenance missing: tta4` で拒否した。`resolve_binding_role`
+を追加し、arm 名が manifest に無い場合はファイル bytes が reviewed
+binding のどれかと SHA256 一致する時だけその role を継承、一致しない
+未知バイトは従来どおり拒否。セキュリティ不変 (reviewed バイトのみ評価
+可能) で TTA arm が同一 ckpt を共有できるようになった。notebook 再生成済。
+
+**結果 (2026-10-23, Colab T4 完走 36min)**: 事前固定ゲートどおり
+**reject_noise** — TTA 系レーンを閉じる。
+
+| arm | PQ@0.35 | PQ@0.40 | PQ@0.45 | PQ@0.50 |
+|---|---|---|---|---|
+| baseline | 0.443393 | 0.443862 | 0.444238 | 0.444532 |
+| tta4 | 0.444286 | 0.444623 | 0.444982 | 0.445092 |
+| tta4g | 0.444299 | 0.444633 | 0.444994 | 0.445305 |
+
+- `delta_tta4g_minus_baseline = +0.000756` → 事前固定帯 [0, +0.005) →
+  **ノイズとして棄却** (昇格候補条件 +0.005 未満)
+- `delta_tta4_minus_baseline = +0.000744` — guard の load-bearing 度は
+  ほぼゼロ (tta4g − tta4 = +0.000012)
+- guard_stats: applied 1678 / fallback 23 (1.35% — Fususu 報告 ~0.7% と同桁)
+- **sanity 完璧**: baseline PQ@0.45 = 0.444238 は v74 実績と bit 一致
+  (diff 0.0) — paired eval の決定性を確認
+- @0.45 TP/FP/FN: baseline 1715/750/1070 → tta4g 1717/750/1068。
+  TTA は境界 TP を2件救うが全域でサブミリの効果のみ
+- 全閾値で単調 +0.0007〜0.0009 — 方向は一貫して正、振幅は常に帯域以下
+
+**解釈**: v65 detector-consensus TTA (+0.0007、非移植で棄却) と同一振幅の
+効果が、独立した機構 (refiner 確率マップ flip-4 平均) でも再現。
+TTA 系平滑化の頭打ちは ~+0.0007-0.0008 帯で、このパイプラインでは
+昇格ゲートに届かないことが2系統で確認された。4× の推論コストに対し
+リターンが小さく、prod 採用しない。
+
+**成果物**: Drive `solar_filament_v75/work/latest/` (v75_eval.json /
+v75_summary.json / sha256_manifest.json、2/2 SHA256 検証済) +
+Kaggle dataset `shingo257/solar-v75-results` (private)。folds
+`febb3f67...`、manifest `2c954685...`、yolo `40ec31fd...`、refiner ckpt
+`b1c0f353...` (baseline = v73 assets の mediseg_edgeattnet_refiner
+_fold2_resume.pt と同一バイト)。
+
+**採用判断**: prod + plain_mhsa_f2 維持。事前固定ゲートの帯域内効果の
+ため別 fold 確認実験は発動しない (ゲート文面どおり)。
+
+### 2.31 v76 設計: refiner checkpoint ensemble (事前登録, 2026-10-23)
+
+v75 で TTA レーンが閉じた後に残る最後の定石レーン: **推論時 checkpoint
+ensemble**。独立に学習・検証された refiner の確率マップを平均する
+(学習なし・推論のみ)。v75 と同一の paired eval 構造 — 同一 YOLO 提案・
+同一後処理・同一公式 PQ で member 構成だけを変える。
+
+| arm | prob map | member ckpts |
+|---|---|---|
+| baseline | prod single-view | fold2_resume (manifest role=baseline) |
+| ens3 | 3 member 平均 | baseline + v74 scratch_s8407 + v74 ssl_s8407 |
+| ens3f | 3 member × flip4 平均 | 同上 (ensemble + TTA 積み上げ) |
+
+**member provenance**: 全て edgeatt arch。baseline は manifest 宣言済、
+v74 ckpt は ckpt 内 fold/folds_sha256 metadata で検証
+(`resolve_binding_role` が metadata-bearing ckpt を許容、unknown bytes
+は拒否 — v75 修正に metadata パスを追加)。
+
+**事前固定ゲート**:
+- primary delta = PQ(ens3f) − PQ(baseline) @0.45:
+  - >= +0.005 → 昇格候補 (別 fold/LB での確認実験がさらに必要)
+  - [0, +0.005) → ノイズとして棄却 / <0 → 棄却
+- secondary delta = ens3 − baseline で ensemble 単独効果を分離
+- sanity: baseline PQ@0.45 が v74/v75 実績 0.444238 ±0.001
+
+**期待値の正直な見立て**: TTA (+0.0007-0.0008)・SSL (負) の実績から、
+ensemble も +0.001 前後の帯域効果に留まる可能性が高い。ただし
+「個別には負だった variant の確率平均」は diversity の効く典型条件で、
+計算コストも軽い (~2.3h、新規学習なし) ため、誠実系の残りレーンとして
+完遂する価値がある。負なら ensemble レーンも確定的に閉じる。
+
+**実装**: `scratch/run_fold_oof_eval_tta.py` に multi-member arm
+(`name=ckpt1+ckpt2+...[:mode]`、member ごとに binding 検証・確率平均)
+を追加。notebook `solar_filament_v76_ensemble_colab.ipynb` は同
+スクリプトを embedded 書き出し (byte 一致を test 担保)。
+想定所要 ~2.3h (proposals ~10min + baseline ~8min + ens3 ~24min +
+ens3f ~95min)。
+
+**結果 (2026-10-24, Colab T4 完走 ~1.5h)**: 事前固定ゲートどおり
+**reject_noise** — ただし観測史上最大のサブゲート正効果。ensemble
+レーンを閉じる。
+
+| arm | PQ@0.35 | PQ@0.40 | PQ@0.45 | PQ@0.50 |
+|---|---|---|---|---|
+| baseline | 0.443393 | 0.443862 | 0.444238 | 0.444532 |
+| ens3 | 0.445534 | 0.446022 | 0.446375 | 0.446521 |
+| ens3f | 0.445201 | 0.445648 | 0.445956 | 0.446100 |
+
+- `delta_ens3f_minus_baseline = +0.001718` → 事前固定帯 [0, +0.005) →
+  **ノイズとして棄却** (昇格候補条件 +0.005 未満)
+- `delta_ens3_minus_baseline = +0.002137` — **全実験で最大の正 delta**
+  (TTA 系 +0.0007-0.0008 の約3倍)。member diversity (pretrained /
+  scratch / ssl init) が確率平均で機能する典型条件に合致
+- **`ens3f < ens3` (−0.00042)**: flip4 TTA は ensemble と相殺的 —
+  各 member の確率マップを既に平均した後の追加平滑化は逆効果
+- @0.45 TP/FP/FN: baseline 1715/750/1070 → ens3 1722/740/1063。
+  **TP・FP・FN の3指標すべて改善**する稀有な結果だが振幅は帯域内
+- sanity 完璧: baseline PQ@0.45 = 0.444238、v74/v75 と3連続 bit 一致
+- member_sha256: b1c0f353 (baseline, manifest role) + 868a8441
+  (v74 scratch_s8407) + df968e64 (v74 ssl_s8407) — 全て provenance
+  検証済み (manifest role / ckpt metadata)
+
+**解釈**: ensemble は TTA 系より一桁明確な正方向の signal を持つが、
++0.005 の昇格ゲートには届かない。帯域内のため確認実験は発動せず、
+prod には採用しない — 事後にゲートを緩めない規律のほうが、単一実験の
+結果よりパッケージの信頼性に寄与する。推論コストも3-12倍に増え、
+提出再現の複雑性も増す。
+
+**成果物**: Drive `solar_filament_v76/work/latest/` (v76_eval.json /
+v76_summary.json / sha256_manifest.json、2/2 SHA256 検証済) +
+Kaggle dataset `shingo257/solar-v76-results` (private)。
+
+**採用判断**: prod + plain_mhsa_f2 維持。**残る誠実系レーンは実質
+尽きた** — SSL (3連続負)・TTA (2系統ノイズ)・ensemble (ノイズ) を
+全て事前固定ゲートで閉鎖。
+
+### 2.32 discussion/LB 再調査 — 第5回リフレッシュ：748498 主催者回答あり（別天文台 SSL 許可） (2026-10-24)
+
+第5回 periodic refresh。LB 完全 CSV・全41 discussion topics・新着
+public kernel を走査。
+
+#### 最重要： topic 748498 に主催者回答が着いた (2026-10-21)
+
+> "Your method is OK. Please make sure that the new set of observations
+> does not include the test images (or observations within +/- 1 hour
+> of those timestamps)."
+
+- **KSO・Meudon・BBSO の無ラベル Hα画像による SSL 事前学習は公式に
+  許可** — 第3-4回 refresh で「唯一の未解決論点」としていた質問が
+  解消
+- 除外条件は **test 時刻の ±1 時間以内の観測** — 我々が GONG で
+  自発的に適用した ±360 min より大幅に狭い（主催者要求は ±60 min）
+- 解釈上の注意: 許可されたのは「unlabeled images for SSL encoder
+  pretraining → MAGFiLO fine-tune、inference は test GONG のみ」
+  という質問文の範囲。ラベル転用・外部ラベル付きデータ・test 観測の
+  流用は別論点（§2.28-2.29 の整理どおり依然グレー/禁止）
+- 我々への含意: GONG SSL が3連続負結果（v72-v74）で閉じたため、
+  **追加実験の合理性は乏しい**。別天文台は機器差（ドメインギャップ）
+  でむしろ劣化リスクがある。ただし「法的に可能な未試行データ」
+  としては残る唯一のレーン — 採否は別途判断（後述の取り込み判断）
+
+#### discussion topics 差分（41件・新規 topic ゼロ）
+
+- 前回 (10-21) 以降の**新規 topic なし** — 最大 id は依然 749526。
+  コメント数も全件で前回と同値（745880:16・744765:19・747960:4・
+  749225:3 等不変）。変化は 748498 の主催者回答1件のみ
+- 取得方法: `KaggleApi.competition_list_topics` (SDK) — CLI
+  `competitions topics list` は 31件しか返さず不完全。**正本は SDK
+  経路**（CLI の page 分岐に不具合がある模様）
+
+#### LB スナップショット（1,161 チーム・ERS rank 216 / 0.39）
+
+| 帯域 | 10-21 | 10-24 | Δ |
+|---|---|---|---|
+| 総チーム | 1,104 | 1,161 | +57 |
+| ≥0.55 | 89 | 95 | +6（うち 0.55 ちょうどが更に増加） |
+| 0.45–0.54 | 3 | — | （帯域集計変更、後述） |
+| 0.40–0.50 | 42 | 49 | +7 |
+| <0.40 | — | 1,015 | 大半 |
+
+- トップ **IONode Online 0.69 で3日間不動** — 10-21 時点の連続上昇は
+  止まり plateau 入りした可能性（提出頻度の単なる間欠かもしれないが、
+  急伸局面は一段落）
+- 2位以下: Tempest 0.64、0.62/0.60/0.58/0.57 が各1-数チーム —
+  0.55+ 95チームの大部分は依然「0.55 共有ファイル」パターン
+- **ERS rank 178→216**（score 0.39 不変・順位のみ後退）— 0.55 帯の
+  膨張と新規チーム流入による相対低下。誠実帯では依然上位
+
+#### 新着 public kernel 調査（手法開示の直接証拠）
+
+- **jianansun/filament-yolo-seed-refiner**: YOLO11s det (imgsz1280,
+  conf0.28) + **seed-refiner U-Net** — refiner 入力が3ch
+  `[image_crop, CLAHE, seed_box_mask]`。「seed は refiner に
+  WHERE to look を教える」。Tim Gluhkikh 氏の手法 (33 votes,
+  LB~0.409) にインスパイアと明記。**detector→refiner 同型だが
+  refiner に空間 prior チャンネルを足す点が我々と異なる新機構**
+  （我々の refiner は crop のみ入力）
+- **alessandrolsilveira/solar-e01..e11a シリーズ** (10-21〜24, e10
+  が5 votes): PLAN.md 駆動の系統実験。**semantic U-Net 全画tile**
+  (detector なし)、3ch `[raw, CLAHE, local contrast]`、BCE+soft
+  Tversky(β0.7)+clDice 中心線 loss、native 2048 sliding-window
+  推論+Gaussian blend→連結成分→RLE。**明確に倫理宣言つきの
+  クリーンルーム系**（"trains ONLY on competition annotations, no
+  public-GT tuning"）
+- **muhammadshoaibaltaf/magfilo-v11/v12**: YOLO26x + UNet++/
+  EfficientNet-B4 の detector→refiner 系。V11 は inference-only PQ
+  実験（detector 解像度 1280 vs 1536・conf/mask 閾値 calibration
+  sweep）、V12 は detector-aware crop fine-tuning — 我々の
+  operating-point sweep と同種の誠実な系統実験
+- **lamhuy8904/solar-filament-unet-segmentation-0-55** (39 votes):
+  全画 U-Net + `remove_instance_overlaps`（greedy disjoint pixel
+  allocation）で 0.55 を自称 — **745880 で指摘された「0.55 共有
+  csv」の最有力ソース**。fork/re-run したチームが 0.55 に並ぶ構造と
+  整合
+- **azimahmadzadeh/self-evaluation-notebook** (48 votes): 主催者側が
+  全参加者に共有する公式 self-eval notebook（PQ・IoU/Dice 分布・
+  many-to-one/one-to-many 診断）— 競合手法ではなく審査ツール
+- LB 0.56+ 帯のチーム (IONode Online・Tempest 等) の公開 kernel は
+  **依然ゼロ** — トップ層手法は非公開継続
+
+#### 取り込み判断
+
+- **新規採用レバーなし**。prod + plain_mhsa_f2 維持
+- **seed-channel refiner**（jianansun 経由の Tim Gluhkikh 系）は
+  refiner 入力設計の未試行バリエーションではあるが、そのソース手法
+  自体は LB~0.409 で我々 (0.444238 OOF / 0.39 LB) と同程度 — 移植
+  してもゲート +0.005 に届く見込みは薄い。v76 ensemble が最大
+  +0.0021 で閉じた現状、推論コスト増に見合わない
+- **748498 の回答で「別天文台 SSL」は合法化**されたが、GONG SSL の
+  3連続負結果（同機器・同日付の方がまだ近いドメイン）を考えると
+  成功確率は低い。**実施するなら v72-v74 の負の教訓を反映した
+  縮小版検証**に留めるべき — 本調査では実験を起こさず、記録のみ
+- 証拠/推測の区別: LB 0.55 共有ファイル説は lamhuy8904 kernel の
+  実在+コミュニティ証言で**強い傍証**(確定ではない)。トップ層手法は
+  依然として直接証拠なし
+
+### 2.33 discussion/LB 再調査 — 第6回リフレッシュ：dariushafshar の OOF↔LB 乖離 kernel 公開 (2026-10-26)
+
+第6回 periodic refresh。LB 完全 CSV・41 discussion topics・新着
+public kernel を走査。
+
+#### LB スナップショット（1,196 チーム・ERS rank 200 / 0.39）
+
+| 帯域 | 10-24 | 10-26 | Δ |
+|---|---|---|---|
+| 総チーム | 1,161 | 1,196 | +35 |
+| ≥0.55 | 95 | 100 | +5（0.55 ちょうど **80** チーム） |
+| 0.45–0.54 | — | 2 | 稀薄帯不変 |
+| 0.40–0.44 | — | 50 | |
+| 0.35–0.39 | — | 450 | |
+| <0.35 | — | 594 | |
+
+- **IONode Online が 0.69→0.70** に再び微増（18 submissions）—
+  10-24 の plateau 観測は一時的。Tempest 0.64（123 subs）、
+  0.62 が3チーム。**0.56+ 帯の手法は依然全て非公開**
+- ERS rank 216→**200**（score 0.39 不変）。上位帯の変動で
+  相対的にやや回復
+
+#### discussion topics：新規ゼロ
+
+- 41 topics・最大 id 749526 不変・全コメント数も前回と同値。
+  締切（11-15）が近いのに新規質問が出ていないのが特徴的
+- 748498（別天文台 SSL 許可の主催者回答）は SDK の commentCount
+  表示が1のままだが、本文取得で主催者返信（10-21）は確認済み。
+  API の count 表記揺れは既知
+
+#### 重要発見： dariushafshar が OOF↔LB 乖離を公開 kernel 化
+
+**`dariushafshar/solar-filament-u-net-oof-0-45-vs-public-0-39`**
+(10-17、9 votes) — 以前の sparse-label 説（§2.28）を
+実行可能な完全 kernel として公開:
+
+- **彼の手法**: 10-model ensemble（5 fold × ResNet34 +
+  EfficientNetV2-S の smp U-Net）、**detector なし全画 semantic
+  型**。native 2048 推論 + **8-view D4 TTA**、各重みの sha256 を
+  receipt で固定
+- **数字**: nested-CV OOF **0.4502** vs public **0.39** —
+  我々の 0.444238 / 0.39 と**ほぼ同じ乖離を独立系で再現**
+- **sparse-label モデルを数式で明示**:
+  `PQ' = r·ΣIoU / (r·TP + ½FP + ½(1−r)TP + ½r·FN)`。
+  1 submission で fit した r で3つの提出全ての乖離を説明
+  （我々が彼の r=0.77 を pooled counts に適用→0.3896≈実績 の検証と一致）
+- keep rule: `t_lo=0.35, t_hi=0.99, min_area=200, min_meanp=0.85`
+  — 我々（min_area=20）より**遥かに厳しい面積・平均確率フィルタ**。
+  高確信・大きめの成分のみ残す運用
+- 結論も我々と同じ規律: 「nested OOF で model 比較、PQ' を public
+  推定値として読み、public board の小差を追わない」
+
+**傍証の強化**: 独立した実装・別 split・別 postprocess で同じ
+OOF↔LB 乖離構造が再現 — test 側注釈の sparse 化（主催者証言
+735256 と整合）説は、我々の内部分析に留まらない外部確認となった
+
+#### その他の新着 kernel
+
+- **muhammadshoaibaltaf/magfilo-v14-low-confidence-candidate-
+  recovery-sweep** (10-25、2 votes): タイトルのみ確認（kernel は
+  private・pull 不可）— 我々の detector-blind FN 問題に直結する
+  低信頼度候補回収 sweep。detector recall 改善は依然として
+  コミュニティの主要関心
+- `adelouadfeul/plot-functions-...`（可視化・手法寄与なし）、
+  `jakuzya/solar-filament-segmentation-unet`（通常 U-Net baseline）
+
+#### 取り込み判断
+
+- **採用レバーなし**、prod + plain_mhsa_f2 維持
+- dariushafshar の kernel は**我々の結論を独立に追認**するもので、
+  新しい改善経路ではない。彼の keep rule（min_area=200,
+  min_meanp=0.85）は我々の全範囲 sweep で棄却済みの方向
+- 証拠/推測の区別: sparse-label 説は「2つの独立 pipeline で
+  同構造が再現＋主催者の注釈漏れ証言」で**強い傍証**だが、
+  test GT 非公開ゆえ証明ではない — この表現を維持
+
+### 2.34 discussion 全スレッド本文の精読 — 41 threads / 115 msgs (2026-10-26)
+
+これまでの refresh は topic 一覧・コメント数中心だったため、全41
+スレッドの**メッセージ本文を一括取得**して精読 (SDK
+`competition_list_topic_messages`)。新規 topic はないが、過去スレッド
+への**追記が2件**発見された — コメント数メタデータでは捕捉できない
+更新。
+
+#### 最重要： 724503 Organizers' Remarks に 10-23 追記 — 提出要件が変わった
+
+10-23 のレビュー (top 250 submissions) に基づく主催者投稿:
+
+> "**We will clean the leaderboard after the deadline**, so that credit
+> is given to genuine submissions."
+> "**The reproducibility of submitted codes is only guaranteed if
+> (for ML/DL models) the weights are stored in the repository and are
+> loaded in the notebook.** Otherwise, the reproducibility requirement
+> is not satisfied, and therefore, such submissions will not be
+> considered for the award."
+> "we discourage [AI's] uncritical use. Clear indications that a
+> technical report was generated by AI without meaningful human
+> oversight undermine our confidence in the work."
+
+**我々への直接影響**: 現在の計画は「weights = private Kaggle dataset
+`shingo257/solar-filament-2026-weights` を repro notebook が参照」だが、
+新要件は「**weights を repository に格納**」を明示。dataset は
+"the repository" ではないため、**単独では要件を満たさない可能性が
+高い**。対応案:
+
+- 必要な重み (実測): yolo_fold{0,1,2}_best.pt 45.3MB×3 +
+  edgeatt refiner all_data 141MB + plain_mhsa_f2 (`best_model` のみ
+  抽出で 141MB; 現 file は model+best_model の2重で 282MB) ≈
+  **計 ~420MB**
+- GitHub 単一 file 上限 100MB → refiner は超過。**Git LFS が正攻法**
+  (public repo: 1GB storage・帯域 1GB/月 — 審査用 clone 数回なら
+  許容圏)。代替: <100MB チャンク分割+notebook で再結合 (LFS 帯域
+  quota 不要だが体裁は劣る)。fp16 化 (~70MB) は原 bytes の SHA256
+  provenance を失うため非推奨
+- **期限日タスクを更新**: 「weights dataset public 化は保留」→
+  「**weights を repo 内に同梱 (LFS)** し repro notebook が repo
+  内パスからロードする」が必須要件に。dataset 公開は補助的に残置可
+- レポート: 「AI 生成を匂わせる無審査の報告書は信頼を損なう」と明記
+  — 我々の4頁報告は実測値・負結果を正直に記述した人間精読済み文書
+  なので問題ないが、README/Form でも同様の姿勢を維持
+
+#### ルール裁定の確定一覧（本文から verbatim 確認）
+
+| topic | 裁定 | 内容 |
+|---|---|---|
+| 737215 | **許可** | 無ラベル GONG での SSL pretrain (test ラベル不使用・inference は test 画像のみ) |
+| 743385 | **inference 不可** | 系列利用は学習のみ。「model may not depend on any sequence during inference」 |
+| 744047 | **許可/不可** | 無ラベル GONG 学習 = OK。推論時の近傍フレーム使用 = **No** |
+| 743521 | **許可** | 同時刻 GONG 磁気図 (bzi) を訓練専用 aux signal として使用可 |
+| 748045 | **許可** | 訓練ラベルの ±数分 GONG archive 転用可 (±1h test 除外必須)。「Your technical report is the right place for such disclosure」 |
+| 748498 | **許可** | KSO/Meudon/BBSO 無ラベル SSL (±1h test 除外) — §2.32 記録済 |
+| 746318 | **不許可** | SWEFil (外部ラベル付き) は「more ground-truth data」として禁止 |
+| 736543 | **許可** | 提供データの spine/bbox/area/category_id を aux 監督に使用可 |
+| 738951 | **許可** | 元 GONG FITS の利用可 (公式 MLEco FITS2JPEG あり) |
+| 744544 | **許可** | グレースケール→3ch 複製は acceptable |
+| 749225 | 参考 | GONG archive は ~40 files で 403 レート制限。community 回避: 2接続+1s delay、ban ~12h。主催者は IT チームに共有したのみで公式経路なし |
+
+残る未解決の推論時外部データ拡張は**全て閉鎖** — 許可された外部利用は
+全て訓練側のみ。
+
+#### リーク構造の確定証拠（728062/729396/737177/745880/741892/743958）
+
+- **728062**: public MAGFiLO (Harvard Dataverse) に **test 180画像の
+  うち139枚が byte 一致**・全180枚の注釈 (~2,045件) が公開。
+  実測: MAGFiLO 注釈に置換した提出で **0.73→0.82**
+- **737177**: Fable の分析 — partial leak で ~0.51、full leak で
+  ~0.66。HDJoJo の 0.52 と整合 → **0.56-0.70 帯の最尤説明は test GT
+  利用**（個別チームの違反を断定するものではないが、構造証拠は強い）
+- **745880**: 第三者が Fususu の 0.70 handoff kernel を実測 →
+  **0.35**。「his 0.70 LB score is not in the submission」— 我々の
+  v75/v76 での棄却判断・移植見送りを事後裏付け
+- **741892**: 「~0.45 (or even 0.41) 超は test 注釈使用」+ 「judges
+  have confirmed they are aware」— 誠実系フロンティア ~0.41-0.49
+  (noisyislands) の認識がコミュニティ共通
+- **743958**: lamhuy8904 kernel = 0.55 ファイルの実体（leak 使用と
+  投稿者が指摘）。主催者「we take a score of 0.41 very seriously」
+
+#### メトリクス考古学（旧メトリクスの exploit 記録）
+
+- **728474**: 全空 mask で 0.93 — 旧 metric が空提出を報酬化
+- **729809**: 同一モデルで提出数だけ変化: 0件=0.93 / 2枚=0.72 /
+  6.4枚=0.67 / 11枚=0.65。predictions が少ないほど高スコア
+- **733912**: 8-9 頃に metric 更新、同一 byte 提出が 0.66→0.31 に
+  低下。LB が新旧 metric の混在期を経た記録
+- **735377**: 予測 mask 重複は scorer ERROR（我々は disjoint
+  allocation 済みで適合）
+- 我々の全 OOF/LB 数値は**新 metric 期のもののみ**を採用済み
+
+#### 評価・提出要件の細部確定
+
+- **727186/728302**: 定量70% (Dice=torchmetrics, IoU, PQ) +
+  定性30%。報告書は「entire pipeline, no micro-level decision
+  undocumented」— 我々の4頁報告+README+RESEARCH_LOG でカバー
+- **735256**: 主催者が注釈漏れを公認 + 「many-to-many relations の
+  分布も審査で見る」— self-eval notebook 生成の図を参照せよと指示
+- **747960**: 両提出の再現必須（我々は同一 repo で両方バイト一致済）
+- **749526**: efficiency は定性フィルタのみ
+- **749524**: Form 再提出可・最大10ファイル（PDF 差替可）
+- **736921**: LB invisible バグの実例あり（主催者が復旧）— 我々は
+  ERS rank 200 で表示中、問題なし
+
+#### 取り込み判断
+
+- **prod + plain_mhsa_f2 維持**。採用レバーなし
+- **要対応**: weights-in-repo 要件 — SUBMISSION_FORM_DRAFT.md の
+  締切日タスクを更新（別節で反映済み）
+- 許可済み未試行レーン（磁気図 aux・ラベル転用・別天文台 SSL）の
+  優先度は依然低い — GONG SSL 3連敗と残り締切日数を考慮
+
+### 2.35 Phase A: weights-in-repository 対応 — 実装記録 (2026-10-26)
+
+topic 724503 の要件 ("weights are stored in the repository and are
+loaded in the notebook") への実装。monorepo には重み本体を置かず、
+**standalone 公開 repo (solar-filament-2026-solution) の weights/ に
+Git LFS で同梱**する方針 (§2.34 締切日タスク参照)。
+
+#### エクスポート (`scratch/export_submission_weights.py`)
+
+| repo weights/ 名 | bytes | sha256 (先頭16) | 原本 | 検証 |
+|---|---|---|---|---|
+| yolo_fold0_best.pt | 45,316,918 | ab8810916e34a755 | runs/yolo_fold_0/.../best.pt | byte 一致 |
+| yolo_fold1_best.pt | 45,316,918 | 44ba9381a575d166 | 同 fold_1 | byte 一致 |
+| yolo_fold2_best.pt | 45,316,918 | 40ec31fd2c6aa8e3 | 同 fold_2 | byte 一致 |
+| refiner_all_data.pt | 141,079,441 | e9f0e8dd7ff104d9 | artifacts/..._all_data_resume.pt | byte 一致 |
+| refiner_plain_mhsa_fold2_s8407.pt | 141,041,333 | **edc4e6660a709f9a** | artifacts/ablation_plain_mhsa_seed8407_fold2.pt | **124 tensors torch.equal** |
+
+plain_mhsa 原本は `model`+`best_model` の2重格納 282MB — `best_model`
+のみ抽出して 141MB に半減。serialized bytes は原本と異なるが
+loader `ckpt.get("best_model") or ckpt["model"]` で同一オブジェクトを
+返すため推論等価。manifest (`weights_manifest.json`) は
+`--verify` で原本との tensor 等価を再検証可能。
+
+#### notebook 解決順序の変更 (builder + 生成物)
+
+`resolve_pretrained()` の探索順を **repo 同梱 weights/ → Kaggle
+dataset → Drive artifacts → フル再学習** に変更。repo 経路は同梱
+`weights_manifest.json` の sha256 で検証し、不一致は ValueError。
+探索根は cwd/weights, cwd.parent/weights, cwd/Solar_Filament_
+Segmentation/weights + `SOLAR_WEIGHTS_DIR` 環境変数。
+fold CSV も repo `data/grouped_folds.csv` (sha256 24367120…, 本
+commit で新規追加) を第一候補に追加 — dataset/Drive 無しでも split
+を再生成せず検証できる。
+
+#### standalone repo への配置設計 (A3)
+
+- `weights/` に上記5ファイル + `weights_manifest.json` (計 ~556MB、
+  Git LFS: `*.pt` filter)。`.gitattributes` に LFS 指定を追加。
+- repo clone 後 `git lfs pull` → `weights/` をそのまま notebook の
+  第一経路が発見する (cwd/weights)。
+- monorepo 側は sha256 指紋のみ (AGENTS.md §2.3 準拠)。LFS quota:
+  storage 1GB / bandwidth 1GB/月 — 審査 clone 数回なら内側。
+- `data/grouped_folds.csv` は standalone repo にも通常ファイルとして
+  同梱 (subtree sync で自動反映)。
+- **sync 注意**: standalone への commit-tree 同期は tree 全体を
+  モジュール tree で置き換えるため、`weights/` (standalone 専有) は
+  sync のたびに落ちる。sync 手順の末尾で `weights/` + `.gitattributes`
+  の LFS 行を前コミットから再 graft するか、weights commit を最後に
+  積み直すこと (実施済: standalone main `b006ede`)。
+- LFS pointer は text file のため repo 上の見た目は小さいが、clone 時に
+  `git lfs pull` が必要 ( notebook は smudge 済み working tree を前提)。
+
+#### テスト
+
+- `test_export_submission_weights.py` 6件 (合成 ckpt で export/
+  verify/manifest/best_model|model 両形式)
+- `test_repo_weights_resolution.py` 5件 (repo 優先・sha 不一致拒否・
+  dataset フォールバック・未検出 None・manifest 参照確認)
+- `test_submission_reproduction_variants.py` の plain dispatch 期待値を
+  2パターン (dataset 名 + repo 名) に更新
+
+### 2.36 B1 設計: verifier rescue — 低conf 候補の回収 (事前登録, 2026-10-26)
+
+#### 仮説と既存証拠
+
+fold-2 OOF の FN の ~68% は detector-blind (conf<0.26 で提案自体が
+出ない)。v72 の verifier 実験は**除去方向**のみ (提案を verifier で
+フィルタ) で失敗。rescue 方向 — conf<0.26 の候補を verifier が
+採用側に回す — は未試行。v14 sweep (muhammadshoaibaltaf) も同方向を
+示唆するが非公開。tile union は FP 洪水で失敗済みなので、
+verifier スコアによる選択的 rescue が残る構造レバー。
+
+#### 設計 (実装確定版)
+
+- 実装: `scratch/run_v80_scorer_eval.py` に `rescue` arm を追加。
+  候補・refiner 出力・特徴量は v80 candidates cache 再利用 (再検出なし)
+- arm `rescue`: **conf>=0.26 の yolo 候補は無条件維持**し、
+  conf∈[0.08, 0.26) の候補は cross-fit 済み A1 scorer の û (期待IoU) が
+  τ 以上なら追加採用 — strictly-additive (prod 集合を減らさない)
+- 掃引 `τ ∈ TAU_GRID (0.16…0.32, 0.02刻み)` — û は期待IoUスケールで
+  運用点 τ*≈0.22。0.5-0.9 の絶対値掃引はスケール不整合のため改訂
+- 評価は全3fold pooled PQ (fold-2 部分も per-obs 集計で報告)。
+  prod arm が同一 cache で再現されるため sanity は内蔵
+- **留保 (事前確定)**: scorer cross-fit は upstream モデルを outer-fold
+  別に再学習していない non-nested 構成 (§2.8 記録の留保と同一)。
+  よって本評価は **exploratory** で、gate 通過しても直接採用不可 —
+  nested 再検証が別途必要
+
+#### 事前固定ゲート (結果を見る前に確定)
+
+- `max_τ (rescue_pq − prod_pq) ≥ +0.005` → 昇格"候補" (nested
+  再検証の実施を起動するのみ、即採用ではない)
+- `[0, +0.005)` → ノイズ棄却 / `<0` → 棄却
+- 掃引の max を取るため multiple-comparison 補正として採用判定は
+  `max_τ Δ` に適用。bootstrap CI95 を参考報告するが判定は点推定
+- 二次指標: rescue 追加候補数と TP/FP 内訳 (分析用、判定に使わない)
+
+#### 指紋
+
+- 入力: candidates cache `solar_filament_v80/candidates/fold_{0,1,2}`
+  + frozen split `24367120…`、GT annotations、実行時に sha256 を記録
+- scorer: HistGBM h×m cross-fit (seed 3407、meta は a1_scorer_meta.json)
+- 再現: `run_v80_scorer_eval.py` (rescue arm)、結果 `output/v80/`
+
+#### B1 結果 (2026-10-27, eval 63min @workers=2, `output/v80_rescue/`)
+
+| arm | pooled PQ | fold0 | fold1 | fold2 | TP | FP | FN |
+|---|---|---|---|---|---|---|---|
+| prod | 0.442631 | 0.4393 | 0.4415 | 0.4471 | 5082 | 2286 | 3117 |
+| rescue τ*=0.28 | 0.444431 | 0.4398 | 0.4442 | 0.4492 | 5142 | 2346 | 3057 |
+
+- τ 掃引: 0.16→−0.0023、0.18→+0.0001、0.20→+0.0010、0.22→+0.0016、
+  0.24→+0.0014、0.26→+0.0017、**0.28→+0.0018 (max)**、0.30→+0.0016、0.32→+0.0006
+- best bootstrap CI95 [+0.00065, +0.00295] — ゼロを跨がない正の効果だが、
+  TP+60/FN−60/FP+60 の対称増加 (真候補も偽候補も等しく拾う)
+- **判定: reject_noise** — max_τ Δ = +0.0018 ∈ [0, +0.005) 帯。
+  non-nested scorer 留保もあり昇格候補にもならない
+- 解釈: û の順位付けは conf<0.26 帯でも弱い正の信号を持つが、
+  rescue 利益と FP コストがほぼ相殺。TTA(+0.0007)・ensemble(+0.0021)・
+  rescue(+0.0018) と独立機構3系統が全て [0, +0.005) 帯に収束 —
+  frozen operating point 周辺の帯域効率の天井を強く示唆
+- **verifier/scorer 系レーンはこれで完全閉鎖** (filter=v72 棄却、
+  scorer 選択=A1 LB 反転、rescue=B1 ノイズ棄却、oracle は +0.107 でも
+  scorer が解放できない)。残りの誠実系レーンは締切日作業のみ

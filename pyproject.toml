@@ -16,6 +16,7 @@ dependencies = [
   "pycocotools>=2.0.7",
   "scikit-learn>=1.2.0",
   "scikit-image>=0.21.0",
+  "tqdm>=4.67",
 ]
 
 [project.optional-dependencies]
