@@ -51,20 +51,25 @@
   — **実施済み (PR #478, standalone `weights/` + Git LFS)**:
   `yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
   `refiner_plain_mhsa_fold2_s8407.pt` (best_model 抽出、124 tensors
-  verified equal) + `weights_manifest.json` ≈ **計 ~556MB**。
+  verified equal) + `weights_manifest.json` ≈ **計 ~418MB (399MiB、
+  公開 clone の `git lfs pull` で実測確認済み)**。
   notebook は `cwd/weights` を第一経路で解決 (manifest sha256 検証、
   不一致は ValueError) → dataset → Drive → 再学習の順。
   2026-10-26 にローカル clone で E2E 検証済み (5 重み全て repo 解決・
   fold CSV sha256 `24367120…` 一致)。残るのは public 化後の
   匿名 clone + `git lfs pull` 再確認のみ
-- [ ] prod + plain_mhsa_f2 を Kaggle UI で最終選択 (B1)
-- [ ] prod + plain_mhsa_f2 を Kaggle UI で最終選択 (B1)
+- [ ] prod + plain_mhsa_f2 を Kaggle UI で最終選択
 
 ## 提出前の最終確認リスト
 
 1. repo public + 上記ファイル群がログアウト状態で閲覧できる
 2. **repo 内の weights (LFS) が公開 clone で取得できる** +
    notebook が repo 内パスから重みをロードできる
-3. report PDF が最新 (v72/v73 SSL 負結果まで反映済み・本文4p再検証済 2026-10-19 #400)
+3. report PDF が最新 — **§2.36 / B1 rescue まで反映済み**
+   (本文4p + refs、PR #481 で再検証済)
 4. Kaggle 最終選択が prod + plain_mhsa_f2 になっている
-5. form 送信後に確認メール/スクリーンショットを保管
+5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
+   主催者回答: 再送信はファイル差替ではなく**追加**になり、
+   旧ファイルは消せない。委員会は「最後の提出」を見ると明言。
+   誤った PDF を上げた場合は訂正版を**末尾に追加**する形で対処
+6. form 送信後に確認メール/スクリーンショットを保管
