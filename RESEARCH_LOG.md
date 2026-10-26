@@ -1702,6 +1702,14 @@ commit で新規追加) を第一候補に追加 — dataset/Drive 無しでも 
 - LFS pointer は text file のため repo 上の見た目は小さいが、clone 時に
   `git lfs pull` が必要 ( notebook は smudge 済み working tree を前提)。
 
+#### E2E 検証 (2026-10-27)
+
+standalone repo を temp dir に clone → notebook 埋め込み関数を AST
+抽出して clone cwd から実行: `repo_weights_roots()` が
+`<clone>/weights` を検出、5 重み全てが repo 経路で解決
+(manifest sha256 検証 pass)、`data/grouped_folds.csv` =
+`24367120…` 一致。公開化後に匿名 clone で再確認するだけの状態。
+
 #### テスト
 
 - `test_export_submission_weights.py` 6件 (合成 ckpt で export/

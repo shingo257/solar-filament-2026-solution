@@ -47,19 +47,17 @@
 - [x] 4ページ報告書 `report/main.pdf` (本文4p + refs、テンプレ準拠)
 - [x] ~~リポジトリを public にする操作~~ → **private repo 作成済み**;
   締切日に `gh repo edit --visibility public` で切替のみ
-- [ ] **重みを repo 内に同梱 (2026-10-23 主催者要件: topic 724503)**
-  — 「stored in the repository AND loaded in the notebook」。
-  必要重みの実測 (Drive 上の reviewed artifacts):
-  `yolo_fold{0,1,2}_best.pt` 45.3MB×3 + `mediseg_edgeattnet_refiner_
-  all_data_resume.pt` 141MB + `ablation_plain_mhsa_seed8407_fold2.pt`
-  の `best_model` state_dict 141MB ≈ **計 ~420MB**
-  - GitHub 1file 上限 100MB 超のため **Git LFS 採用が第一案**
-    (public repo: storage 1GB・帯域 1GB/月 — 審査 clone 数回なら許容)
-  - 代替案: <100MB チャンク分割 + notebook 内で再結合 (LFS 帯域
-    quota 不要・体裁は劣る)。fp16 化は原 bytes の SHA256 provenance
-    を失うため非推奨
-  - repro notebook は repo 内相対パスから重みをロードする形に更新
-    が必要。Kaggle dataset 公開は補助として残置可
+- [x] **重みを repo 内に同梱 (2026-10-23 主催者要件: topic 724503)**
+  — **実施済み (PR #478, standalone `weights/` + Git LFS)**:
+  `yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
+  `refiner_plain_mhsa_fold2_s8407.pt` (best_model 抽出、124 tensors
+  verified equal) + `weights_manifest.json` ≈ **計 ~556MB**。
+  notebook は `cwd/weights` を第一経路で解決 (manifest sha256 検証、
+  不一致は ValueError) → dataset → Drive → 再学習の順。
+  2026-10-26 にローカル clone で E2E 検証済み (5 重み全て repo 解決・
+  fold CSV sha256 `24367120…` 一致)。残るのは public 化後の
+  匿名 clone + `git lfs pull` 再確認のみ
+- [ ] prod + plain_mhsa_f2 を Kaggle UI で最終選択 (B1)
 - [ ] prod + plain_mhsa_f2 を Kaggle UI で最終選択 (B1)
 
 ## 提出前の最終確認リスト
