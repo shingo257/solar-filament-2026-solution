@@ -7,3 +7,8 @@
 **/*.csv text eol=lf
 **/*.json text eol=lf
 **/*.ipynb text eol=lf
+
+# weights/ は Git LFS 管理 (2026-10-23 主催者要件: weights stored in
+# the repository)。monorepo 側 .gitattributes にも同一規則があり、
+# subtree sync 後もこのファイルへ再適用される。
+weights/*.pt filter=lfs diff=lfs merge=lfs -text
