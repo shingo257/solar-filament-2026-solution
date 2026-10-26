@@ -117,13 +117,24 @@ python scratch/run_test_submission.py --mode prod --device cuda  # --device省�
 # 第2提出（plain_mhsa_f2）の再現
 python scratch/run_test_submission.py --mode prod --refiner plain_mhsa_f2 --device cuda
 
-# 重みを Drive 以外から読む: Kaggle dataset をダウンロードして --weights-dir に渡す
-# （test画像には引き続き Drive 相当の配置が必要。両バリアント疎通は作者報告）
+# 重みを Drive 以外から読む: repo 同梱の weights/ または Kaggle dataset を
+# --weights-dir に渡す（test画像には引き続き Drive 相当の配置が必要。
+# 両バリアント疎通は作者報告）
 python scratch/run_test_submission.py --mode prod \
-    --refiner plain_mhsa_f2 --weights-dir <dataset_dir> --device cuda
+    --refiner plain_mhsa_f2 --weights-dir weights --device cuda
 ```
 
-- **重み**: Kaggle dataset `shingo257/solar-filament-2026-weights`
+- **重み（提出用正本・repo 同梱）**: `weights/` 以下に Git LFS で同梱
+  （`yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
+  `refiner_plain_mhsa_fold2_s8407.pt`、計 ~418MB、
+  `weights/weights_manifest.json` に sha256 一覧）。
+  **clone 後は `git lfs pull` で実体化**（git-lfs 未導入環境では
+  pointer file のみ降りるので注意）。提出再現 notebook は
+  `weights/` を第一経路で解決し manifest の sha256 を検証する
+  （不一致は ValueError）。Kaggle dataset / Drive は冗長フォールバック。
+  主催者要件「weights stored in the repository and loaded in the
+  notebook」（topic 724503、2026-10-23）への対応。
+- **重み（冗長経路・Kaggle dataset）**: `shingo257/solar-filament-2026-weights`
   （`yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
   `ablation_plain_mhsa_seed8407_fold2.pt`（第2提出用）+ `a1_scorer_*`、
   sha256 manifest 同梱）。ローカルでは Drive `solar_filament_v30/artifacts/` の

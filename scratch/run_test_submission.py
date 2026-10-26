@@ -89,6 +89,29 @@ DATASET_FILENAMES = {
     "edgeatt_f2": "ablation_edge_att_seed8407_fold2.pt",
 }
 
+# repo 同梱 weights/ (best_model 抽出名) と Kaggle dataset 名の両方を受理
+PLAIN_MHSA_ALT_NAME = "refiner_plain_mhsa_fold2_s8407.pt"
+
+
+def resolve_weights_dir_paths(weights_dir: Path, refiner: str):
+    """--weights-dir 内の yolo/refiner 重みパスを解決して返す。"""
+    if not weights_dir.is_dir():
+        raise FileNotFoundError(
+            f"--weights-dir が存在しません: {weights_dir}")
+    yolo_src = weights_dir / DATASET_FILENAMES["yolo"]
+    refiner_src = weights_dir / DATASET_FILENAMES[refiner]
+    if not refiner_src.exists() and refiner == "plain_mhsa_f2":
+        alt = weights_dir / PLAIN_MHSA_ALT_NAME
+        if alt.exists():
+            refiner_src = alt
+    missing = [p.name for p in (yolo_src, refiner_src) if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"--weights-dir に重みがありません: {missing} "
+            f"({weights_dir})")
+    return yolo_src, refiner_src
+
+
 # 29特徴ベース列 (FEATURE_NAMES から prob_* 4列を除いた順序をここでも固定)
 BASE_FEATURES_NO_PROB = (
     "log_area", "log_area_prop", "shrink_ratio", "aspect", "elongation",
@@ -194,16 +217,8 @@ def _run_submission(local: Path) -> int:
 
     refiner_filename, refiner_kind = REFINER_VARIANTS[args.refiner]
     if args.weights_dir is not None:
-        if not args.weights_dir.is_dir():
-            raise FileNotFoundError(
-                f"--weights-dir が存在しません: {args.weights_dir}")
-        yolo_src = args.weights_dir / DATASET_FILENAMES["yolo"]
-        refiner_src = args.weights_dir / DATASET_FILENAMES[args.refiner]
-        missing = [p.name for p in (yolo_src, refiner_src) if not p.exists()]
-        if missing:
-            raise FileNotFoundError(
-                f"--weights-dir に重みがありません: {missing} "
-                f"({args.weights_dir})")
+        yolo_src, refiner_src = resolve_weights_dir_paths(
+            args.weights_dir, args.refiner)
     else:
         yolo_src = (drive / "solar_filament_v30" / "runs"
                     / f"yolo_fold_{SINGLE_FOLD}" / "weights" / "best.pt")
