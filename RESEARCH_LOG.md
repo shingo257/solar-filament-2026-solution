@@ -1710,6 +1710,16 @@ standalone repo を temp dir に clone → notebook 埋め込み関数を AST
 (manifest sha256 検証 pass)、`data/grouped_folds.csv` =
 `24367120…` 一致。公開化後に匿名 clone で再確認するだけの状態。
 
+**GitHub push 済み (2026-10-27、repo は private のまま)**:
+`shingo257/solar-filament-2026-solution` へ `main` を force push
+(`d1c4bd42 → a5cd1215`、旧系統は内容の部分集合・非 FF のため
+force; 逆方向差分なしで喪失ゼロを確認済み)。LFS 5 objects/418MB
+アップロード完了。authenticated な新規 clone + `git lfs pull` で
+5 重み全てが実体化し manifest sha256 と一致 (ab881091… /
+44ba9381… / 40ec31fd… / e9f0e8dd… / edc4e666…) — **GitHub
+経路の E2E は検証済み、締切日の残作業は visibility 切替 +
+匿名 clone 再確認のみ**。
+
 #### テスト
 
 - `test_export_submission_weights.py` 6件 (合成 ckpt で export/

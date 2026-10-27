@@ -45,8 +45,10 @@
   (`solar_filament_submission_reproduction.ipynb`: prod と
   plain_mhsa_f2 の両提出を再現)
 - [x] 4ページ報告書 `report/main.pdf` (本文4p + refs、テンプレ準拠)
-- [x] ~~リポジトリを public にする操作~~ → **private repo 作成済み**;
-  締切日に `gh repo edit --visibility public` で切替のみ
+- [x] ~~リポジトリを public にする操作~~ → **private repo に push 済み**
+  (2026-10-27、LFS 418MB 含む; authenticated clone で 5 重みの
+  sha256 一致を実測確認)。締切日は `gh repo edit --visibility public`
+  の切替のみ
 - [x] **重みを repo 内に同梱 (2026-10-23 主催者要件: topic 724503)**
   — **実施済み (PR #478, standalone `weights/` + Git LFS)**:
   `yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
