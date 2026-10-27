@@ -244,7 +244,7 @@ Drive 側は `solar_filament_v30/artifacts/` に
 spine、barb、chirality、時間発展、観測所間頑健性の改善を意味しない。特に`shrink`は
 proposal外の細構造を復元できないため、科学・実運用候補への昇格には別評価が必要である。
 
-今後は[`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md)に従い、最初に
+今後は[`SCIENTIFIC_UTILITY_ROADMAP.md`](../../SCIENTIFIC_UTILITY_ROADMAP.md)に従い、最初に
 V35、raw YOLO、V34をspine・接続性・境界・split/merge・層別条件で再評価する。S0完了前に
 科学トラックの数値ゲートを推定で置かず、PQ単独を実運用への昇格理由にしない。
 
