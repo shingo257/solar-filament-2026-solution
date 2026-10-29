@@ -1,0 +1,26 @@
+{
+  "iou_0.1_0.3": {
+    "n": 54,
+    "area_ratio_median": 0.378,
+    "area_ratio_p25": 0.245,
+    "area_ratio_p75": 3.461
+  },
+  "iou_0.3_0.5": {
+    "n": 196,
+    "area_ratio_median": 1.214,
+    "area_ratio_p25": 0.525,
+    "area_ratio_p75": 1.936
+  },
+  "iou_0.5_0.7": {
+    "n": 606,
+    "area_ratio_median": 1.097,
+    "area_ratio_p25": 0.824,
+    "area_ratio_p75": 1.353
+  },
+  "iou_0.7_1.01": {
+    "n": 472,
+    "area_ratio_median": 1.03,
+    "area_ratio_p25": 0.923,
+    "area_ratio_p75": 1.126
+  }
+}

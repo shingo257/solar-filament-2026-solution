@@ -146,7 +146,11 @@ def test_generated_notebook_and_code_cells_match_source(fold):
 
 
 def test_detector_recipe_is_preserved_from_v30():
-    original = (ROOT / 'scratch/build_v30_prize_colab.py').read_text(encoding="utf-8")
+    # The v30 payload strings moved to the cells module; scan both sources.
+    original = ''.join(
+        (ROOT / f'scratch/{name}').read_text(encoding='utf-8')
+        for name in ('build_v30_prize_colab.py', 'build_v30_prize_colab_cells.py')
+    )
     module_tree = ast.parse(original)
     strings = [n.value for n in ast.walk(module_tree) if isinstance(n, ast.Constant) and isinstance(n.value, str)]
     old_source = next(s for s in strings if 'def train_yolo_fold' in s)

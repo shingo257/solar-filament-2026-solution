@@ -1792,3 +1792,268 @@ verifier スコアによる選択的 rescue が残る構造レバー。
 - **verifier/scorer 系レーンはこれで完全閉鎖** (filter=v72 棄却、
   scorer 選択=A1 LB 反転、rescue=B1 ノイズ棄却、oracle は +0.107 でも
   scorer が解放できない)。残りの誠実系レーンは締切日作業のみ
+
+### 2.37 B2 設計: mask morphology sweep — 推論時マスク膨張/収縮 (事前登録, 2026-10-27)
+
+**動機**: §near-miss 診断 (fold2 全 235 obs・1,290 pred↔GT ペア、
+`scratch/analyze_nearmiss_area_bias.py`) で IoU 0.3–0.5 帯の
+pred_area/gt_area 中央値 = **1.214** (p25 0.525 / p75 1.936)。
+予測が GT よりやや大きい傾向 — 一様 erosion が near-miss の一部を
+TP 化する可能性。一方分散が大きく (合併 pred は ~2x)、効果の符号は
+事前には不明 — これは既存レバーの中で唯一未試行の安価な純後処理変更。
+
+**設計 (全て prod 経路と同一、変更はマスクへの morphology だけ)**:
+
+- `morph` arm: keep 集合 = prod (`source==0 & usable & conf>=0.26`)
+- 各候補マスクに disk dilation (r>0) / erosion (r<0)、
+  r ∈ {−3,−2,−1,+1,+2,+3} px @2048² (cv2.MORPH_ELLIPSE)
+- その後は全て同一: drop_contained@0.90 → area 昇順 greedy_disjoint
+  (min_area=20) → 公式 PQ
+- v80 candidates cache 再利用 (refiner 再推論なし)、3fold pooled 評価
+
+**事前固定ゲート** (B1 と同一規約):
+
+- `max_r (morph_pq − prod_pq) >= +0.005`: nested 再検証の検討のみ
+  (即採用しない)
+- `[0, +0.005)`: reject_noise
+- `<0`: reject
+
+**誠実留保**: 面積比診断は探索的 — 符号は不明で結果を見てからの
+採用判断はしない。erosion で mask が消滅した候補は min_area で
+自然に落ちる (実装は消滅マスクもそのまま流す)。
+
+### 2.38 v87 設計: union-label YOLO 再学習 — アノテータ間クラスタ和集合教師 (事前登録, 2026-10-27)
+
+**出自**: 外部 AI (ユーザー経由 zip `v87_yolo_union_label.zip`) からの
+提案。実装は zip 同梱版をベースに、本リポ側でコードレビュー・検証・
+補強 (`--folds-sha256` 引数追加、folds sha256 を実測値で埋め込み再生成)
+して統合。外部 AI の合成テスト報告のみで GPU 学習/評価は未実行だったため、
+動作検証は本リポで実施 (unit test 6/6 緑、prod 学習引数との完全一致を
+`build_master_pipeline_notebook.py` 対比で確認、Drive 側全前提ファイルの
+実在・folds sha256 `febb3f67…` を実測確認)。
+
+**動機**: prod YOLO は `(file, annotator record)` を独立サンプルとして
+学習している。これは暗黙に (a) 高合意物体を複数回 positive 化し、
+(b) 1人しか描いていない物体を他アノテータのコピーでは背景負例として
+教え、(c) 境界の不一致を矛盾ラベルとして与える。detector-blind FN が
+FN の 68% を占める現状 (§v74/B1) で、候補生成側のラベル構造を変える
+唯一未試行のレバー (D3 系)。
+
+**設計 (学習データのラベルのみ変更。モデル・ハイパラ・fold・seed・
+評価経路は prod と完全一致)**:
+
+- `union_hard`: 同一物理フィラメントをアノテータ横断で mask IoU>0.5
+  union-find (同 record 同士は合併禁止・IoU 降順 deterministic)、
+  和集合 mask を全 record コピーに重みなしで付与
+- `union_agree`: 同じ和集合クラスタで、合意数 a のクラスタを a コピーに
+  付与 (合意重みをサンプル複製で近似)
+- union の YOLO 化は最大外周輪郭のみ (min_area=20 未満は drop、
+  複数成分 union は統計として記録)
+- fold2 のみ、seed=3407+2、学習引数 18 項目は master/prod と完全一致
+- 評価は prod 経路と同一: EdgeAtt fold2 refiner → drop_contained@0.90
+  → greedy ownership (min_area=20) → 公式 PQ、conf sweep
+  {0.15,0.20,0.26,0.32}、primary=0.26
+- prod baseline は同一 notebook 内で同経路評価 (paired Δ)。
+  既知値 0.444238 との ±0.002 超乖離は警告 (判定は paired Δ)
+
+**事前固定ゲート**:
+
+- `PQ(arm,0.26) − PQ(prod,0.26) >= +0.005`: fold0/1 に昇格検討
+- `[0, +0.005)`: reject_noise
+- `<0`: reject
+- conf sweep の最大値のみでの採用はしない (primary 固定)
+
+**誠実留保**: (a) `union_agree` でも高合意物体の複製構造は残り、
+「他アノテータが描いた物体を背景化」する問題は `union_hard` でも
+完全には解消しない (複製コピー全てに全 union を入れる設計のため)。
+(b) 最大輪郭のみの変換は非連結 union の一部成分を捨てる
+(統計で報告)。(c) Drive パス・既知値 0.444238 は外部 AI の推定を
+本リポで実測確認済みだが、paired baseline 評価が前提の最終確認。
+(d) LB は疎ラベル採点の可能性が高く、OOF で上がっても LB には
+出ない可能性がある。
+
+**結果 (Colab A100, 2026-10-28, fold2, paired eval, 235 val images)**:
+
+paired baseline 再現性は `prod@0.26 = 0.444221` vs 既知値
+`0.444238` (差 −1.7e−05) で ±0.002 以内を確認。学習は両 arm とも
+YOLO11m-seg・70 epoch 上限 (union_hard は early stop @52 で 66 epoch、
+union_agree は完走)、detector 単体 best val mask mAP50 は
+union_hard 0.618 / union_agree 0.632。
+
+| arm | conf | PQ | SQ | TP | FP | FN | preds/img | ΔPQ@0.26 |
+|---|---|---|---|---|---|---|---|---|
+| prod | 0.26 | **0.4442** | 0.6799 | 1715 | 750 | 1070 | 6.38 | — |
+| union_hard | 0.26 | 0.4304 | 0.6758 | 1860 | 1196 | 925 | 7.98 | **−0.0138** |
+| union_agree | 0.26 | 0.4402 | 0.6804 | 1588 | 536 | 1197 | 5.46 | **−0.0040** |
+
+conf sweep 全値:
+
+| conf | prod | union_hard | union_agree |
+|---|---|---|---|
+| 0.15 | 0.4265 | 0.3935 | 0.4319 |
+| 0.20 | 0.4372 | 0.4151 | 0.4401 |
+| 0.26 | **0.4442** | 0.4304 | 0.4402 |
+| 0.32 | 0.4416 | 0.4378 | 0.4305 |
+
+**解釈**: `union_hard` は設計意図通り detector-blind FN を回収
+(TP +145 / FN −145) したが、1 票物体と肥大化 union mask 由来の
+FP が +446 と暴走し大幅悪化。`union_agree` は合意重みで FP を
+prod 以下 (536) まで抑え込んだが、今度は TP が −127 と recall 側に
+負荷が回り、ネットでは −0.004 の微損。両 arm とも sweep 全域で
+prod を上回る conf 帯はなく、閾値調整でも救えない。
+union 化による「他アノテータ未描画物体の背景化」解消は FN 回収に
+効くが、sparse-label OOF 評価系では追加候補が FP として直接
+罰せられるため、純粋な recall レバーとしては機能しないことが
+定量的に確認できた。
+
+**verdict**: 両 arm **reject** (Δ@primary < 0)。D3 系
+(ラベル構造変更) レーンは v87 で打ち止め。prod /
+plain_mhsa_f2 2 構成は不変。manifest は Drive
+`solar_filament_v30/artifacts/v87_yolo_union_label_fold2_union_hard_union_agree_manifest.json`
+に保存済み。
+
+### 2.39 discussion/LB 再調査 — 第7回リフレッシュ：biconcavelens の全手法公開（SABiD 論文化） (2026-10-27)
+
+第7回 periodic refresh。LB 完全 CSV・42 discussion topics・新着
+public kernel・外部 GitHub 公開を走査。
+
+#### LB スナップショット（1,218 チーム・ERS rank 206 / 0.39）
+
+| 帯域 | 10-26 | 10-27 | Δ |
+|---|---|---|---|
+| 総チーム | 1,196 | 1,218 | +22 |
+| ≥0.55 | 100 | 102 | +2（0.55 ちょうど **82** チーム） |
+| 0.45–0.54 | 2 | 2 | 0 |
+| 0.40–0.44 | 50 | 53 | +3 |
+| 0.35–0.39 | 450 | 454 | +4 |
+| <0.35 | 594 | 607 | +13 |
+
+- 先頭不変: IONode Online 0.70・Tempest 0.64・0.62 が4チーム。
+  ERS rank 200→**206**（score 0.39 不変・後続流入で微落）
+- 0.55 ちょうどに 82 チーム集中の構造は不変 — test GT 既知系の
+  クラスタと整合（§2.34 リーク証拠の通り）
+
+#### discussion 差分：新規 1 topic + 724503 へ追記
+
+- **753043「multiple annotations」**（新規・未回答）: test 画像に
+  複数アノテーターがいる場合、metric は全注釈を別 instance として
+  pool するか — v87 で検証した annotator disagreement 問題と
+  **同一の問いがコミュニティに出始めた**。主催者の回答待ち
+- **724503 Organizers' Remarks に 10-26 追記**（§2.34 精読後）:
+  - Q「いつボードをリセットするのか」→ A「**We decided to clear
+    the board after the deadline**. We do not want to leak any
+    information about our guardrails until then.」— LB 浄化は
+    **締切後**と明言
+  - 評価 rubric の明確化 (10-26): 「**Quality**: 重要例について実際の
+    segmentation を目視で見る。**Feasibility**: 合理的時間・
+    過度に複雑でない・実装が理解可能なモデルを高評価」
+    — 我々の再現可能で単純な detect-then-refine 構成は
+    feasibility 側で有利。LB 位置より実装品質が効く設計を維持
+
+#### 重要発見: biconcavelens/filament-segmentation-2026（全手法+論文公開）
+
+GitHub で**検証ログ付きの完全公開 repo** を発見（Mellimi/Bhargava/
+Gupta, SABiD 2026 投稿、LB 0.40 / OOF 0.461）。我々とほぼ同じ
+detect-then-refine 族で、**独立系統で我々と同じ壁に到達**している:
+
+- **最終系**: Mask R-CNN@2048 + YOLO11m/l-seg@1280 + RT-DETR-l +
+  semantic ConvNeXt-Tiny U-Net の calibrated 融合 + crop refiner
+  (ResNet34 smp U-Net, **spine centerline aux head** — 736543 の
+  許可裁定済み aux 監督) + 4-view flip TTA (topology-safe fallback)
+- **OOF 0.461 / LB 0.40** — 我々 (0.444/0.39)・dariushafshar
+  (0.450/0.39) と併せて **3 系統の独立 pipeline で同じ
+  OOF↔LB ≈0.05-0.06 乖離**。sparse-label test 説の傍証がさらに強化
+- **彼らの最重要 lever（我々が未試行）**: **cls-loss reweight**。
+  「detector-blind ではなく well-localized だが低 score」という診断
+  （bbox-IoU 0.70-0.87 が conf 0.05）に対し YOLO `cls=0.5→1.5` で
+  LB 0.37→0.38、Mask R-CNN RoI cls 3x、RT-DETR cls=2.0 で同型修正。
+  cls=3.0 は過剰で悪化 — 最適は穏やかな reweight
+- **cross-detector true dedup** (calibrated score で pool → IoU 0.05
+  で候補全体 discard → paint): 4 度の失敗（閾値調整・AGREE/UNIQUE
+  grid・isotonic 単一閾値・両側校正後再試行）の末、**事前 dedup**
+  だけが初めて solo を超えた (0.4252→0.4407 local, 0.38→0.39 LB)。
+  我々の RF-DETR union が −0.028 で沈んだのは dedup 欠如と整合
+- **multi-annotator**: `train_labels="complete"`（最注釈数の
+  annotator のみ採用）は 39% の訓練量喪失で悪化 — v87 union 化の
+  reject と合わせ、**ラベル構造レバーは独立 2 系統で negative**
+- rescue filtering 4 方式（refiner 確率・contrast・特徴量
+  classifier）全滅 — 我々の verifier/rescue negative と独立一致
+- self-training (conf≥0.75 pseudo-label) は 0.4171→0.3931 に明確悪化
+  （「自分の blind spot を強化する」）— 未試行だが妥当性高い負例
+- Cellpose 系 flow-field instance seg は「試していない残存方向」
+  として言及 — 我々も未踏だが from-scratch で高コスト
+
+#### 新着 kernel
+
+- `koushikkumardinda/solar-filament-segmentation-2026-edgeattnet`
+  (10-27): EdgeAtt U-Net だが **semantic 型**（全 instance を1枚の
+  mask に集約）— instance 分離なしで PQ には不向き。取り込み対象外
+- 他は既知 baseline の焼き直し・EDA のみ
+
+#### 取り込み判断
+
+- **即採用レバーなし**。prod + plain_mhsa_f2 維持
+- **記録上の注記**: cls-loss reweight は biconcavelens が実証した
+  「well-localized だが低 confidence」の病態に対する upstream 修正で、
+  我々の detector-blind FN の一部が実は conf<0.15 の低 score 候補に
+  混在している可能性と整合する。追求するなら事前登録が必須だが、
+  fold-2 blind-FN の 68% が「any conf で proposal なし」と記録済みの
+  ため（§2.36 前段の分析）、効果量は不明。締切までの残作業
+  （repo 公開・再現検証・Form）優先で新規 GPU 実験は開かない
+- 主催者の rubric 明確化（品質目視・feasibility・理解可能な実装）は
+  現在の「正直な報告 + 再現可能な単純 pipeline」方針を裏書き
+
+### 2.40 v88 設計: YOLO cls=1.5 再学習 — confidence head undertraining 修正 (事前登録, 2026-10-27)
+
+**出自**: §2.39 の biconcavelens 全手法公開で見つかった唯一の未試行
+upstream レバー。ユーザー指示で採用検証する。
+
+**仮説**: biconcavelens は「bbox-IoU 0.70-0.87 で well-localized なのに
+conf 0.05」の missed filament を発見し、confidence head の undertraining
+を原因と診断。ultralytics `cls` 損失重み 0.5→1.5 で solo PQ
+0.4171→0.4252・LB 0.37→0.38 を得た (cls=3.0 は過剰で悪化、1.5 が最適)。
+我々の fold2 FN の一部 (「any-conf で proposal なし」と記録した 68% の
+うち、実は低 score 帯に候補があるもの) が同じ病態である可能性。
+
+**設計 (変更は `cls=1.5` のみ。それ以外は prod と完全一致)**:
+
+- `cls15`: `model.train(..., cls=1.5)`。モデル (yolo11m-seg)・
+  imgsz (1280)・epoch (70)・patience (14)・augment 一式・
+  seed (3407+2=3409)・all-labeler データセット構築は prod と同一
+- fold2 のみ (パイロット慣行)。学習は約 2.5h (A100 見込み)
+- 評価は prod 経路と同一: EdgeAtt fold2 refiner → drop_contained@0.90
+  → greedy ownership (min_area=20) → 公式 PQ、conf sweep
+  {0.15,0.20,0.26,0.32}、primary=0.26
+- prod baseline は同一 notebook 内で同経路評価 (paired Δ)。
+  既知値 0.444238 との ±0.002 超乖離は警告
+- **追加診断 (採用判定に使わない)**: 推論 floor を 0.02 に下げて
+  生提案を全保持 (refine 対象は conf>=0.08 のみ = prod 経路不変)。
+  primary で FN の GT のうち conf [0.02,0.26) に IoU>0.5 の生提案が
+  ある割合を記録 — detector-blind FN に低 score 候補が埋まっているかを
+  biconcavelens 流に直接測定
+
+**事前固定ゲート**:
+
+- `PQ(cls15,0.26) − PQ(prod,0.26) >= +0.005`: fold0/1 に昇格検討
+- `[0, +0.005)`: reject_noise
+- `<0`: reject
+- conf sweep の最大値のみでの採用はしない (primary 固定)
+
+**誠実留保**: (a) biconcavelens の val は 70 画像で我々の 235 画像と
+異なり効果量は直接移らない。(b) 我々の FN 分解は「conf floor 0.08 で
+proposal なし」までしか検証していない — cls fix が効く余地は診断結果
+次第。(c) もし reject でも lowconf 診断の結果は blind-FN の性質を
+明確化する価値がある。(d) LB は疎ラベル採点の可能性が高く OOF 改善が
+LB に出ない可能性がある (§2.28)。
+
+実装: `scratch/build_v88_yolo_cls15.py` →
+`solar_filament_v88_yolo_cls15_fold2_colab.ipynb`。manifest は
+Drive `artifacts/v88_yolo_cls15_fold2_manifest.json` に保存。
+
+Kaggle 版も用意: `scratch/build_v88_yolo_cls15_kaggle.py` →
+`solar_filament_v88_yolo_cls15_fold2_kaggle.ipynb`。input は competition
+data + `solar-filament-v35-artifacts` (前処理+folds) +
+`solar-filament-2026-weights` (prod yolo) + `solar-v73-assets`
+(fold2 refiner)。評価経路・ゲートは Colab 版と完全同一。manifest は
+kernel output `v88_yolo_cls15_fold2_manifest.json`。実行 kernel:
+`shingo257/v88-yolo-cls15-fold2` (T4, private)。

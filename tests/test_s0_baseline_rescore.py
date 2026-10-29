@@ -45,10 +45,10 @@ def test_partial_staging_falls_back_per_observation(tmp_path, monkeypatch):
     canonical_cache.touch()
     canonical_image.touch()
     monkeypatch.setattr(
-        "scratch.run_s0_baseline_rescore.OOF_CACHE", canonical_oof
+        "scratch.run_s0_baseline_rescore_impl.OOF_CACHE", canonical_oof
     )
     monkeypatch.setattr(
-        "scratch.run_s0_baseline_rescore.PREPROC", canonical_images
+        "scratch.run_s0_baseline_rescore_impl.PREPROC", canonical_images
     )
 
     assert resolve_yolo_cache_path(staged_oof, 1, "observation.jpeg") == canonical_cache

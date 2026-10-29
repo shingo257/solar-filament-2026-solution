@@ -1,0 +1,85 @@
+{
+  "scope": "探索的scorer cross-fit (8観測)、上流モデルはnon-nested",
+  "result_kind": "exploratory_non_nested_scorer_crossfit",
+  "adoption_eligible": false,
+  "provenance_limitations": [
+    "Scorer training-fold upstream models include outer held-out-fold labels",
+    "Frozen split identity and complete candidate-cache coverage are not verified",
+    "Nested outer-fold upstream/cache refits or independent evaluation are required"
+  ],
+  "active_arms": [
+    "prod",
+    "morph"
+  ],
+  "dropped_features": [],
+  "n_features": 33,
+  "arm_tau_sweep": {
+    "prod": {
+      "0.16": 0.436359,
+      "0.18": 0.436359,
+      "0.2": 0.436359,
+      "0.22": 0.436359,
+      "0.24": 0.436359,
+      "0.26": 0.436359,
+      "0.28": 0.436359,
+      "0.3": 0.436359,
+      "0.32": 0.436359
+    },
+    "morph": {
+      "-3.0": 0.097199,
+      "-2.0": 0.253209,
+      "-1.0": 0.416075,
+      "1.0": 0.369461,
+      "2.0": 0.300765,
+      "3.0": 0.213186
+    }
+  },
+  "table": {
+    "prod": {
+      "pq": 0.436359,
+      "tp": 43.0,
+      "fp": 20.0,
+      "fn": 26.0,
+      "sq": 0.66976,
+      "rq": 0.651515,
+      "pq_fold0": 0.436359,
+      "pq_fold1": 0.0,
+      "pq_fold2": 0.0,
+      "ΔPQ_vs_prod": 0.0,
+      "worst_fold": 0.0
+    },
+    "morph": {
+      "pq": 0.416075,
+      "tp": 41.0,
+      "fp": 22.0,
+      "fn": 28.0,
+      "sq": 0.669779,
+      "rq": 0.621212,
+      "pq_fold0": 0.416075,
+      "pq_fold1": 0.0,
+      "pq_fold2": 0.0,
+      "ΔPQ_vs_prod": -0.020284,
+      "worst_fold": 0.0
+    }
+  },
+  "runtime_sec": 38.8,
+  "utc_completed": "2026-10-27T05:00:46Z",
+  "morph": {
+    "definition": "prod keep masks に disk dilation(r>0)/erosion(r<0) を適用",
+    "radius_sweep": {
+      "-3.0": 0.097199,
+      "-2.0": 0.253209,
+      "-1.0": 0.416075,
+      "1.0": 0.369461,
+      "2.0": 0.300765,
+      "3.0": 0.213186
+    },
+    "best_radius": -1.0,
+    "delta_vs_prod": -0.020284033598799045,
+    "bootstrap_ci95_at_best_radius": [
+      -0.04663596960161754,
+      0.008809234058902075
+    ],
+    "b2_gate": "reject"
+  }
+}
