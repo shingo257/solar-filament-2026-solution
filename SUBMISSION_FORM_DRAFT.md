@@ -20,6 +20,7 @@
 | Code repository URL | `https://github.com/shingo257/solar-filament-2026-solution` — **作成済み(private)。締切日に public 切替** |
 | (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57072525` (plain_mhsa_f2) |
 | (あれば) Public score | 0.39 (両提出とも) |
+| (あれば) Method/efficiency | detect-then-refine 2 構成。主催者 rubric は品質目視 + feasibility (理解可能な実装を高評価、topic 724503 追記) — 単純で再現可能な構成をそのまま記述 |
 
 ## リポジトリ方針 — A 決定・実行済み (2026-10-19)
 
@@ -67,8 +68,10 @@
 1. repo public + 上記ファイル群がログアウト状態で閲覧できる
 2. **repo 内の weights (LFS) が公開 clone で取得できる** +
    notebook が repo 内パスから重みをロードできる
-3. report PDF が最新 — **§2.36 / B1 rescue まで反映済み**
-   (本文4p + refs、PR #481 で再検証済)
+3. report PDF が最新 — **v87 union-label 再学習の負結果まで反映済み**
+   (本文4p + refs、PR #510 で再検証済)。v88 (cls=1.5) が走って
+   いるが、昇格条件は fold0/1 再検証なので締切まで最終構成は
+   prod + plain_mhsa_f2 不変 — 結果次第で report 更新要否を判断
 4. Kaggle 最終選択が prod + plain_mhsa_f2 になっている
 5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
    主催者回答: 再送信はファイル差替ではなく**追加**になり、
