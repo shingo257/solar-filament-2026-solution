@@ -2057,3 +2057,46 @@ data + `solar-filament-v35-artifacts` (前処理+folds) +
 (fold2 refiner)。評価経路・ゲートは Colab 版と完全同一。manifest は
 kernel output `v88_yolo_cls15_fold2_manifest.json`。実行 kernel:
 `shingo257/v88-yolo-cls15-fold2` (T4, private)。
+
+**結果 (2026-10-29, Colab A100-40GB 実行 — 学習 70ep 完走 0.962h、
+early stop なし)**: paired baseline `prod@0.26 = 0.444221`
+(既知値 0.444238、差 −1.7e−05、評価経路健全)。
+
+| arm | conf | PQ | SQ | TP | FP | FN | preds/img | pq_sparse_r077 |
+|---|---|---|---|---|---|---|---|---|
+| prod | 0.15 | 0.4265 | 0.6752 | 1821 | 1160 | 964 | 7.78 | 0.3694 |
+| prod | 0.20 | 0.4372 | 0.6771 | 1781 | 950 | 1004 | 7.10 | 0.3809 |
+| prod | **0.26** | **0.4442** | 0.6799 | 1715 | 750 | 1070 | 6.38 | 0.3896 |
+| prod | 0.32 | 0.4416 | 0.6816 | 1610 | 575 | 1175 | 5.64 | 0.3904 |
+| cls15 | 0.15 | 0.4192 | 0.6759 | 1854 | 1339 | 931 | 8.31 | 0.3615 |
+| cls15 | 0.20 | 0.4357 | 0.6786 | 1826 | 1077 | 959 | 7.54 | 0.3781 |
+| cls15 | **0.26** | **0.4480** | 0.6808 | 1768 | 821 | 1017 | 6.71 | 0.3916 |
+| cls15 | 0.32 | 0.4533 | 0.6837 | 1682 | 607 | 1103 | 5.89 | 0.3994 |
+
+**verdict: `reject_noise`** — ΔPQ@0.26 = +0.0038 < ゲート +0.005。
+fold0/1 昇格検討の条件は不成立。最終構成 `prod` / `plain_mhsa_f2` は
+不変。
+
+分解 (primary 0.26): TP +53・FN −53 (仮説方向に回復) だが
+FP +71 が相殺し効果量はゲート未達。SQ は +0.0009 でほぼ不変。
+preds/img は全 conf で +0.25〜+0.55 増 — cls 強化が proposal スコアを
+一様に持ち上げた証拠として機構は一致。
+
+診断 (採用判定外): 低 conf coverage は prod 543/953 (57.0%) →
+cls15 531/907 (58.5%)。**prod の primary FN の 57% が conf
+[0.02,0.26) に IoU>0.5 候補を持つ** — biconcavelens の病態分類
+(候補あるが閾値未到達) が我々側でも過半と確認。cls15 は FN を
+953→907 に減らしたが lowconf プール内の診断構造は不変で、
+「閾値を下げても FP 側が同じプールから増える」限界を裏付けた。
+
+留意 (事後、採用判断には不使用): cls15 の operating curve は右に
+シフトしており conf 0.32 で 0.4533 (prod 同点比 +0.0117)。sweep
+最大値採用は事前留保で禁止のため記録のみ。この「最適 conf 移動」
+自体は cls 重み付けの予想される副作用であり、別実験
+(calibrated-threshold 再登録) の材料にはなり得るが今回の
+採用証拠にはしない。
+
+manifest: Drive `solar_filament_v30/artifacts/
+v88_yolo_cls15_fold2_manifest.json` (Colab run 出力)。
+Kaggle T4 kernel は同一 deterministic 実験の冗長コピーのため
+完了前に停止してよい。
