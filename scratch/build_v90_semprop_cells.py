@@ -102,6 +102,8 @@ class CFG:
     SEM_TRAIN_HOURS = 1.2   # 時間予算 (彼らは T4 で 3h 規模)
     SEM_PROP_THRESH = 0.5   # 提案化の確率閾値
     SEM_DEDUP_IOU = 0.5     # union で det 提案との重複判定
+    # --- YOLO (prod det 評価のみ。再学習はしない) ---
+    YOLO_IMGSZ = 1280
     # --- 評価 (run_fold_oof_eval.py / v87 と同一) ---
     PREDICT_CONF_FLOOR = 0.08   # refine 対象の下限 (prod 経路と同一)
     DIAG_CONF_FLOOR = 0.02      # 診断のみ: 生提案をこの下限まで記録
