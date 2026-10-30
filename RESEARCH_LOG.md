@@ -2100,3 +2100,110 @@ manifest: Drive `solar_filament_v30/artifacts/
 v88_yolo_cls15_fold2_manifest.json` (Colab run 出力)。
 Kaggle T4 kernel は同一 deterministic 実験の冗長コピーのため
 完了前に停止してよい。
+
+### 2.41 v89 設計: cls=1.5 fold0/1 複製 + 移行 operating point 検証 (事前登録, 2026-10-29)
+
+**出自**: v88 (§2.40) で cls15 は reject_noise だったが、operating
+curve の右シフト (0.32 で +0.0117) が残った。fold2 一 fold の観察では
+(a) cls15 の改善方向が fold 間で一般化するか、(b) cls15 は prod と
+異なる operating point を持つべきか、が未検証。ユーザー指示で複製
+検証を継続する (「実験どんどんやりたい」)。
+
+**仮説**: cls 強化による score 上昇は fold2 固有ではなく fold 横断で
+再現する。再現すれば cls15 は prod より高 conf の operating point で
+真の gain を持つ可能性がある。
+
+**設計 (変更は fold のみ。レシピは v88/prod と完全一致)**:
+
+- `cls15`: fold0 (CFG.FOLD=1 で fold1) を `cls=1.5` で再学習。
+  モデル・imgsz・epoch・augment・seed (3407+fold)・all-labeler
+  構築・評価経路は v88 と同一
+- prod baseline は既存 `runs/yolo_fold_<F>` を同経路で paired 評価
+- refiner は fold 別 ckpt (`mediseg_edgeattnet_refiner_fold<F>_resume.pt`、
+  glob fallback 付き)
+- fold0/1 の prod 既知値は v80 系評価しかなく経路差があるため
+  BASELINE_PQ チェックは warn-only
+
+**事前固定ゲート — 2 つの判定を両方記録**:
+
+- 同一 point: `PQ(cls15,0.26) − PQ(prod,0.26) >= +0.005`
+- 移行 point: `PQ(cls15,0.32) − PQ(prod,0.26) >= +0.005`
+  (0.32 は fold2 観察から fold0/1 評価**前**に固定 — 評価セットへの
+  閾値 fitting ではなく fold 横断 transfer として扱う)
+- 採用検討には fold0 + fold1 **両方**での合格が必要。片方のみの
+  合格は fold 依存性の証拠として reject_noise 扱い
+- いずれも未達なら reject_noise
+
+**誠実留保**: (a) 0.32 移行 point は fold2 で選択済みのため「同一
+セットで選んで同一セットで採点」ではないが、fold 数が増えるほど
+transfer の信頼性は下がる。(b) cls15 の fold2 gain が主に低 conf
+proposal の昇格由来なら、fold0/1 でも同じ FP/FN トレードオフ構造が
+出るはず — 低 conf 診断で照合する。(c) sweep 最大値採用は引き続き
+禁止 (本実験でも exploratory_best_conf は記録するが判定に使わない)。
+
+実装: `scratch/build_v89_cls15_fold01.py` →
+`solar_filament_v89_cls15_fold01_colab.ipynb`。manifest は Drive
+`artifacts/v89_yolo_cls15_fold<F>_manifest.json`。
+
+### 2.42 v90 設計: semantic U-Net 提案源 — detector-blind FN の救済 (事前登録, 2026-10-30)
+
+**仮説**: v88 (fold2) と v89 fold0 baseline の低 conf 診断が一致して
+示したように、primary FN の ~57% は低 conf proposal で覆える一方、
+残り ~43% は detector が **any-conf** で候補を出さない blind-FN。
+conf 再配分・ensemble・postprocess ではこの層を構造的に拾えない。
+biconcavelens (§2.39, OOF 0.461 / LB 0.40) は semantic ConvNeXt-T
+U-Net を独立提案源として detector-missed filament を ~30個追加獲得
+した。同機構を我々の prod 評価経路に移植し、blind-FN を直接狙う。
+
+**arm**:
+
+- `union`: prod det 提案 ∪ semantic 提案 (dedup: sem 提案は conf>=c の
+  det 提案と mask-IoU>0.5 で重複する場合落とす)
+- `semprop`: semantic 提案単独 (提案源性能の診断。採用候補にしない)
+- `prod`: 既存 `runs/yolo_fold_2` を同経路 paired 評価 (fold2 pilot)
+
+**semantic モデル** (biconcavelens `train_semseg.py` 準拠):
+
+- smp U-Net `tu-convnext_tiny` (ImageNet init, in_channels=1, classes=1:
+  fg のみ。彼らの spine aux head は提案化に使わないので省略)
+- 1024px crop・(file, annotator) エントリ単位 (fit_entries、val fold の
+  観測・annotator は完全除外 — frozen grouped_folds で分離)
+- 75% filament-centered crop (+jitter) / 25% random、rot90・hflip、
+  gamma/brightness/contrast jitter
+- focal(γ=2, α=0.25)×10 + soft-dice、AdamW lr 2e-4、AMP bf16、
+  batch 8 (A100)、時間予算 1.2h (彼らは T4 で 3h 規模のため縮小 pilot)
+- 推論: full-res 4-flip TTA → fg 確率マップ (float16 npz を Drive に cache)
+- 提案化: 確率 ≥0.5 → connected components (8-conn)、conf = 成分内最大
+  確率、min_area 20 未満除外
+- 提案は prod det 提案と**同じ** refine→ownership→公式PQ 経路に乗せる
+  (refine 対象は det と同じ conf>=0.08 フィルタ…ではなく sem 提案は
+  全件 refine — conf=成分最大確率が 0.08 未満の成分は 0.5 閾値で
+  既に除外済みのため実質同じ)
+
+**事前固定ゲート**:
+
+- `PQ(union,0.26) − PQ(prod,0.26) >= +0.005` で fold0/1 昇格検討
+  (fold2 pilot 単体では採用しない — v89 と同じ両 fold 合格ルール)
+- `[0,+0.005)` は reject_noise、`<0` は reject
+- sweep 最大値採用は禁止 (exploratory_best_conf は記録のみ)
+
+**診断 (採用判定に使わない)**:
+
+- `diag_semrescue.fn_covered_by_sem_prop`: prod の primary FN のうち
+  semantic 生提案が IoU>0.5 で覆う数 — blind-FN の残り 43% が実際に
+  拾えるかの直接測定
+- `semprop` の PQ/FP 構造: semantic 単独でどこまで届くか (提案源と
+  しての上限)
+- `sem_props_per_image`: 提案数のスケール確認
+
+**誠実留保**: (a) 時間予算学習は epoch 数が非決定的 (環境依存) —
+再現性のため ckpt sha256 を manifest に記録。(b) sem conf は成分内
+最大画素確率で det conf と分布が違う — 同一 sweep は便宜的な共通化。
+(c) dedup は「det が既に拾っているもの」を落とすだけで FP 追加は
+防げない — union の ΔFP も分解して記録する。
+
+実装: `scratch/build_v90_semprop.py` +
+`scratch/build_v90_semprop_cells.py` →
+`solar_filament_v90_semprop_fold2_colab.ipynb`。manifest は Drive
+`artifacts/v90_semprop_fold2_manifest.json`、ckpt/prob map は
+`runs/v90_semprop/`。
