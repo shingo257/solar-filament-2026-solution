@@ -2207,3 +2207,44 @@ U-Net を独立提案源として detector-missed filament を ~30個追加獲�
 `solar_filament_v90_semprop_fold2_colab.ipynb`。manifest は Drive
 `artifacts/v90_semprop_fold2_manifest.json`、ckpt/prob map は
 `runs/v90_semprop/`。
+
+### 2.43 v89 fold0 結果: cls=1.5 は fold0 で reject — fold2 ゲイン非一般化 (2026-10-30)
+
+**判定: `reject`（両ゲートとも負）**。Colab A100、学習 59.5 分、
+manifest `artifacts/v89_yolo_cls15_fold0_manifest.json`。
+
+| conf | prod | cls15 | Δ |
+|---|---|---|---|
+| 0.15 | 0.4228 | 0.4273 | +0.0045 |
+| 0.20 | 0.4378 | 0.4367 | −0.0011 |
+| **0.26** | **0.4443** | **0.4406** | **−0.0037** |
+| 0.32 | 0.4383 | 0.4396 | +0.0013 |
+
+- 同一 point 判定: Δ@0.26 = **−0.0037** → reject
+- 移行 point 判定: cls15@0.32 = 0.4396 vs prod@0.26 = 0.4443 →
+  **−0.0047** → reject
+- exploratory_best_conf = 0.26（cls15 の最良も 0.26 — fold2 で見た
+  右シフトは fold0 では再現しなかった）
+
+**分解 (0.26)**: TP 1685 vs 1712 (−27)、FN 1064 vs 1037 (+27)、
+FP 744 vs 761 (−17)。fold2 の「TP+53・FN−53・FP+71」と機構が
+**逆** — fold0 では cls15 は TP を失う方向に作用した。
+
+**低 conf 診断**: cls15 は fn_at_primary=960 / covered=548 (57.1%)、
+prod は 941/543 (57.7%) — 病態構造は fold 横断で不変だが、cls15 は
+その回収に寄与しなかった (fold2 では低 conf 候補の昇格が TP+53 に
+寄与したが fold0 では見られない)。
+
+**意味論**:
+
+- §2.41 の採用条件は「fold0+fold1 **両方**で合格」→ fold0 時点で
+  cls15 の昇格は**数学的に消滅** (fold1 の結果に関わらず)
+- v88 の fold2 +0.0038 は fold 分散内の観測だった可能性が高い:
+  fold2 +0.0038 / fold0 −0.0037 で平均 ≈ 0。cls loss reweight は
+  系統的改善ではなく fold 依存ノイズとして記録
+- prod の不変性確認: prod@0.26 は fold2 0.4442 / fold0 0.4443 で
+  安定 — 分割・評価経路は健全
+
+**fold1 について**: 昇格判定上は既に結論が出ているが、fold 分散の
+3 点目データとして fold1 を回せば「cls15 効果の分散 σ²」がより
+正確に推定できる (任意。優先度は v90 より低い)。
