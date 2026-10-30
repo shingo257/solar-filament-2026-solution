@@ -2317,3 +2317,48 @@ refine/ownership を通って実際に TP 化するのは 61 件。**blind-FN
 rescue スコアとして使う（提案生成ではなく二次判定）。(c) dedup を
 IoU>0.5 から「det と一切重ならない」に厳格化。いずれも別実験と
 して preregister が必要。
+
+### 2.46 v91 設計: semantic map 再利用の提案厳格化 grid + rescue-scorer (事前登録, 2026-10-30)
+
+**前提**: v90 (§2.45) は union TP +61 で blind-FN 救済機構の存在を
+実証したが、sem 提案の粗さ (blob 化・面積過小の擬似成分) が
+FP +524 を量産し Δ = −0.0307 で reject。本実験は v90 が Drive に
+cache した確率 map (`runs/v90_semprop/probs_fold2/*.npz`) を再利用し、
+**学習なしで提案化パラメータだけを変える** fold2 検索フェーズ。
+
+**Arm A — union 厳格化 grid (27 設定)**:
+
+- `prop_thresh ∈ {0.5, 0.65, 0.8}` (成分抽出の確率閾値)
+- `min_area ∈ {20, 60, 120}` (小擬似成分の除去)
+- `dedup_iou ∈ {0.5, 0.25, 0.0}` (det 提案との重複許容。0.0 = det と
+  一切重ならない提案のみ — FP 源の overlap 提案を根本から排除)
+- 各 thresh で成分列挙+refine は 1 回だけ行い、(min_area, dedup) の
+  変化は filter のみ。@0.26 (gate point) と @0.20 を採点
+
+**Arm B — rescue-scorer grid (3 設定)**:
+
+- det の conf [0.08, 0.26) の refine 済み提案で、**生 det mask 内の
+  mean sem 確率 >= theta** のものを primary に昇格
+- `theta ∈ {0.3, 0.5, 0.7}`
+- 提案生成ではなく既存 det 提案の二次判定 — 543 件の
+  lowconf-covered FN 層を直接狙う (v88/v89 で fold 不変の病態)
+
+**事前固定ルール**:
+
+- fold2 は**検索**フェーズ。argmax 設定は `nominees` に記録するのみで
+  **採用候補にしない** (fold2 で選んで fold2 で採点 = 探索バイアス)
+- 昇格は別途 fold0/1 確認実験 (v92) で
+  `PQ(arm,0.26) − PQ(prod,0.26) >= +0.005` を**両 fold**で満たす場合のみ
+- 全 grid 設定が prod を下回る場合、semantic 提案源ラインは
+  negative result として閉じる
+
+**誠実留保**: (a) sem 確率 map は fold2 学習のもので fold0/1 確認には
+別 fold の学習が必要 (v92 のコスト ~1.5h×2)。(b) rescue-scorer の
+mean 確率は det mask 全域で取るため、mask が大きいと背景で薄まる —
+max 確率版は未実装で、探索結果が乏しければ検討。(c) Arm A の grid は
+27 点と密でない — 連続パラメータの最適化ではなく方向性の検証。
+
+実装: `scratch/build_v91_semsweep.py` +
+`scratch/build_v91_semsweep_cells.py` →
+`solar_filament_v91_semsweep_fold2_colab.ipynb`。manifest は Drive
+`artifacts/v91_semsweep_fold2_manifest.json`。
