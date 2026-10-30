@@ -2362,3 +2362,41 @@ max 確率版は未実装で、探索結果が乏しければ検討。(c) Arm A 
 `scratch/build_v91_semsweep_cells.py` →
 `solar_filament_v91_semsweep_fold2_colab.ipynb`。manifest は Drive
 `artifacts/v91_semsweep_fold2_manifest.json`。
+
+
+### 2.47 v91 結果: semantic 提案源ライン negative で閉鎖 (2026-10-30)
+
+**判定: 両 arm とも prod 未満 — §2.46 ルールにより提案源ラインを
+negative result として閉じる**。Colab A100、学習なし (v90 cache
+再利用)、manifest `artifacts/v91_semsweep_fold2_manifest.json`。
+
+**Arm A — union 厳格化 grid (27 設定)**: 最良は
+`thresh=0.8 / min_area=120 / dedup_iou=0.0` → PQ **0.4366**
+(Δ **−0.0076**)。thresh・min_area・dedup を厳しくするほど改善
+する方向は一貫 (dedup=0.0 が最良) だが、最厳格点でも prod
+0.4442 に −0.0076 届かず。rescued TP +28 に対し残存 FP が支配。
+
+**Arm B — rescue-scorer grid (3 設定)**:
+
+| theta | PQ@0.26 | Δ | rescued | 純増TP |
+|---|---|---|---|---|
+| 0.3 | 0.4124 | −0.032 | 832 | −14 |
+| 0.5 | 0.4274 | −0.017 | 556 | −9 |
+| 0.7 | 0.4433 | −0.0009 | 250 | +13 |
+
+theta=0.7 で Δ −0.0009 まで肉薄するが、theta↑ で Δ→0 に漸近
+する形状 = **この機構は prod に収束するだけで prod を超える
+方向を持たない**。昇格させた 250 件で純増 TP は +13 のみ。
+
+**意味論**: semantic 提案源は「blind-FN を拾える」という機構
+そのものは実在した (v90: TP +61) が、拾える提案は実運用の
+精度では FP コストに負ける。厳格化・二次判定のどちらの
+アプローチも prod を上回る点を持たない。残りの FN プールは
+検出器・画素分類のいずれにも実質 blind (注釈ノイズ・極細個体
+の可能性が高い)。biconcavelens が報告した +30 filament 救済は、
+彼らの pipeline 全体 (spine head・watershed 分割・別評価経路)
+との複合効果であり、我々の prod 経路への移植では再現しなかった。
+
+**キャンペーン状態**: cls 重み付け (fold 分散ノイズ)・verifier・
+rescue・ensemble・TTA・提案源 — 主要レバー全て尽きた。
+`prod`/`plain_mhsa_f2` が最終構成として確定。
