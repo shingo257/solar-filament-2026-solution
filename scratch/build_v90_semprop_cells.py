@@ -517,13 +517,13 @@ def semseg_prob(image_path):
     \"\"\"full-res 4-flip TTA の fg 確率マップ [0,1] float32。\"\"\"
     x = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
     x = torch.from_numpy(x[None, None].astype(np.float32) / 255.0).cuda()
-    acc = torch.zeros((x.shape[2], x.shape[3]), dtype=torch.float32, device="cuda")
+    acc = torch.zeros_like(x)
     for flip in [(), (3,), (2,), (2, 3)]:
         xi = torch.flip(x, flip) if flip else x
         with torch.autocast("cuda", torch.bfloat16):
-            p = semseg_net()(xi).float().sigmoid()[0, 0]
+            p = semseg_net()(xi).float().sigmoid()
         acc += torch.flip(p, flip) if flip else p
-    return (acc / 4).cpu().numpy()
+    return (acc / 4)[0, 0].cpu().numpy()
 
 def semseg_probs_for_valid():
     \"\"\"valid_files 全件の確率マップを生成し Drive npz に cache (冪等)。\"\"\"
