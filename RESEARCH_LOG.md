@@ -2400,3 +2400,50 @@ theta=0.7 で Δ −0.0009 まで肉薄するが、theta↑ で Δ→0 に漸近
 **キャンペーン状態**: cls 重み付け (fold 分散ノイズ)・verifier・
 rescue・ensemble・TTA・提案源 — 主要レバー全て尽きた。
 `prod`/`plain_mhsa_f2` が最終構成として確定。
+
+
+### 2.48 v88 Kaggle 再現: Colab manifest との deterministic 一致検証 (2026-10-30)
+
+**判定: 検証成功** — 凍結入力・prod 経路は Kaggle (T4) と Colab
+(A100) で一致し、cls15 の判定 (`reject_noise`) も両環境で同一。
+Kaggle kernel `shingo257/v88-yolo-cls15-fold2` (COMPLETE,
+2026-10-29)。manifest: Drive `artifacts/v88_yolo_cls15_fold2_kaggle_manifest.json`
+(ローカル `output/v88_kaggle/`)。
+
+**contract 全項目一致** (差分ゼロ): `annotations_sha256 5da9e92b…`、
+`folds_sha256 febb3f67…`、`refiner_sha256 b1c0f353…`、
+`prod_yolo_sha256 40ec31fd…`、fold/arms/conf_sweep/gate/cls=1.5。
+**datasets 一致**: train 758 観測 / 5414 instances、val 235/1784
+(学習時間のみ差: T4 245.6 分 vs A100 59.1 分 = 4.2x)。
+
+**prod baseline (同一重み) — 実質 deterministic**:
+
+| conf | PQ_kaggle | PQ_colab | Δ(tp/fp/fn) |
+|---|---|---|---|
+| 0.26 | 0.4442 | 0.4442 | 0/0/0 (完全一致) |
+| 0.20 | 0.4372 | 0.4372 | 0/0/0 |
+| 0.15 | 0.4263 | 0.4265 | +1/+4/−1 |
+| 0.32 | 0.4414 | 0.4416 | 0/+2/0 |
+
+primary 点の PQ・TP/FP/FN が完全一致。0.15/0.32 の ±1-2 個体差は
+T4↔A100 の浮動小数点経路差 (retina_masks の閾値境界)。診断も
+一致: `fn_at_primary=953, covered=543` 両環境同一。
+
+**cls15 arm (再学習、重みは非同一)** — `weights_sha256` は異なる
+(クロスハード CUDA 非決定性; `deterministic=True` は同一環境内の
+保証) が、評価は同一傾向:
+
+| conf | PQ_kaggle | PQ_colab |
+|---|---|---|
+| 0.26 (primary) | 0.4486 | 0.4480 |
+| 0.32 | 0.4458 | 0.4533 |
+
+`delta_primary`: Kaggle **+0.0044** / Colab +0.0038 → 両方とも
+`[0, +0.005)` の `reject_noise`。**判定が環境を跨いで安定**。
+diag: Kaggle 899/495 vs Colab 907/531 (同規模)。
+
+**結論**: v88 の実験プロトコル・凍結入力・prod 評価経路は
+Kaggle/Colab で再現可能として検証された。再学習重みはハード間で
+非同一になるが、fold 分散範囲内 (σ≈0.003) であり、実験判定を
+変えない。これで全 3 fold の cls15 証拠 + クロスプラットフォーム
+再現性の記録が揃った。
