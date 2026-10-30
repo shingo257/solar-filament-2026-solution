@@ -2248,3 +2248,72 @@ prod は 941/543 (57.7%) — 病態構造は fold 横断で不変だが、cls15 
 **fold1 について**: 昇格判定上は既に結論が出ているが、fold 分散の
 3 点目データとして fold1 を回せば「cls15 効果の分散 σ²」がより
 正確に推定できる (任意。優先度は v90 より低い)。
+
+### 2.44 v89 fold1 結果: cls=1.5 — 3 fold 完走、fold 分散内ノイズ確定 (2026-10-30)
+
+**判定: `reject_noise`（Δ@0.26 = +0.0012、xfer −0.0014）**。Colab A100、
+manifest `artifacts/v89_yolo_cls15_fold1_manifest.json`。
+
+| conf | prod | cls15 | Δ |
+|---|---|---|---|
+| 0.15 | 0.4212 | 0.4196 | −0.0016 |
+| 0.20 | 0.4328 | 0.4349 | +0.0021 |
+| **0.26** | **0.4408** | **0.4420** | **+0.0012** |
+| 0.32 | 0.4371 | 0.4395 | +0.0024 |
+
+分解 (0.26): TP +36・FN −36・FP +50 — fold2 と同じ「TP 回復・FP 増」
+機構だがネットは +0.0012 のみ。
+
+**3 fold 集約 — cls15 効果の確定値**:
+
+| fold | prod@0.26 | cls15@0.26 | Δ | verdict |
+|---|---|---|---|---|
+| 0 | 0.4443 | 0.4406 | −0.0037 | reject |
+| 1 | 0.4408 | 0.4420 | +0.0012 | reject_noise |
+| 2 | 0.4442 | 0.4480 | +0.0038 | reject_noise |
+
+平均 Δ ≈ +0.0004、fold 間 SD ≈ 0.0033。**cls loss reweight は系統的
+改善ではなく fold 分散ノイズとして確定**。事前登録の両 fold 合格
+ルールでも消滅。0.32 移行 point は 3 fold 全てで不発（fold2 の右
+シフトは単一 fold の観測だった）。`prod`/`plain_mhsa_f2` 不変確定。
+
+低 conf 病態の fold 不変性も確定: covered/total は fold0 543/941、
+fold1 545/942、fold2 543/953 — いずれも 57-58%。
+
+### 2.45 v90 結果: semantic 提案源 — blind-FN 救済は実在するが FP コストが支配 (2026-10-30)
+
+**判定: `reject`（union@0.26 = 0.4135 vs prod 0.4442、Δ = −0.0307）**。
+Colab A100、semseg 173 epoch/72 分、manifest
+`artifacts/v90_semprop_fold2_manifest.json`。
+
+| conf | prod | union | semprop |
+|---|---|---|---|
+| 0.15 | 0.4265 | 0.4095 | 0.3467 |
+| 0.20 | 0.4372 | 0.4142 | 0.3467 |
+| **0.26** | **0.4442** | **0.4135** | **0.3467** |
+| 0.32 | 0.4416 | 0.4076 | 0.3467 |
+
+**分解 (union@0.26)**: TP 1776 vs 1715 (**+61**)・FN 1009 vs 1070
+(**−61**)・FP 1274 vs 750 (**+524**)。仮説の救済機構は実在 —
+semantic 提案は prod の primary FN を 61 件 TP に変換した。しかし
+dedup+refine 後も FP が +524 増え、cost が gain を大きく上回った。
+
+**核心診断 `diag_semrescue`**: prod の primary FN 953 件のうち
+semantic 生提案が IoU>0.5 で覆うのは **157 件 (16.5%)** だけ。
+refine/ownership を通って実際に TP 化するのは 61 件。**blind-FN
+の ~43% 仮説に対し、semantic U-Net もその大部分を blind だった**
+— 残る FN は検出器・画素分類どちらにも難しい（注釈ノイズ・極細/
+低コントラスト個体の可能性）。
+
+**semprop 単独 = 0.3467**: 提案源としての上限。conf sweep が全行
+同一値なのは仕様通り（sem conf = 成分内最大画素確率 ≧0.5 なので
+閾値を効かない）。8.35 props/img と det より多く、blob 状の粗い
+提案が FP を生む（spine aux head・watershed 分割は pilot では未実装
+— それらが FP を絞る役割だった可能性）。
+
+**次レバー候補**: (a) sem 提案の厳格化（prob 閾値↑・watershed 分割・
+形態学的フィルタ）— prob map は Drive cache 済みなので **評価のみ**
+（~15 分）で sweep 可能。(b) sem 確率を det 低 conf 提案の
+rescue スコアとして使う（提案生成ではなく二次判定）。(c) dedup を
+IoU>0.5 から「det と一切重ならない」に厳格化。いずれも別実験と
+して preregister が必要。
