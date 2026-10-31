@@ -2790,3 +2790,20 @@ honest per-record 採点では理論上限を超える — discussion 733912
 annotator pooling や空マスク補正の扱い) を利用している可能性が
 高い。我々の 0.39 は honest 予測の帯として、最終評価は主催者
 rubric (再現性・報告書・方法の健全性) 依存と整理済み。
+
+### 2.59 v89 fold0 再実行で deterministic 一致を確認 (2026-11-01)
+
+`solar_filament_v89_cls15_fold01_colab.ipynb` (fold0) を Colab A100
+で再実行 — 学習 0.970h・評価まで完走。**§2.43 の記録値と全 16 セル
+(4 conf × prod/cls15 × PQ/SQ/TP/FP/FN/sum_iou) が小数 4 桁まで一致**:
+
+prod@0.26 = 0.4443 / cls15@0.26 = 0.4406 (Δ −0.0037、reject)、
+xfer@0.32 = −0.0047、diag 543/941・548/960。
+
+`deterministic=True` + `seed=3407+fold` + 同一 dataset/fold/refiner
+ckpt で、YOLO11m-seg 学習→refine→公式 PQ の全経路が bit 等価の
+メトリクスを再生成した = パイプラインの end-to-end 決定性を
+同一プラットフォーム上で確認 (§2.48 は Colab→Kaggle の横断一致、
+本項は Colab→Colab の再実行一致)。評価コード・分割・重み解決の
+健全性の追加証拠。manifest は同一経路
+`artifacts/v89_yolo_cls15_fold0_manifest.json` に再書き込み。
