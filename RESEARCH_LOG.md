@@ -2469,3 +2469,49 @@ Kaggle/Colab で再現可能として検証された。再学習重みはハー�
 
 提出要件の「公開 Git リポジトリ + 重み同梱」は検証済み。残るは
 Google Form 送信 (ユーザー操作) のみ。
+
+
+### 2.50 上位手法・Discussion サーベイ (2026-10-31)
+
+**LB 現状**: 先頭 IONode Online 0.70 (10-24 提出)、次点 Tempest
+0.64、0.62×4、0.60×4。我々 0.39。**ただし高スコアは汚染疑い
+が濃厚**: 旧メトリック時代 (8-20 修正前) は空提出 0.93-1.00・
+「予測数が少ないほど高スコア」の欠陥が確認済み (topic 728474/
+729809)。`lamhuy8904/…0-55` kernel は実モデルではなく
+lzma+base85 埋め込みの**事前計算 CSV 再生**であり、コピー
+提出が盤上に残っている。Fususu `phuongncn/lb-0-70-…handoff` は
+8-5 提出分 (修正前) の 0.70 を主張、参加者検証では ~0.35。
+
+**手法サーベイ** (公開 kernel/model):
+
+| 手法 | 出典 | 要点 |
+|---|---|---|
+| Mask R-CNN + crop U-Net refiner + flip-4 TTA | phuongncn 0.70 handoff | detect-then-refine (我々と同系)。det 0.70/mask 0.50、refiner 256px crop、topology-safe TTA + crowding abstention。MD5 固定重み |
+| YOLO + crop seg refiner | muhammadshoaibaltaf MAGFiLO V10 | file_name グループ分割・annotator 別サンプル (我々と同一流儀) |
+| ResNet-34 U-Net + Dice/BCE | rokaiyasomapti "(LB 1st)" | タイトル詐称、実態は baseline pipeline |
+| ResNet-34 U-Net mask+hull+interior 3heads | jamesmills1975 CAGE | model 公開のみ |
+| 古典 CV 閾値処理 | vmerckle 0.46 | 学習なし dark residual percentile+CC で LB 0.46 — 採点慣例の隙 |
+| 申告値 | discussion | OOF PQ 0.48 (106枚 val)、厳格 5-fold OOF 0.46、decoupled pipeline "past 0.44"、local 0.49 |
+
+**実力帯の推定**: 真剣な参加者の honest OOF/LB は ~0.44-0.49。
+我々の OOF 0.443-0.445・LB 0.39 は実力フロンティア内。0.55+
+は汚染由来と判断してよい。
+
+**新規主催者裁定 (提出直結)**:
+
+| 項目 | 裁定 |
+|---|---|
+| 両 submission の再現 | 戦略が異なれば**両方**再現必須 (747960) → 我々の repro nb は両方を byte-identical 再現済みで適合 |
+| Google Form | 再提出可・**最後の提出が有効** (749524)。11-15 まで編集可 |
+| 効率性 | qualitative フィルタのみ、点数化せず (749526) |
+| test 評価 | self-eval nb と同一 PQ 計算 (753665)。multi-annotator の詳細は意図的に非開示 (753816/753043) |
+| best model | ensemble でも可、評価対象を載せよ (753665) |
+| SWEFil 外部GT | **禁止** (746318) |
+| unlabeled 外部/近傍 frame | 学習のみ可・test±1h 除外・推論時は test 画像のみ (748045/748498/744047/743385) |
+| spine/bbox/area aux target | **使用可** (736543) — biconcavelens の spine head は合法 (v90 では未実装だった) |
+| top-3 判定 | LB 順位ではなく Rubric ベース (753665) → 報告書・コード品質が効く |
+
+**含意**: 新規採用候補の方法はなし。残差は評価寄り — 報告書・
+再現性・証拠の積み上げが最後の差別化であり、それは完了済み。
+データ: `output/discussions_2026-10-31.json`、
+`output/discussion_msgs_2026-10-31.json`、`output/kernel_survey_2026-10-31/`。
