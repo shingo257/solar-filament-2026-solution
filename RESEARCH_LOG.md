@@ -2599,3 +2599,33 @@ refine→ownership→公式PQ。
 - fold2 は検索フェーズ。ゲート突破時のみ fold0/1 確認を別途設計
 - 全 arm が prod 未満なら flow-field ラインは negative で閉じ、
   `prod`/`plain_mhsa_f2` を最終構成のまま提出する
+
+### 2.53 v92 結果: Cellpose flow-field 提案源 reject (fold2)
+
+manifest: `artifacts/v92_cellpose_flow_fold2_manifest.json`
+(exp `v92_cellpose_flow`, fold2, 155 epoch / 72.0min、A100)。
+
+**結果**: 両 arm prod 未満 → §2.52 ルールで flow-field ライン negative 閉鎖。
+
+| arm | PQ@0.26 | Δ | TP | FP | FN | verdict |
+|---|---|---|---|---|---|---|
+| prod | 0.4442 | — | 1715 | 750 | 1070 | — |
+| flowprop | 0.3686 | −0.0756 | 1537 | 1273 | 1248 | reject |
+| union | 0.4235 | **−0.0207** | 1772 | 1124 | 1013 | reject |
+
+**診断**: `diag_flowrescue` = prod primary FN 953 件のうち
+flow 提案が IoU>0.5 で覆うのは **163 件 (17.1%)** — v90 semantic
+の 157 件 (16.5%) とほぼ同等。flow_props_per_image = 7.29。
+union は TP+57 に対し FP+374 — v90/v91 と同じ FP 爆発構造。
+
+**解釈**: Cellpose flow-field は機構として正しく動いたが、
+「残りの blind-FN プール」を広げる効果はほぼゼロ (163 vs 157)。
+detector・semantic・flow の 3 系統が事実上同じ FN 層を見落とす
+ことを裏付け — この層はモデル非依存の限界 (注釈ノイズ・極細個体
+との推定を再確認)。個体分離の原理差は提案品質の差に現れず、
+dedup 統合でも FP コストが勝った。
+
+**キャンペーンの最終確定**: 主要機構すべて尽きた。
+cls 重み付け・verifier・rescue・ensemble・TTA・提案源 3 系統
+(semantic・flow)・再学習 — すべて frozen gate 未達。
+`prod`/`plain_mhsa_f2` が最終構成 (OOF ~0.444、public ~0.39)。
