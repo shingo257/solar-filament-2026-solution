@@ -1,0 +1,186 @@
+{
+  "config": {
+    "variant": "prod",
+    "conf": 0.26,
+    "refiner_thr": 0.45,
+    "drop": 0.9,
+    "min_area": 20,
+    "imgsz": 1280,
+    "cluster_iou": 0.5,
+    "near_miss_lo": 0.3
+  },
+  "official_reproduction": {
+    "pq": 0.4458323037142675,
+    "sq": 0.6796795453297195,
+    "rq": 0.655944859276278,
+    "tp": 1713,
+    "fp": 761,
+    "fn": 1036,
+    "denominator": 2611.5,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15"
+  },
+  "photos": {
+    "n": 236,
+    "records": 391,
+    "gt_instances": 2749,
+    "clusters": 2133,
+    "singleton_clusters": 1677,
+    "singleton_share": 0.7862165963431786,
+    "preds_final": 1515,
+    "proposals": 1722
+  },
+  "cluster_coverage_funnel": {
+    "proposal": 1229,
+    "refined": 1298,
+    "final": 1226,
+    "n_clusters": 2133
+  },
+  "fn_by_class": {
+    "proposal_blind": 699,
+    "near_miss": 267,
+    "ownership_lost": 37,
+    "cross_covered": 33
+  },
+  "fp_by_class": {
+    "annotator_gap": 294,
+    "free": 282,
+    "near_miss": 185
+  },
+  "fn_by_cluster_k": {
+    "1": 829,
+    "2": 137,
+    "3": 70
+  },
+  "fn_area_median_by_cls": {
+    "cross_covered": 1584.0,
+    "near_miss": 1629.0,
+    "ownership_lost": 866.0,
+    "proposal_blind": 774.0
+  },
+  "fp_area_median_by_cls": {
+    "annotator_gap": 1032.5,
+    "free": 882.5,
+    "near_miss": 1498.0
+  },
+  "recall_by_cluster_k": {
+    "1": {
+      "gt": 1677,
+      "fn": 829,
+      "recall": 0.505664877757901
+    },
+    "2": {
+      "gt": 592,
+      "fn": 137,
+      "recall": 0.7685810810810811
+    },
+    "3": {
+      "gt": 480,
+      "fn": 70,
+      "recall": 0.8541666666666666
+    }
+  },
+  "tp_iou_by_cluster_k": {
+    "count": {
+      "1": 848,
+      "2": 455,
+      "3": 410
+    },
+    "mean": {
+      "1": 0.6760509864860684,
+      "2": 0.6801184588229416,
+      "3": 0.6866973801102075
+    }
+  },
+  "counterfactuals": {
+    "c1_iou_thr_0.3": {
+      "pq": 0.4914367236563802,
+      "sq": 0.6393804169180625,
+      "rq": 0.7686139747995419,
+      "tp": 2013,
+      "fp": 476,
+      "fn": 736,
+      "denominator": 2619.0,
+      "iou_threshold": 0.3,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c2_cluster_coverage_transfer": {
+      "pq": 0.4680428125396202,
+      "sq": 0.7000537256284182,
+      "rq": 0.668581275129236,
+      "tp": 1746,
+      "fp": 728,
+      "fn": 1003,
+      "denominator": 2611.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c3_oracle_all_gt": {
+      "pq": 1.0,
+      "sq": 1.0,
+      "rq": 1.0,
+      "tp": 2749,
+      "fp": 0,
+      "fn": 0,
+      "denominator": 2749.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c4_drop_free_fp": {
+      "pq": 0.47127749894750437,
+      "sq": 0.6796795453297195,
+      "rq": 0.6933819064966606,
+      "tp": 1713,
+      "fp": 479,
+      "fn": 1036,
+      "denominator": 2470.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c5_union_dedup_eval": {
+      "pq": 0.44458852781351926,
+      "sq": 0.6797321711368546,
+      "rq": 0.6540642722117203,
+      "tp": 1211,
+      "fp": 359,
+      "fn": 922,
+      "denominator": 1851.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    }
+  },
+  "per_pred_marginal": {
+    "n_preds": 1515,
+    "value_negative_n": 459,
+    "value_negative_share": 0.30297029702970296,
+    "neg_conf_median": 0.44077882170677185,
+    "pos_conf_median": 0.6028111279010773,
+    "conf_band_value": {
+      "(0.0, 0.3]": {
+        "n": 79,
+        "ratio_mean": 0.5485651314530935,
+        "neg_share": 0.25316455696202533
+      },
+      "(0.3, 0.5]": {
+        "n": 355,
+        "ratio_mean": 0.5992978388265296,
+        "neg_share": 0.14366197183098592
+      },
+      "(0.5, 0.7]": {
+        "n": 395,
+        "ratio_mean": 0.633756917450275,
+        "neg_share": 0.08354430379746836
+      },
+      "(0.7, 0.9]": {
+        "n": 337,
+        "ratio_mean": 0.7038197608889929,
+        "neg_share": 0.020771513353115726
+      },
+      "(0.9, 1.0]": {
+        "n": 1,
+        "ratio_mean": 0.5016549968173138,
+        "neg_share": 0.0
+      }
+    }
+  }
+}

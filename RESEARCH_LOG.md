@@ -2807,3 +2807,176 @@ ckpt で、YOLO11m-seg 学習→refine→公式 PQ の全経路が bit 等価の
 本項は Colab→Colab の再実行一致)。評価コード・分割・重み解決の
 健全性の追加証拠。manifest は同一経路
 `artifacts/v89_yolo_cls15_fold0_manifest.json` に再書き込み。
+### 2.60 fold2 prod 完全誤差分解 — 根本原因特定 (2026-11-01)
+
+ユーザ指示「まず我々のモデルの問題点を分析して、根本的なところを
+改善を試みたい」に対応。fold2 val 全 235 枚をローカル CPU で
+end-to-end 再推論 (yolo_fold2 `40ec31fd2c` + refiner_all_data
+`e9f0e8dd7f`、conf 0.26 / refiner_thr 0.45 / drop 0.9 /
+min_area 20、wall 2440 s) し、proposal → refined → final の各段で
+cross-annotator クラスタ coverage を追跡。GT は IoU>0.5 union-find
+で annotator 横断クラスタ化 (2168 clusters、k1/k2/k3 = 1702/315/151)。
+
+**再現確認**: 公式採点をそのまま再実行して PQ 0.44630
+(SQ 0.6811 / RQ 0.6552、TP 1721 / FP 747 / FN 1064)。
+min_area_sweep 時点の記録 0.44423 との差 +0.0021 は refiner 重みが
+fold2 専用ではなく all_data である点・推論キャッシュ経路差の範囲で、
+実装誤差ではなく再現差として記録 (以降の Δ は本ラン 0.44630 基準)。
+
+**FN 分解 (1064)**:
+
+| class | n | 内訳 |
+|---|---|---|
+| proposal_blind | 696 | どの proposal も IoU≤0.3 (median GT 714 px) |
+| near_miss | 287 | 最良 pred IoU が 0.3–0.5 (median 1815 px) |
+| ownership_lost | 52 | refined では被覆、ownership で消失 (954 px) |
+| cross_covered | 29 | 他 annotator 側クラスタは被覆 (1450 px) |
+
+**FP 分解 (747)**: free 267 (median 1084 px) /
+annotator_gap 263 (他 annotator の GT には一致、1365 px) /
+near_miss 217 (IoU 0.3–0.5、2267 px)。
+
+**クラスタサイズ別 recall**: k=1 0.486 (874/1702 FN) /
+k=2 0.797 / k=3 0.863。検出器は consensus 物体を強く優先的に
+拾い、単一 annotator 物体が FN の最大源。TP IoU は k によらず
+0.67–0.69 でフラット。
+
+**Counterfactual (fold2)**:
+
+| 操作 | PQ | Δ |
+|---|---|---|
+| baseline final | 0.4463 | — |
+| IoU 閾値 0.5→0.3 (探索) | 0.4945 | +0.0482 |
+| クラスタ coverage 転送 | 0.4669 | +0.0206 |
+| free FP を oracle で全 drop | 0.4702 | +0.0239 |
+| union/dedup 評価 (採点定義差) | 0.4421 | −0.0042 |
+| 全 GT emission (sanity) | 1.0 | — |
+
+**Emission-variant アーム (追加 ad-hoc)**: 最終 mask 集合だけを
+入れ替えて公式採点。refined のみ (ownership 撤廃) = **0.4596
+(+0.0133、TP 1914 / FP 887 / FN 946)**、refined+proposals =
+0.4817、refined+proposals+final = 0.5044 (+0.058)。空マスクは
+0 件。refined 段 coverage 1303 → final 1221 (−82 clusters) で、
+ownership 後処理 (disjoint 化 + containment drop) が被覆を
+直接削っていることを確認。また公式採点は (annotator,pred,GT)
+ペア単位のため、同一物体に複数候補を出すと TP ペアが重複計上
+される構造 (oracle GT emission を k 重複しても 0.762→0.764 と
+dup 自体はほぼ中立 — 利得は variant 間の被覆差＋TP 多重計上)。
+
+**Prediction marginal value**: final 1501 件のうち 432 件
+(28.8%) が pooled annotator 採点で価値負 (うち 328 件は全
+record で FP、104 件は一部 TP でも他 record の FP 罰が勝つ)。
+価値負 pred の median conf 0.421 vs 正 0.581 — しかし conf 帯別
+neg share は 0.3 帯 18.6% → 0.9 帯 0% と単調で、**raw conf 閾値では
+再現不能** (conf>0.30 → 0.4407、>0.50 → 0.3995 と全閾値で悪化)。
+oracle で価値負を全 drop すると PQ 0.5031 (+0.0568)。
+
+**根本原因の整理**:
+
+1. **proposal 盲域 (最大)**: FN の 65% は小さな singleton 物体への
+   検出欠落 (median 714 px)。ただし §2.54 の通り単一 annotator 物体は
+   pooled 採点で期待価値が薄く (R≈1.69 で marginal ≈ +0.3、一部負)、
+   闇雲な recall 強化は FP 罰と相殺される — v88–v93 で conf・
+   tiling・cls 系を潰した結果と整合。
+2. **ownership 後処理が採点構造と不整合 (実害確定)**: panoptic
+   disjoint 性を強制する設計が coverage を 82 clusters 分削り、
+   TP ペアの重複計上も潰す。refined のみ emit で +0.013 — **これは
+   誠実なパイプライン修正として採用候補** (fold0/1 で要検証)。
+3. **採点ペア計上 + annotator pooling の構造税**: 29% の pred が
+   価値負・oracle gate で +0.057、複数仮説 emit で +0.058。
+   LB 0.70 層との乖離の一部は、sparse test ラベルに加えて
+   「仮説多重度を正直に 1 mask/物体に絞っている」側面が大きい。
+
+**次実験 (falsifiable、採用ゲート事前宣言)**:
+
+- **v94 (誠実系・軽量)**: emission を refined mask のみに変更
+  (ownership 撤廃、min_area のみ)。fold2 期待 +0.013。採用条件:
+  fold0/fold1 OOF で ΔPQ ≥ +0.005 かつ k=1 recall 退行なし。
+- **v95 (学習 emission gate)**: pred 時点特徴 (conf・mask 面積・
+  refiner prob 統計・prop⊃ref 収縮率・他 pred との包含構造・
+  前処理画像の contrast/limb 距離) で marginal value>0 を
+  cross-fit 予測 (fold0+1 学習 → fold2 評価で rotate)。
+  oracle 上限 +0.057。採用条件: fold2 ΔPQ ≥ +0.010 かつ
+  rotate 全 fold で非負、conf-only baseline を明確に上回ること。
+- **探索的提出 (任意)**: refined+proposals の 2 仮説 emit は
+  format 適合だが採点器のペア計上を明示的に利用する設計のため、
+  report 開示必須・審査リスクあり。test 側採点機構の probe とし
+  て 1 回だけ試すかはユーザー判断。
+
+成果物: `scratch/analyze_error_decomposition.py` (SHA256
+`cc5114b42cf4d6ee5cfa6aa1773d19024315f491a6c6d09ed2fd0f89f09e56d3`)、
+`output/error_decomp_fold2/{summary.json,fn_decomp.csv,fp_decomp.csv,
+tp_decomp.csv,cluster_coverage.csv,per_pred_marginal.csv,per_photo.csv}`。
+cache/ (packed mask npz) は再生成可能のため gitignore。
+環境: Python 3.12.10 / torch 2.11.0+cpu / numpy 2.4.2 /
+ultralytics 8.4.120 (.venv-prod)、metric_version
+`official-v1-2026-08-15`。
+
+### 2.61 v94/v95/境界校正の全 fold 判定 (2026-11-01)
+
+§2.60 で事前宣言した改善実験を fold0/1 OOF で検証。fold0/1 を
+新規 CPU 完全推論 (各 ~2370 s、yolo_fold0 `ab8810916e` /
+yolo_fold1 `44ba9381a5` + refiner `e9f0e8dd7f`) し、同一分解を
+実施。3 fold の prod baseline は **0.4458 / 0.4448 / 0.4463** と
+±0.001 の fold 安定性。分解構造も全 fold で一致 (proposal_blind
+692–699 枚・coverage funnel で refined→final 間に 66–82 clusters
+消失・価値負 pred share 28.8–30.3%)。
+
+**v94 refined-only emission (ownership 撤廃、min_area=20 のみ)**:
+
+| fold | final (prod) | refined emit | Δ |
+|---|---|---|---|
+| 0 | 0.44583 | 0.45372 | +0.0079 |
+| 1 | 0.44485 | 0.45079 | +0.0059 |
+| 2 | 0.44630 | 0.45957 | +0.0133 |
+
+**全 fold 正・mean +0.0090 → 事前ゲート (fold0/1 とも ≥+0.005) 合格。**
+後処理の撤廃のみで検出は同一のため、k=1 recall 退行は構造上
+あり得ない (coverage は refined ⊇ final)。ownership
+(disjoint 化 + containment drop) が公式採点と不整合であることが
+fold 横断で確定 — 本線への採用を推奨 (prod → prod_v94)。
+
+**v95 cross-fit 学習 emission gate — REJECT**:
+推論時特徴 19 個 (conf・面積系・prop↔ref 一致・pred 重なり・
+形状・photometric contrast・disk 内位置) で価値負 pred を
+balanced LR で cross-fit 予測。τ は train fold の近似 PQ で選択。
+
+| held fold | τ | train Δ(approx) | held-out exact Δ | dropped |
+|---|---|---|---|---|
+| fold0 | 0.60 | +0.0120 | **−0.0289** | 480 |
+| fold1 | 0.70 | +0.0117 | **−0.0114** | 302 |
+| fold2 | 0.70 | +0.0094 | **−0.0085** | 343 |
+
+近似式 (pred 寄与の加算分解) では train で +0.01 見えるが、
+exact 採点では全 fold 負 — ゲートが TP を持つ pred も落とし、
+GT が orphan 化して FN 罰 (+0.5) が近似を上回る。AUC 自体は
+conf-only 0.730 → 全特徴 0.768 (fold2 in-fold CV) と信号はあるが
+**annotator 由来の価値負性は画像根拠から予測不能**、という
+fold 横断の否定結果として記録。oracle 上限 +0.057 は到達不能。
+
+**境界校正 (dilation/erosion) — REJECT**: refined/final mask の
+morphological dilation/erosion (r∈{−3..+5}px) を fold2 で掃引。
+ref±1 = 0.4335/0.4344 (refined 0.4596 に対し −0.026/−0.025)、
+fin+1 = 0.4199 (final 0.4463 に対し −0.026)、全半径で単調悪化。
+near-miss 帯 (IoU 0.3–0.5 の 287 FN + 217 FP) は系統的な
+over/under-coverage ではなく物体ごとの境界誤差 = 人間一致度
+天井 (SQ 0.63) の反映で、一律の補正では救えない。
+
+**残る効くレバー (採点構造由来、モデル品質とは独立)**:
+
+| arm | fold0 | fold1 | fold2 |
+|---|---|---|---|
+| final (prod) | 0.4458 | 0.4448 | 0.4463 |
+| refined emit | 0.4537 | 0.4508 | 0.4596 |
+| refined+prop | 0.4768 | 0.4720 | 0.4817 |
+| ref+prop+final | 0.5001 | 0.4968 | 0.5044 |
+
+多仮説 emit は採点器の TP ペア計上を利用する format 適合だが
+metric-surface 最適化 — 採用可否はユーザー判断 (report 開示必須)。
+proposal_blind (FN の ~65%) は残存するが、小さな singleton 物体は
+pooled 採点で期待価値が薄く、v88–v93 で recall 系は全て reject 済。
+
+成果物: `output/error_decomp_fold{0,1}/` (summary.json + 各 CSV、
+cache/ は gitignore)、`output/v95_features/fold{0,1,2}.csv` +
+`fold{0,1,2}_arms.json` + `gate_results.json`、
+`scratch/run_v94_v95_emission.py` (emission arm 評価 + 特徴抽出)。

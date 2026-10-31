@@ -1,0 +1,186 @@
+{
+  "config": {
+    "variant": "prod",
+    "conf": 0.26,
+    "refiner_thr": 0.45,
+    "drop": 0.9,
+    "min_area": 20,
+    "imgsz": 1280,
+    "cluster_iou": 0.5,
+    "near_miss_lo": 0.3
+  },
+  "official_reproduction": {
+    "pq": 0.44629746509213825,
+    "sq": 0.6811158001536902,
+    "rq": 0.6552446221206929,
+    "tp": 1721,
+    "fp": 747,
+    "fn": 1064,
+    "denominator": 2626.5,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15"
+  },
+  "photos": {
+    "n": 235,
+    "records": 396,
+    "gt_instances": 2785,
+    "clusters": 2168,
+    "singleton_clusters": 1702,
+    "singleton_share": 0.7850553505535055,
+    "preds_final": 1501,
+    "proposals": 1701
+  },
+  "cluster_coverage_funnel": {
+    "proposal": 1228,
+    "refined": 1303,
+    "final": 1221,
+    "n_clusters": 2168
+  },
+  "fn_by_class": {
+    "proposal_blind": 696,
+    "near_miss": 287,
+    "ownership_lost": 52,
+    "cross_covered": 29
+  },
+  "fp_by_class": {
+    "free": 267,
+    "annotator_gap": 263,
+    "near_miss": 217
+  },
+  "fn_by_cluster_k": {
+    "1": 874,
+    "2": 128,
+    "3": 62
+  },
+  "fn_area_median_by_cls": {
+    "cross_covered": 1450.0,
+    "near_miss": 1815.0,
+    "ownership_lost": 953.5,
+    "proposal_blind": 714.5
+  },
+  "fp_area_median_by_cls": {
+    "annotator_gap": 1365.0,
+    "free": 1084.0,
+    "near_miss": 2267.0
+  },
+  "recall_by_cluster_k": {
+    "1": {
+      "gt": 1702,
+      "fn": 874,
+      "recall": 0.4864864864864865
+    },
+    "2": {
+      "gt": 630,
+      "fn": 128,
+      "recall": 0.7968253968253969
+    },
+    "3": {
+      "gt": 453,
+      "fn": 62,
+      "recall": 0.8631346578366446
+    }
+  },
+  "tp_iou_by_cluster_k": {
+    "count": {
+      "1": 828,
+      "2": 502,
+      "3": 391
+    },
+    "mean": {
+      "1": 0.6721449344864436,
+      "2": 0.6931165092089924,
+      "3": 0.6847053674854516
+    }
+  },
+  "counterfactuals": {
+    "c1_iou_thr_0.3": {
+      "pq": 0.4944555671605291,
+      "sq": 0.6386212536131698,
+      "rq": 0.7742547940003798,
+      "tp": 2039,
+      "fp": 441,
+      "fn": 748,
+      "denominator": 2633.5,
+      "iou_threshold": 0.3,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c2_cluster_coverage_transfer": {
+      "pq": 0.4669106536257006,
+      "sq": 0.7007661895702301,
+      "rq": 0.6662859318484675,
+      "tp": 1750,
+      "fp": 718,
+      "fn": 1035,
+      "denominator": 2626.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c3_oracle_all_gt": {
+      "pq": 1.0,
+      "sq": 1.0,
+      "rq": 1.0,
+      "tp": 2785,
+      "fp": 0,
+      "fn": 0,
+      "denominator": 2785.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c4_drop_free_fp": {
+      "pq": 0.47019666749478584,
+      "sq": 0.6811158001536902,
+      "rq": 0.6903329322101885,
+      "tp": 1721,
+      "fp": 480,
+      "fn": 1064,
+      "denominator": 2493.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c5_union_dedup_eval": {
+      "pq": 0.4421360079567948,
+      "sq": 0.6796606871693162,
+      "rq": 0.6505246166263116,
+      "tp": 1209,
+      "fp": 340,
+      "fn": 959,
+      "denominator": 1858.5,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    }
+  },
+  "per_pred_marginal": {
+    "n_preds": 1501,
+    "value_negative_n": 432,
+    "value_negative_share": 0.28780812791472354,
+    "neg_conf_median": 0.4206402003765106,
+    "pos_conf_median": 0.5809521675109863,
+    "conf_band_value": {
+      "(0.0, 0.3]": {
+        "n": 70,
+        "ratio_mean": 0.5987965308096711,
+        "neg_share": 0.18571428571428572
+      },
+      "(0.3, 0.5]": {
+        "n": 391,
+        "ratio_mean": 0.599888002604886,
+        "neg_share": 0.15601023017902813
+      },
+      "(0.5, 0.7]": {
+        "n": 401,
+        "ratio_mean": 0.6554232143366989,
+        "neg_share": 0.04987531172069826
+      },
+      "(0.7, 0.9]": {
+        "n": 301,
+        "ratio_mean": 0.6879716790263674,
+        "neg_share": 0.03322259136212625
+      },
+      "(0.9, 1.0]": {
+        "n": 10,
+        "ratio_mean": 0.7676888451186389,
+        "neg_share": 0.0
+      }
+    }
+  }
+}

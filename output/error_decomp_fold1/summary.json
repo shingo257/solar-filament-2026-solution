@@ -1,0 +1,186 @@
+{
+  "config": {
+    "variant": "prod",
+    "conf": 0.26,
+    "refiner_thr": 0.45,
+    "drop": 0.9,
+    "min_area": 20,
+    "imgsz": 1280,
+    "cluster_iou": 0.5,
+    "near_miss_lo": 0.3
+  },
+  "official_reproduction": {
+    "pq": 0.4448497505798014,
+    "sq": 0.6802000423514397,
+    "rq": 0.6539984164687253,
+    "tp": 1652,
+    "fp": 735,
+    "fn": 1013,
+    "denominator": 2526.0,
+    "iou_threshold": 0.5,
+    "metric_version": "official-v1-2026-08-15"
+  },
+  "photos": {
+    "n": 236,
+    "records": 367,
+    "gt_instances": 2665,
+    "clusters": 2106,
+    "singleton_clusters": 1682,
+    "singleton_share": 0.798670465337132,
+    "preds_final": 1491,
+    "proposals": 1673
+  },
+  "cluster_coverage_funnel": {
+    "proposal": 1191,
+    "refined": 1273,
+    "final": 1207,
+    "n_clusters": 2106
+  },
+  "fn_by_class": {
+    "proposal_blind": 692,
+    "near_miss": 263,
+    "cross_covered": 30,
+    "ownership_lost": 28
+  },
+  "fp_by_class": {
+    "annotator_gap": 287,
+    "free": 262,
+    "near_miss": 186
+  },
+  "fn_by_cluster_k": {
+    "1": 825,
+    "2": 144,
+    "3": 44
+  },
+  "fn_area_median_by_cls": {
+    "cross_covered": 1383.0,
+    "near_miss": 1664.0,
+    "ownership_lost": 970.0,
+    "proposal_blind": 753.0
+  },
+  "fp_area_median_by_cls": {
+    "annotator_gap": 1087.0,
+    "free": 808.5,
+    "near_miss": 1977.5
+  },
+  "recall_by_cluster_k": {
+    "1": {
+      "gt": 1682,
+      "fn": 825,
+      "recall": 0.509512485136742
+    },
+    "2": {
+      "gt": 580,
+      "fn": 144,
+      "recall": 0.7517241379310344
+    },
+    "3": {
+      "gt": 403,
+      "fn": 44,
+      "recall": 0.890818858560794
+    }
+  },
+  "tp_iou_by_cluster_k": {
+    "count": {
+      "1": 857,
+      "2": 436,
+      "3": 359
+    },
+    "mean": {
+      "1": 0.6751027949372884,
+      "2": 0.6760039183173984,
+      "3": 0.6974642515792102
+    }
+  },
+  "counterfactuals": {
+    "c1_iou_thr_0.3": {
+      "pq": 0.4916132656002546,
+      "sq": 0.6395769911481484,
+      "rq": 0.7686537702329254,
+      "tp": 1947,
+      "fp": 452,
+      "fn": 720,
+      "denominator": 2533.0,
+      "iou_threshold": 0.3,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c2_cluster_coverage_transfer": {
+      "pq": 0.46547644176207487,
+      "sq": 0.6990448822181933,
+      "rq": 0.6658749010292954,
+      "tp": 1682,
+      "fp": 705,
+      "fn": 983,
+      "denominator": 2526.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c3_oracle_all_gt": {
+      "pq": 0.9997931556821462,
+      "sq": 0.9997931556821461,
+      "rq": 1.0,
+      "tp": 2667,
+      "fp": 0,
+      "fn": 0,
+      "denominator": 2667.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c4_drop_free_fp": {
+      "pq": 0.4691818246198657,
+      "sq": 0.6802000423514397,
+      "rq": 0.6897703549060543,
+      "tp": 1652,
+      "fp": 473,
+      "fn": 1013,
+      "denominator": 2395.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    },
+    "c5_union_dedup_eval": {
+      "pq": 0.44524101378898184,
+      "sq": 0.6784802394223731,
+      "rq": 0.6562328390993959,
+      "tp": 1195,
+      "fp": 341,
+      "fn": 911,
+      "denominator": 1821.0,
+      "iou_threshold": 0.5,
+      "metric_version": "official-v1-2026-08-15"
+    }
+  },
+  "per_pred_marginal": {
+    "n_preds": 1491,
+    "value_negative_n": 445,
+    "value_negative_share": 0.29845741113346747,
+    "neg_conf_median": 0.4196421355009079,
+    "pos_conf_median": 0.6095297634601593,
+    "conf_band_value": {
+      "(0.0, 0.3]": {
+        "n": 78,
+        "ratio_mean": 0.5577728674173303,
+        "neg_share": 0.2564102564102564
+      },
+      "(0.3, 0.5]": {
+        "n": 350,
+        "ratio_mean": 0.5920291541749495,
+        "neg_share": 0.17142857142857143
+      },
+      "(0.5, 0.7]": {
+        "n": 371,
+        "ratio_mean": 0.6396389998385116,
+        "neg_share": 0.08355795148247978
+      },
+      "(0.7, 0.9]": {
+        "n": 359,
+        "ratio_mean": 0.6957375990936105,
+        "neg_share": 0.013927576601671309
+      },
+      "(0.9, 1.0]": {
+        "n": 4,
+        "ratio_mean": 0.7411322480262562,
+        "neg_share": 0.0
+      }
+    }
+  }
+}
