@@ -2515,3 +2515,57 @@ lzma+base85 埋め込みの**事前計算 CSV 再生**であり、コピー
 再現性・証拠の積み上げが最後の差別化であり、それは完了済み。
 データ: `output/discussions_2026-10-31.json`、
 `output/discussion_msgs_2026-10-31.json`、`output/kernel_survey_2026-10-31/`。
+
+
+### 2.51 Biohub CTDD 上位手法の転用調査 (2026-10-31)
+
+biohub-cell-tracking-during-development (9-29 締切、3,947 チーム)
+の受賞解法を調査し、solar へ転用可能な前処理・マスク技術を抽出。
+データ: `output/discussions_2026-10-31.json`、
+`output/top_solutions_2026-10-31.json` (Biohub module 側)。
+
+**上位パイプラインの共通構造** (detect→link→ILP は我々の
+detect→refine→ownership と同系):
+
+- 1st (Sergio Alvarez, 0.978): **Cellpose 型 flow-field head** —
+  前景確率 + 各 voxel→中心への 3ch flow を予測し、収束先で個体化
+  (Gaussian blob ではなく mask+flow)。3D U-Net、anisotropic
+  pooling、deep supervision、**軽量 MAE 事前学習** (50% を 2×4×4
+  tiny block で mask)、手書き 1,800 セル + GT 中心への
+  **4.305µm Gaussian stamp** + 全動画擬似ラベル (5-fold avg +
+  flip-4 TTA、高確信のみ採用)、重い aug + EMA、分裂 8x
+  oversample、hard-negative round、mask 幾何特徴 (semi-axes,
+  fill ratio, axis direction) を linker 入力に
+- 2nd (0.970): temporal 3D detection + graph tracking。**弱い
+  検出証拠を単体で捨てず track として判断** (我々の lowconf
+  提案と同じ病態だが時間持続で仲裁 — solar 単一フレームでは
+  直接適用不可)。合成 faint-cell を検出器学習に注入
+- 3rd (0.967): 2.5D U-Net + 3D SegResNet ensemble、dense 3D flow
+  motion 補正、物理座標 (µm) で距離計算、gap 充填+小成分除去
+- 4th (0.969/0.962): 検出→擬似ラベルモデルで精緻化、**sparse
+  movie には厳格閾値** (context 適応)、learned link/div score +
+  ILP、fork verifier (GBM)、track-support gate
+- 5th: 3D U-Net + transformer linker (frame 間 cross-attn) + ILP、
+  5-fold × 8 TTA 平均、重複/drift frame を val から除外
+
+**solar へ転用可能な技術**:
+
+| 技術 | 適用性 | 評価 |
+|---|---|---|
+| **Cellpose flow-field 個体分離** | 新機構。merged instance 分離 (report の未解決課題) を box-NMS 以外の原理で解く。v90-91 で pixel blob の FP 爆発を見たが、flow は各画素を 1 中心に束縛するため blob より厳格な提案を作れる可能性 | **唯一の未試行本格機構 — 将来候補** |
+| Gaussian stamp 補助監視 (中心 σ≈4.3µm) | refiner の crop 内で中心距離 aux head | 小粒。shrink-only 設計と相性は要検討 |
+| mask 幾何特徴 scorer (semi-axes/fill/axis) | lowconf 提案 (57% cover 層) の rich な二次判定 | A1 scorer で既に類似路線 (OOF+0.0034→LB不転)。特徴量は強化できるが機構は試行済みに近い |
+| hard-negative crop mining | refiner 学習の FP 耐性 | 1st は使わず (我々も同じ)。3rd/4th は使用。小粒 |
+| sparse context 適応閾値 | 疎密別の conf 運用 | sweep の変種。小粒 |
+| 擬似ラベル + 高確信フィルタ + TTA平均 | 既試行 (reject) | × |
+| flip-4 TTA on refiner prob | 既試行 (+0.0007 不転) | × |
+| SSL 事前学習 (MAE-light) | SimCLR で負の結果済み。MAE は別レシピだが SSL ライン自体閉鎖済み | × (新証拠なし) |
+| time-step / temporal aug | v67 で reject (stale labels) | × |
+| ensemble 平均 (5-fold×TTA) | 既試行 (不転) | × |
+
+**結論**: 学習済みの大半は我々が類似路線で棄却済み。**唯一の
+実質的な未試行機構は Cellpose 型 flow-field による個体分離** —
+merged filament の分離と、box 非依存の提案生成を両立させ得る。
+ただし新モデル学習が必要であり、11-15 締切の最終構成
+(`prod`/`plain_mhsa_f2`) を変えるものではない。報告書の
+future work 候補として記録する。
