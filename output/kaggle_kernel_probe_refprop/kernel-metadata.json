@@ -1,0 +1,19 @@
+{
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "shingo257/solar-filament-2026-weights"
+  ],
+  "competition_sources": [
+    "filament-segmentation-2026"
+  ],
+  "kernel_sources": [],
+  "category_ids": [],
+  "id": "shingo257/solar-filament-2026-reproduction-probe-refprop",
+  "title": "solar-filament-2026-reproduction-probe-refprop",
+  "code_file": "solar_filament_submission_reproduction_probe_refprop.ipynb"
+}

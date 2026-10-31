@@ -79,6 +79,18 @@ plain-MHSA fold2 重みに差し替えた構成、アーキテクチャ差によ
 上書きしない(例: `SOLAR_SUBMISSION_CONF=0.32` → `submission_conf032.csv` /
 `submission_master_pipeline_conf032.csv`)。これは探索用候補であり、
 最終選択 (0.26) を置き換えるものではない。
+
+## emission バリアント (§2.60/2.61 の誤差分解から)
+
+`CFG.SUBMISSION_VARIANT` に 2 つの emission バリアントを追加:
+
+- `prod_v94`: prod パイプラインのまま ownership 後処理 (包含 drop +
+  disjoint 化) を撤廃し、refined mask をそのまま emit。
+  fold0/1/2 OOF で +0.0079/+0.0059/+0.0133 (全 fold 正、事前ゲート合格)。
+- `probe_refprop`: refined mask + proposal mask の 2 仮説 emit。
+  公式採点が (annotator, pred, GT) ペア単位で TP を計上する構造への
+  探索的 probe (local OOF +0.03 台)。重複 mask を意図的に含むため、
+  監査セルの disjoint assert は本バリアントでは計数報告に緩和される。
 """
 
 SETUP_CELL = """\
@@ -144,6 +156,10 @@ class CFG:
     # "prod"(既定: EdgeAtt all-data refiner) / "plain_mhsa_f2"(第2提出:
     # ablation plain-MHSA fold2 refiner、重み dataset の
     # ablation_plain_mhsa_seed8407_fold2.pt が必要)
+    # "prod_v94": prod の emission を refined mask 直接出力に変更
+    #   (ownership 撤廃、§2.60/2.61 で全 fold +0.006〜+0.013 検証済み)
+    # "probe_refprop": refined + proposal の 2 仮説 emit (採点機構の
+    #   探索的 probe、§2.61。重複 mask を許容するため監査は緩和済み)
     SUBMISSION_VARIANT = "prod"
     SUBMISSION_CONF = float(os.environ.get("SOLAR_SUBMISSION_CONF", "0.26"))
     REFINER_THRESHOLD = 0.45
@@ -152,7 +168,8 @@ class CFG:
     PREDICT_IOU = 0.55
     SINGLE_FOLD = 2  # V50/V52で確認済み
 
-if CFG.SUBMISSION_VARIANT not in ("prod", "plain_mhsa_f2"):
+if CFG.SUBMISSION_VARIANT not in ("prod", "plain_mhsa_f2",
+                                  "prod_v94", "probe_refprop"):
     raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")
 
 for path in (CFG.LOCAL_ROOT, CFG.PREPROC_DIR, CFG.ARTIFACT_ROOT, CFG.YOLO_ROOT, CFG.RUNS_ROOT):
@@ -472,7 +489,7 @@ refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
             "repo weights/、重み dataset、または Drive artifacts に配置してください")
     refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
-elif CFG.SUBMISSION_VARIANT == "prod":
+elif CFG.SUBMISSION_VARIANT in ("prod", "prod_v94", "probe_refprop"):
     refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
 else:
@@ -512,6 +529,20 @@ for file_name in tqdm(test_files, desc="test推論"):
     refined = [refine_proposal(image, m) for _, m in proposals]
     final_masks = apply_ownership(refined, scores)""")
 
+    # emission を提出バリアントに応じて分岐 (v94=ownership撤廃、
+    # probe_refprop=refined+proposal 2仮説、既定は従来 ownership)
+    old_emit = "    final_masks = apply_ownership(refined, scores)"
+    assert src12.count(old_emit) == 1, "cell12 emission anchor mismatch"
+    src12 = src12.replace(old_emit, """    if CFG.SUBMISSION_VARIANT == "prod_v94":
+        # v94: ownership 撤廃 — refined mask をそのまま emit (§2.60/2.61)
+        final_masks = [m for m in refined if m.any()]
+    elif CFG.SUBMISSION_VARIANT == "probe_refprop":
+        # 採点機構 probe: refined + proposal の 2 仮説 emit (探索用)
+        final_masks = ([m for m in refined if m.any()]
+                       + [m for _, m in proposals if m.any()])
+    else:
+        final_masks = apply_ownership(refined, scores)""")
+
     # 最終 print の直前に計算効率サマリを挿入
     old_tail = """print({"rows": len(submission), "images_with_predictions":
        len(set(a["file_name"] for a in audit if a["submitted"] > 0))})"""
@@ -527,6 +558,26 @@ print(efficiency)
 print({"rows": len(submission), "images_with_predictions":
        len(set(a["file_name"] for a in audit if a["submitted"] > 0))})""")
     cells[12] = code(src12)
+
+    # 6b. 出力監査セル(cell 14): disjoint 性 assert は ownership を通す
+    # variant (prod / plain_mhsa_f2) のみに限定。prod_v94 / probe_refprop は
+    # mask 重複を意図的に許容するため、重複画素数を計数して報告に留める。
+    src14 = "".join(cells[14]["source"])
+    old_occ = "occupancy = {}"
+    assert src14.count(old_occ) == 1, "cell14 occupancy anchor mismatch"
+    src14 = src14.replace(old_occ, "occupancy = {}\noverlap_pixels = 0")
+    old_overlap = ('    assert not np.logical_and(occ, decoded.astype(bool)).any(), '
+                   'f"重複: {image_id}"\n    occ |= decoded.astype(bool)')
+    assert old_overlap in src14, "cell14 overlap anchor mismatch"
+    src14 = src14.replace(old_overlap, """    overlap_n = int(np.logical_and(occ, decoded.astype(bool)).sum())
+    if CFG.SUBMISSION_VARIANT in ("prod", "plain_mhsa_f2"):
+        assert overlap_n == 0, f"重複: {image_id}"
+    overlap_pixels += overlap_n
+    occ |= decoded.astype(bool)""")
+    old_op_print = '"overlap_pixels": 0,'
+    assert old_op_print in src14, "cell14 print anchor mismatch"
+    src14 = src14.replace(old_op_print, '"overlap_pixels": overlap_pixels,')
+    cells[14] = code(src14)
 
     # 7. 末尾に環境固定セルを追加
     cells.append(md("## (F) 環境固定記録"))

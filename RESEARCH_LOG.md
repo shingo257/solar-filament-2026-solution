@@ -2980,3 +2980,27 @@ pooled 採点で期待価値が薄く、v88–v93 で recall 系は全て reject
 cache/ は gitignore)、`output/v95_features/fold{0,1,2}.csv` +
 `fold{0,1,2}_arms.json` + `gate_results.json`、
 `scratch/run_v94_v95_emission.py` (emission arm 評価 + 特徴抽出)。
+### 2.62 v94 採用 + probe kernel 提出 (2026-11-01、ユーザー承認)
+
+v94 (refined-only emission) は事前ゲート合格 (全 fold 正、
+fold0/1 で ≥+0.005) のため **採用**。提出用に
+`build_submission_reproduction.py` へ emission バリアントを追加:
+
+- `prod_v94`: prod pipeline の emission だけを refined mask 直接
+  出力に変更 (ownership 撤廃)。refiner・重み・前処理は prod と同一。
+- `probe_refprop`: refined + proposal の 2 仮説 emit。採点器の
+  TP ペア計上が test 側でも同じかを測る **1 回限りの探索的提出**
+  (ユーザー判断)。local OOF +0.03 台を期待 — LB が prod の 0.39
+  から大きく跳べば top 層の手法が「仮説多重度」である傍証。
+  report には scoring-surface 最適化である旨を開示する方針。
+
+実装上の注意: 監査セル (cell 14) の disjoint assert は
+prod / plain_mhsa_f2 (ownership 経由) のみに限定し、v94/probe は
+重複画素を計数報告に緩和 (emit する mask が構造上重なり得るため)。
+
+kernel (Kaggle GPU、各 ~7h 想定):
+- `shingo257/solar-filament-2026-reproduction-prod-v94` v1
+- `shingo257/solar-filament-2026-reproduction-probe-refprop` v1
+
+最終 2 提出の選択は引き続きユーザー操作 (prod `57039986` /
+plain_mhsa_f2 `57072525` / 本 2 件の結果次第で再判断)。
