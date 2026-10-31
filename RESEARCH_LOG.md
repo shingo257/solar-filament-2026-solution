@@ -2363,7 +2363,6 @@ max 確率版は未実装で、探索結果が乏しければ検討。(c) Arm A 
 `solar_filament_v91_semsweep_fold2_colab.ipynb`。manifest は Drive
 `artifacts/v91_semsweep_fold2_manifest.json`。
 
-
 ### 2.47 v91 結果: semantic 提案源ライン negative で閉鎖 (2026-10-30)
 
 **判定: 両 arm とも prod 未満 — §2.46 ルールにより提案源ラインを
@@ -2400,7 +2399,6 @@ theta=0.7 で Δ −0.0009 まで肉薄するが、theta↑ で Δ→0 に漸近
 **キャンペーン状態**: cls 重み付け (fold 分散ノイズ)・verifier・
 rescue・ensemble・TTA・提案源 — 主要レバー全て尽きた。
 `prod`/`plain_mhsa_f2` が最終構成として確定。
-
 
 ### 2.48 v88 Kaggle 再現: Colab manifest との deterministic 一致検証 (2026-10-30)
 
@@ -2448,7 +2446,6 @@ Kaggle/Colab で再現可能として検証された。再学習重みはハー�
 変えない。これで全 3 fold の cls15 証拠 + クロスプラットフォーム
 再現性の記録が揃った。
 
-
 ### 2.49 公開 repo の匿名再現検証 (2026-10-30)
 
 **判定: 成功** — standalone repo `shingo257/solar-filament-2026-solution`
@@ -2469,7 +2466,6 @@ Kaggle/Colab で再現可能として検証された。再学習重みはハー�
 
 提出要件の「公開 Git リポジトリ + 重み同梱」は検証済み。残るは
 Google Form 送信 (ユーザー操作) のみ。
-
 
 ### 2.50 上位手法・Discussion サーベイ (2026-10-31)
 
@@ -2515,7 +2511,6 @@ lzma+base85 埋め込みの**事前計算 CSV 再生**であり、コピー
 再現性・証拠の積み上げが最後の差別化であり、それは完了済み。
 データ: `output/discussions_2026-10-31.json`、
 `output/discussion_msgs_2026-10-31.json`、`output/kernel_survey_2026-10-31/`。
-
 
 ### 2.51 Biohub CTDD 上位手法の転用調査 (2026-10-31)
 
@@ -2569,3 +2564,38 @@ merged filament の分離と、box 非依存の提案生成を両立させ得る
 ただし新モデル学習が必要であり、11-15 締切の最終構成
 (`prod`/`plain_mhsa_f2`) を変えるものではない。報告書の
 future work 候補として記録する。
+
+### 2.52 v92 事前登録: Cellpose flow-field 提案源 pilot (2026-10-31)
+
+§2.51 の棚卸しで唯一残った未試行機構 (Biohub 1st の Cellpose 型
+flow-field 個体分離) を fold2 pilot として実行する。
+ノート: `solar_filament_v92_cellpose_flow_fold2_colab.ipynb`
+(builder `scratch/build_v92_cellpose_flow.py`)。
+
+**設計**: v90 の semantic U-Net を 3ch 化 — ch0=fg logit
+(10*focal+dice, v90 と同式)、ch1-2=flow_y/flow_x (fg 画素上の
+smooth-L1×1.0)。flow 教師 = 各画素→所属 instance 全体重心への
+unit ベクトル (bg=0)。学習は v90 と同条件 (ConvNeXt-T、1024px
+crop、(file,annotator) エントリ、時間予算 1.2h)。augment は
+rot90/flip を flow 場に空間+ベクトル成分変換で適用。
+
+**推論**: full-res 4-flip TTA (flow 成分は反転解除時に符号反転)
+→ fg>=0.5 の画素を予測 flow で Euler 追従 (200 step × 1px、
+bilinear) → 端点を DBSCAN (eps=6px, min_samples=8) でクラスタ
+→ クラスタ毎の画素集合を 1 instance 提案 (conf=クラスタ内平均
+fg 確率、min_area=20 未満・noise 点は棄却)。blob と違い各画素が
+1 中心に束縛されるため merged instance の分離を原理で解く。
+
+**arm**: `flowprop` (flow 提案のみ、診断用で採用候補にしない) +
+`union` (prod det ∪ flow、dedup IoU=0.5)。採点は prod と同一
+refine→ownership→公式PQ。
+
+**事前固定ゲート**:
+
+- `PQ(union,0.26) − PQ(prod,0.26) >= +0.005` → fold0/1 に昇格検討
+- `[0,+0.005)` → reject_noise、`<0` → reject
+- 診断 (判定不使用): `diag_flowrescue` = prod の primary FN を
+  flow 提案が IoU>0.5 で覆う数 + flow_props_per_image
+- fold2 は検索フェーズ。ゲート突破時のみ fold0/1 確認を別途設計
+- 全 arm が prod 未満なら flow-field ラインは negative で閉じ、
+  `prod`/`plain_mhsa_f2` を最終構成のまま提出する
