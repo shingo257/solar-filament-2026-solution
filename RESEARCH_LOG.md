@@ -2447,3 +2447,25 @@ Kaggle/Colab で再現可能として検証された。再学習重みはハー�
 非同一になるが、fold 分散範囲内 (σ≈0.003) であり、実験判定を
 変えない。これで全 3 fold の cls15 証拠 + クロスプラットフォーム
 再現性の記録が揃った。
+
+
+### 2.49 公開 repo の匿名再現検証 (2026-10-30)
+
+**判定: 成功** — standalone repo `shingo257/solar-filament-2026-solution`
+を PUBLIC に切替え、credential helper 無効・`GIT_TERMINAL_PROMPT=0`
+の真の匿名環境で `git clone --depth 1` を検証:
+
+- 791 ファイル clone 成功 (commit `0c0fc757`)
+- **Git LFS 5 オブジェクト (398.7 MiB) が匿名ダウンロード成功** —
+  重みは実体で LFS pointer ではない
+- `weights/weights_manifest.json` との SHA256 照合 **5/5 MATCH**
+  (`yolo_fold{0,1,2}_best.pt` 45,316,918B、`refiner_all_data.pt`
+  141,079,441B、`refiner_plain_mhsa_fold2_s8407.pt` 141,041,333B;
+  fold2 = `40ec31fd…` は v88 manifest の `prod_yolo_sha256` と一致)
+- `solar_filament_submission_reproduction.ipynb`・`report/main.pdf`・
+  `README.md`・`RESEARCH_LOG.md` 全て存在
+- シークレットスキャン済み: 資格情報値の混入なし (kaggle.json は
+  実行時に Drive から読む設計、値は repo 非含有)
+
+提出要件の「公開 Git リポジトリ + 重み同梱」は検証済み。残るは
+Google Form 送信 (ユーザー操作) のみ。
