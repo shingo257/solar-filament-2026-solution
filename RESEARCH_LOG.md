@@ -2708,7 +2708,7 @@ fold2、70 epoch 完走 (0.966h、early stop なし)。manifest:
 
 | arm | PQ@0.26 | Δ vs prod(0.4442) | TP | FP | FN |
 |---|---|---|---|---|---|
-| consensus2 w0=1.0 | 0.4035 | **−0.0407** | 1322 | 372 | 1463 |
+| consensus2 w0=1.0 | 0.4035 | **−0.0408** | 1322 | 372 | 1463 |
 | w0=0.7 | 0.3720 | −0.0722 | 1115 | 233 | 1670 |
 | w0=0.5 | 0.3659 | −0.0783 | 1076 | 203 | 1709 |
 | w0≤0.3 | ≤0.3717 | さらに悪化 | — | — | — |
@@ -2720,6 +2720,13 @@ strong class (合意>=2, val では instance の ~24%) に偏り、weak class
 (76%) は低 conf 化。@0.26 で TP が 1715→1322 と大崩れ。w0 を下げると
 weak 提案が消え FN が単調増悪 — 弱い物体はその record 採点では依然
 GT なので、捨てる方向には絶対に効かない。
+
+val の class 構成: weak 1363 inst / 218 img (76%)、strong 421 inst /
+100 img (24%)。学習後の class 別 val: strong は mask R=0.727 と高め
+に振れる一方、weak は R=0.536 — strong 側に conf を集中させた
+結果、総合 recall が崩れた。weak_kept_per_image は w0=1.0@0.26 で
+1.29 (残る weak は conf 高の少数) → w0<=0.3 で 0.0 (全滅)。verdict:
+`best_w0=w0=1.0, Δ@primary=-0.0408, reject` (manifest 確定値)。
 
 **§2.54 との整合**: singleton と consensus は見た目では分離不能
 (annotator の「判断」の違いであって外見の違いではない) ため、明示
