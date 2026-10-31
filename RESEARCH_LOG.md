@@ -2744,3 +2744,31 @@ calibration コストだけが残った。
 → **ラベル構造変更は全手法棄却で完全閉鎖**。prod の per-record 生
 ラベルがこの採点構造では最適であることが確定。
 `prod`/`plain_mhsa_f2` 最終構成に変更なし。
+
+### 2.57 conf032 A/B 提出: prod@0.32 = public 0.39 (prod@0.26 と表示同等)
+
+sparse-label 仮説 (§2.54・discussion 743385/735256 系) に基づく
+低コスト A/B: 公式再現 notebook を `SOLAR_SUBMISSION_CONF=0.32`
+(既定値パッチ済み kernel `solar-filament-2026-reproduction-conf032`
+v1、Kaggle T4、wall ~7h install+前処理律速) で実行。
+
+**provenance**: 凍結重みを使用 (再学習なし)。
+yolo_fold2 `40ec31fd2c6aa8e3` / refiner_all_data `e9f0e8dd7ff104d9` /
+grouped_folds `24367120` はいずれも凍結値と一致。
+efficiency: 0.854 s/img (T4、153.8s/180枚)。
+
+**結果**: `submission_conf032.csv` (1026 行、prod@0.26 の 1172 から
+−146 = 93 画像の低信頼案が脱落、+2 は NMS floor 差) を提出
+(ref 57843737) → **public 0.39**。prod@0.26 の 0.39 と表示桁
+(0.01) では識別不能、Δ は ±0.005 以内。
+
+**解釈**: conf を 0.32 に上げても public スコアは悪化も改善も
+しなかった — 「conf が public LB の binding constraint ではない」
+という弱い証拠。sparse-label 仮説の方向 (高 conf が利く) とも
+「予測 drop が無関係な層」とも整合で、結論は inconclusive。
+提出枠を 1 つ消費したが、final 2 提出の選択には影響なし —
+**prod + plain_mhsa_f2 のまま確定**。
+
+成果物 (repo 外): `output/conf032_run/` (gitignore、CSV +
+efficiency + sha256 + pip_freeze、359K)。
+kernel バリアントは `output/kaggle_kernel_conf032/` (PR #576)。

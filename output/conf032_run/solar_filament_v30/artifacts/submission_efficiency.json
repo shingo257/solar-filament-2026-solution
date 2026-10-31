@@ -1,0 +1,6 @@
+{
+  "test_images": 180,
+  "total_wall_s": 153.8,
+  "s_per_image": 0.854,
+  "gpu": "Tesla T4"
+}
