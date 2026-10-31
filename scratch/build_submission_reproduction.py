@@ -71,6 +71,14 @@ plain-MHSA fold2 重みに差し替えた構成、アーキテクチャ差によ
 `plain_mhsa_f2` は setup セルの `CFG.SUBMISSION_VARIANT` を `"plain_mhsa_f2"`
 に変更して再実行する(重み dataset の `ablation_plain_mhsa_seed8407_fold2.pt`
 を使用、出力は `submission_plain_mhsa_f2.csv`)。
+
+## 探索用 conf バリアント (sparse-label 仮説の A/B、§2.54)
+
+`CFG.SUBMISSION_CONF` は `SOLAR_SUBMISSION_CONF` 環境変数で上書きできる
+(既定 0.26)。0.26 以外では出力名に `_confNNN` が付き、公式提出 CSV を
+上書きしない(例: `SOLAR_SUBMISSION_CONF=0.32` → `submission_conf032.csv` /
+`submission_master_pipeline_conf032.csv`)。これは探索用候補であり、
+最終選択 (0.26) を置き換えるものではない。
 """
 
 SETUP_CELL = """\
@@ -137,7 +145,7 @@ class CFG:
     # ablation plain-MHSA fold2 refiner、重み dataset の
     # ablation_plain_mhsa_seed8407_fold2.pt が必要)
     SUBMISSION_VARIANT = "prod"
-    SUBMISSION_CONF = 0.26
+    SUBMISSION_CONF = float(os.environ.get("SOLAR_SUBMISSION_CONF", "0.26"))
     REFINER_THRESHOLD = 0.45
     DROP_THRESHOLD = 0.90
     MIN_AREA = 20
@@ -444,9 +452,11 @@ else:
     anchor12 = 'OUTPUT_PATH = Path("/content/submission.csv")'
     assert anchor12 in src12, "cell12 output anchor mismatch"
     src12 = src12.replace(anchor12,
-        '''OUTPUT_PATH = (WORK_ROOT / "submission.csv"
+        '''_conf_tag = ("" if CFG.SUBMISSION_CONF == 0.26
+               else f"_conf{int(round(CFG.SUBMISSION_CONF * 100)):03d}")
+OUTPUT_PATH = (WORK_ROOT / f"submission{_conf_tag}.csv"
                if CFG.SUBMISSION_VARIANT == "prod"
-               else WORK_ROOT / f"submission_{CFG.SUBMISSION_VARIANT}.csv")''')
+               else WORK_ROOT / f"submission_{CFG.SUBMISSION_VARIANT}{_conf_tag}.csv")''')
     # refiner を提出バリアントに応じて解決(prod=all-data EdgeAtt、
     # plain_mhsa_f2=添付 dataset/Drive の ablation plain-MHSA fold2 重み)
     old_refiner = """refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
@@ -481,9 +491,9 @@ else:
     assert old_artifact_copy in src12, "cell12 artifact copy anchor mismatch"
     src12 = src12.replace(old_artifact_copy,
         '''shutil.copy2(OUTPUT_PATH, CFG.ARTIFACT_ROOT /
-               (f"submission_master_pipeline_{CFG.SUBMISSION_VARIANT}.csv"
+               (f"submission_master_pipeline_{CFG.SUBMISSION_VARIANT}{_conf_tag}.csv"
                 if CFG.SUBMISSION_VARIANT != "prod"
-                else "submission_master_pipeline.csv"))''')
+                else f"submission_master_pipeline{_conf_tag}.csv"))''')
     # 計算効率(ルーブリック明記項目): 画像あたり推論wall-clockを計測して記録
     old_loop = """for file_name in tqdm(test_files, desc="test推論"):
     image_path = CFG.PREPROC_DIR / file_name

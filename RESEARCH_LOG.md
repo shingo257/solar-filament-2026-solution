@@ -2629,3 +2629,74 @@ dedup 統合でも FP コストが勝った。
 cls 重み付け・verifier・rescue・ensemble・TTA・提案源 3 系統
 (semantic・flow)・再学習 — すべて frozen gate 未達。
 `prod`/`plain_mhsa_f2` が最終構成 (OOF ~0.444、public ~0.39)。
+
+### 2.54 診断: annotator 不一致天井 — ネックの定量的確定 (2026-11-01)
+
+v88-92 の全機構棄却後、残るボトルネックの正体を multi-annotator
+データで直接計測 (fold 全体・707 file・296 multi-annotated file・
+2146 matched pairs)。計算は train JSON のみで完結、外部データ不使用。
+
+**計測結果**:
+
+| 指標 | 値 | 解釈 |
+|---|---|---|
+| annotator matched IoU (IoU>0.5 一致対、n=2146) | mean **0.634** / med 0.630 / p25 0.572 / p75 0.693 | 人間同士の境界一致度 |
+| **我々のモデル SQ** | **0.680** | **人間一致度を既に超過** → SQ 改善余地ゼロ |
+| per-record recall (別 annotator にも描かれる率) | mean **0.563** | 全ラベルの ~44% が単独 annotator 物体 |
+| 単独物体の視認性 (n=702, 100 file 計測) | contrast 9.6・visible 46% | 不可視ではなく「判断が分かれる境界物体」 |
+| consensus 物体の視認性 (n=774) | contrast 11.6・visible 66% | 単独より明瞭だが絶対差は小さい |
+
+**FN プールの構造確定**: prod primary FN 953 件のうち det/semantic/
+flow の 3 系統で救済できたのは各 ~16-17% (=単独 annotator 物体層と
+数値一致)。残りは「annotator 同士も描かない物体」ではなく
+「1人しか描かない物体」= 注釈エントロピー由来でありモデル依存
+ではない。
+
+**per-record 採点の数学的束縛**: R≈2.44 record/file の pooled 採点で、
+単独物体 (1 record にのみ存在) を予測すると 1TP vs ~1.44FP。
+限界価値 ≈ 0.63IoU×1 − 0.5×1.44 ≈ 負 → **単独物体の予測は数学的に
+マイナス**であり、prod がそれらを避けるのは採点上最適。理論上限
+(全 annotator union を完璧予測でも SQ=0.63 頭打ち・非共有分が FP 化)
+は PQ≈0.49 程度と推定 — v87 union_hard がこの路線で −0.014 だった
+理由と整合。
+
+**結論**: ネックはモデル能力ではなく **注釈不一致 × per-record 採点
+構造**。マスク/前処理の変更は SQ が人間一致度を超えている時点で
+理論上効かない。残る機構差のある一手は「consensus 尤度を明示的に
+学習する 2-class 検出器」(v93) と「sparse-label 採点向けの高 conf
+提出」のみ。
+
+### 2.55 v93 事前登録: consensus-class YOLO (annotator 合意数の明示学習)
+
+§2.54 の診断に基づく、ラベル構造変更の**最後の未試行バリアント**。
+v87 union-label (ラベル集合を union mask に置換) は棄却済みだが、
+v93 は**集合構造を prod と完全に同一に保ったまま instance の class
+だけを変える** — 全く別のレバー。
+
+**設計 (事前固定)**:
+
+- per-record 学習サンプルは prod と同一 (`stem__c{j}`、各 record が
+  自分の polygon を持つ)。**変えるのは class index のみ**
+- 各 instance の class = **1 (strong/consensus)** if IoU>0.5 union-find
+  cluster (同一 record 同士は併合しない、v87 の cluster_from_iou) の
+  distinct annotator 数 >= 2、else **0 (weak/単独)**
+- `yolo11m-seg` を 2-class、`single_cls=False`、data.yaml は
+  `0: weak / 1: strong`。他の学習引数 18 項目・fold2・seed は prod 同一
+- 評価: 各提案の score = conf if cls==1 else conf*w0、
+  w0 grid {1.0, 0.7, 0.5, 0.3, 0.0} × conf sweep {0.15,0.20,0.26,0.32}。
+  w0=1.0 は sanity (class 情報不使用、prod ranking と同等のはず)
+
+**ゲート (事前固定)**: `max_{w0} [PQ(arm,0.26) − PQ(prod,0.26)] >= +0.005`
+→ fold0/1 昇格検討。全 w0 で [0,+0.005) は reject_noise、<0 は reject。
+exploratory best (w0,conf) は記録のみ、判定に使わない。
+
+**仮説**: §2.54 のように単独物体の予測は per-record 採点でマイナス。
+prod の conf は既に consensus-likeness を暗黙学習しているはずだが、
+明示 class 化でランキングの分解能が上がるかもしれない。
+棄却された場合: consensus 仮説自体は §2.54 で支持されるが、
+**class 明示化という実装形態では効果を出せなかった**と記録し、
+ラベル構造ラインを完全閉鎖する。
+
+notebook: `solar_filament_v93_consensus_class_fold2_colab.ipynb`
+builder: `scratch/build_v93_consensus_class.py` (v87 を改造)
+manifest: `artifacts/v93_consensus_class_fold2_consensus2_manifest.json`
