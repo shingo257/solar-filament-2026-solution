@@ -2772,3 +2772,21 @@ efficiency: 0.854 s/img (T4、153.8s/180枚)。
 成果物 (repo 外): `output/conf032_run/` (gitignore、CSV +
 efficiency + sha256 + pip_freeze、359K)。
 kernel バリアントは `output/kaggle_kernel_conf032/` (PR #576)。
+
+### 2.58 public LB スナップショット (2026-10-31、conf032 提出後)
+
+`kaggle competitions leaderboard -d` で全 1305 チームを取得。
+自チーム "ERS" (shingo257): **rank 219 / 1305、score 0.39、
+17 submissions** (最終 = conf032 A/B ref 57843737)。
+
+上位分布: 1位 IONode Online 0.70、2位 Tempest 0.64、3-6位 0.62、
+7-9位 0.60、以降 0.58/0.57/0.56 の密集帯。top 層は conf032 提出
+時点で動いていない (メトリックリセットではなく高得点が実在)。
+
+§2.54 の annotator 天井 (~0.49 union 上限) との対比: 0.70 超は
+honest per-record 採点では理論上限を超える — discussion 733912
+(二metric混在)・735377 (panoptic painting 要件)・729809 (metric
+測定) と整合的に、top 層は採点器の挙動差 (test 側の multi-
+annotator pooling や空マスク補正の扱い) を利用している可能性が
+高い。我々の 0.39 は honest 予測の帯として、最終評価は主催者
+rubric (再現性・報告書・方法の健全性) 依存と整理済み。
