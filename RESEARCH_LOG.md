@@ -2700,3 +2700,40 @@ prod の conf は既に consensus-likeness を暗黙学習しているはずだ�
 notebook: `solar_filament_v93_consensus_class_fold2_colab.ipynb`
 builder: `scratch/build_v93_consensus_class.py` (v87 を改造)
 manifest: `artifacts/v93_consensus_class_fold2_consensus2_manifest.json`
+
+### 2.56 v93 結果: consensus-class YOLO = reject — ラベル構造ライン完全閉鎖 (2026-11-01)
+
+fold2、70 epoch 完走 (0.966h、early stop なし)。manifest:
+`artifacts/v93_consensus_class_fold2_consensus2_manifest.json`。
+
+| arm | PQ@0.26 | Δ vs prod(0.4442) | TP | FP | FN |
+|---|---|---|---|---|---|
+| consensus2 w0=1.0 | 0.4035 | **−0.0407** | 1322 | 372 | 1463 |
+| w0=0.7 | 0.3720 | −0.0722 | 1115 | 233 | 1670 |
+| w0=0.5 | 0.3659 | −0.0783 | 1076 | 203 | 1709 |
+| w0≤0.3 | ≤0.3717 | さらに悪化 | — | — | — |
+| exploratory 全域 best | w0=1.0@conf0.2 → 0.4293 | −0.0149 | — | — | — |
+
+**sanity arm 自体の劣化が本質**: w0=1.0 (class 情報不使用 = 提案 ranking
+だけ比較) で既に −0.041。2-class 化が base 検出性能を損なった — conf が
+strong class (合意>=2, val では instance の ~24%) に偏り、weak class
+(76%) は低 conf 化。@0.26 で TP が 1715→1322 と大崩れ。w0 を下げると
+weak 提案が消え FN が単調増悪 — 弱い物体はその record 採点では依然
+GT なので、捨てる方向には絶対に効かない。
+
+**§2.54 との整合**: singleton と consensus は見た目では分離不能
+(annotator の「判断」の違いであって外見の違いではない) ため、明示
+class 化してもモデルが得る追加情報はゼロ — むしろ class 分割の
+calibration コストだけが残った。
+
+**ラベル構造ラインの最終台帳**:
+
+| 実験 | 手法 | Δ@0.26 |
+|---|---|---|
+| v87 union_hard | 全 record union mask を全 copy に | −0.0138 |
+| v87 union_agree | 合意数重みの copy | −0.0040 |
+| v93 consensus2 | class=合意数 (集合構造は prod 同一) | −0.0407 |
+
+→ **ラベル構造変更は全手法棄却で完全閉鎖**。prod の per-record 生
+ラベルがこの採点構造では最適であることが確定。
+`prod`/`plain_mhsa_f2` 最終構成に変更なし。
