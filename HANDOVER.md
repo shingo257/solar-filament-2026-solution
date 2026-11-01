@@ -104,7 +104,8 @@ pip freeze + SHA256記録・`submission_efficiency.json`出力。
 重要な負の知見:
 - 残り FP751 は conf≥0.26・refiner・ownership・3view-TTA・磁気図の
   **すべてを通過する難しい誤検出** — selector系では構造的に届かない。
-- 残り FN1071 の68%は detector-blind(proposal自体が無い)。
+- 残り FN1071 の68%は conf≥0.26 の proposal で未被覆(§2.66 訂正:
+  任意 conf で不可視の意味ではなく、FN の ~57% は conf<0.26 に IoU>0.5 候補あり)。
   RF-DETR は box 相補カバー 317/612 を持つが union は FP 洪水で敗北。
 - v68 sanity: filament重心→PIL中央値63px vs ランダム81px —
   物理信号は実在するが分離力不足。

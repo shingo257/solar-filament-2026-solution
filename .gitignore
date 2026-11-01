@@ -62,3 +62,6 @@ report/*.out
 
 # discussion/LB 定期調査の生データ (再取得可能。結果は RESEARCH_LOG §2.28+ に記録)
 scratch/_survey*/
+
+# §2.66 annotator 数別限界価値の集計 (コミット済み error_decomp CSV から数秒で再生成)
+output/annotator_count_marginal.json
