@@ -33,7 +33,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["solar_filament*", "src*", "scratch*"]
+include = ["solar_filament*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

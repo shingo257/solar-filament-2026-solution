@@ -166,9 +166,9 @@ PQは互換性指標として必ず報告するが、S1ではPQ単独の上昇�
 
 ## 9. 参照
 
-- [V35 PQ再整合報告](docs/history/V35_PQ_REALIGNMENT_REPORT_2026-08-15.md)
-- [実験経緯・技術引継ぎ](docs/history/SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md)
-- [S0-4 盲検レビュー運用ガイド](docs/history/S0_BLINDED_REVIEW_OPERATOR_GUIDE_2026-08-24.md)
+- [V35 PQ再整合報告](V35_PQ_REALIGNMENT_REPORT_2026-08-15.md)
+- [実験経緯・技術引継ぎ](SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md)
+- [S0-4 盲検レビュー運用ガイド](S0_BLINDED_REVIEW_OPERATOR_GUIDE_2026-08-24.md)
 - [技術報告書草稿](TECHNICAL_REPORT_DRAFT.md)
 - [MAGFiLO dataset paper](https://www.nature.com/articles/s41597-024-03876-y)
 - [clDice](https://openaccess.thecvf.com/content/CVPR2021/papers/Shit_clDice_-_A_Novel_Topology-Preserving_Loss_Function_for_Tubular_Structure_CVPR_2021_paper.pdf)

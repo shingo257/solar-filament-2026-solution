@@ -116,3 +116,101 @@ def test_fp_and_tp_terms_combine_per_pred():
         feats, tps, BASE, {("a.jpg", 0)})
     # numerator = 6.5 - 0.8 = 5.7; D = 13 - 1 - 1 + 0.5 = 11.5
     assert got == pytest.approx(5.7 / 11.5)
+
+
+# ------------------------------------------------- PanopticQuality oracle --
+# The cases above pin the formula's arithmetic; this section additionally
+# cross-checks exact_pq_after_drop against a real PanopticQuality re-score
+# on a synthetic two-record image (the strongest available local oracle).
+
+from solar_filament.metrics.metrics_official import (  # noqa: E402
+    PanopticQuality)
+import numpy as np  # noqa: E402
+
+# File "img" scored under two annotator records. Final preds:
+#   p0: TP in r1 (0.8, shares gt0 with p1), FP in r2
+#   p1: TP in r1 (0.6, shares gt0) and r2 (0.7, unique cover), no FP
+#   p2: FP in both records
+#   p3: TP in r1 (0.7, covers gt1 alone) — survives every drop below, so
+#       the orphaned-GT assertions retain a nonzero IoU numerator and can
+#       distinguish exact FN accounting from a per-pred n_unique sum.
+_ORACLE_R1 = np.array([
+    [0.8, 0.6, 0.0, 0.0],   # gt0 vs [p0, p1, p2, p3]
+    [0.0, 0.0, 0.0, 0.7],   # gt1 vs [p0, p1, p2, p3]
+])
+_ORACLE_R2 = np.array([[0.0, 0.7, 0.0, 0.0]])
+_N_ORACLE_PREDS = 4
+
+
+def _oracle_world():
+    pq = PanopticQuality()
+    pq.add_matrix(_ORACLE_R1, 2, _N_ORACLE_PREDS)
+    pq.add_matrix(_ORACLE_R2, 1, _N_ORACLE_PREDS)
+    base = pq.summary()
+    feats = _feats([
+        ("img", 0, 0.8, 1, 1),
+        ("img", 1, 1.3, 2, 0),
+        ("img", 2, 0.0, 0, 2),
+        ("img", 3, 0.7, 1, 0),
+    ])
+    tps = _tps([
+        ("img", "r1", 0, 0),
+        ("img", "r1", 0, 1),
+        ("img", "r1", 1, 3),
+        ("img", "r2", 0, 1),
+    ])
+    return feats, tps, base
+
+
+def _oracle_pq(drop_pred_idxs):
+    """Ground truth: drop pred columns and re-score with PanopticQuality."""
+    keep = [i for i in range(_N_ORACLE_PREDS) if i not in drop_pred_idxs]
+    pq = PanopticQuality()
+    pq.add_matrix(_ORACLE_R1[:, keep], 2, len(keep))
+    pq.add_matrix(_ORACLE_R2[:, keep], 1, len(keep))
+    return pq.summary()["pq"]
+
+
+def _oracle_run(drop_pred_idxs):
+    feats, tps, base = _oracle_world()
+    keys = {("img", i) for i in drop_pred_idxs}
+    return exact_pq_after_drop(feats, tps, base, keys)
+
+
+def test_oracle_no_drops():
+    feats, tps, base = _oracle_world()
+    assert exact_pq_after_drop(feats, tps, base, set()) == pytest.approx(
+        _oracle_pq(set()))
+
+
+def test_oracle_fp_only_removal():
+    # Dropping p2 removes its 2 FPs only; p0 and p3 stay FP in r2:
+    # TP=4, FP=2, FN=0 -> D=5.0.
+    assert _oracle_run({2}) == pytest.approx(_oracle_pq({2}))
+    assert _oracle_pq({2}) == pytest.approx(2.8 / 5.0)
+
+
+def test_oracle_unique_cover_removal():
+    # Dropping p1 orphans r2's gt0 (r1's gt0 stays covered by p0):
+    # TP=2 (p0, p3), FP=4, FN=1 -> D=4.5.
+    assert _oracle_run({1}) == pytest.approx(_oracle_pq({1}))
+    assert _oracle_pq({1}) == pytest.approx(1.5 / 4.5)
+
+
+def test_oracle_partial_shared_cover_no_fn():
+    # Dropping p0 leaves r1's gt0 covered by p1 — no new FN:
+    # TP=3, FP=3, FN=0 -> D=4.5.
+    assert _oracle_run({0}) == pytest.approx(_oracle_pq({0}))
+    assert _oracle_pq({0}) == pytest.approx(2.0 / 4.5)
+
+
+def test_oracle_remove_all_preds_sharing_gt():
+    # Orphaned-GT case: dropping p0 and p1 removes every prediction
+    # covering r1's gt0 AND p1's unique cover of r2's gt0 — two new FNs
+    # that a per-pred n_unique sum (0 for p0 + 1 for p1) would undercount.
+    # p3 survives as a TP so the numerator stays nonzero and the exact
+    # FN count is what decides the score:
+    # TP=1 (p3), FP=3 (p2 x2, p3 in r2), FN=2 -> D=3.5;
+    # the buggy count would give 0.7/3.0.
+    assert _oracle_run({0, 1}) == pytest.approx(_oracle_pq({0, 1}))
+    assert _oracle_pq({0, 1}) == pytest.approx(0.7 / 3.5)

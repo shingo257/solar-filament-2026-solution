@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 import solar_filament.metrics.science_metrics as science_metrics
+import solar_filament.metrics.science_metrics_matching as science_metrics_matching
 
 from solar_filament.metrics.science_metrics import (
     audit_spine_coordinates,
@@ -89,7 +90,9 @@ def test_matching_prioritizes_valid_pairs_before_subthreshold_iou(monkeypatch):
             [0.50, 0.00],
         ]
     )
-    monkeypatch.setattr(science_metrics, "iou_matrix", lambda truths, predictions: matrix)
+    # iou_matrix lives in the _matching impl module after the 500-line split;
+    # match_instances resolves it through that module's globals.
+    monkeypatch.setattr(science_metrics_matching, "iou_matrix", lambda truths, predictions: matrix)
     dummy = np.zeros((1, 1), dtype=bool)
 
     matches = match_instances(

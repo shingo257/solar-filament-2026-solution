@@ -200,3 +200,13 @@ def test_margins_status_detects_tbd(tmp_path: Path) -> None:
     status = MODULE.margins_status(path)
     assert status["registered"] is False
     assert status["tbd_occurrences"] == 1
+
+
+def test_execution_inputs_endpoint_registration_resolves_from_root() -> None:
+    # The readiness validator resolves execution_inputs paths relative to the
+    # module root; moving the registration draft must stay a loud failure.
+    spec, _, _ = payloads()
+    path = MODULE.resolve_from_root(spec["execution_inputs"]["endpoint_registration"])
+    assert path.exists(), f"endpoint registration missing: {path}"
+    status = MODULE.margins_status(path)
+    assert status["exists"] is True

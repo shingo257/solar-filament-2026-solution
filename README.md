@@ -8,7 +8,7 @@ Filaments** への取り組み。GONG の H-Alpha 全面画像（2048×2048）�
 - データ: MAGFiLO（Manually Annotated GONG Filaments from H-Alpha Observations）
 - Historical mixed-source fingerprints: [inactive 25-path index](docs/history/mixed-source-20260828/README.md) (no research acceptance)
 - 締切: 2026-11-15
-- 優勝を狙うための実験計画: [`WINNING_STRATEGY_2026-08-29.md`](WINNING_STRATEGY_2026-08-29.md)
+- 優勝を狙うための実験計画: [`WINNING_STRATEGY_2026-08-29.md`](docs/history/WINNING_STRATEGY_2026-08-29.md)
   （トップ層手法・外部文献・公式ルールの調査に基づく優先順位付き計画）
 - 4ページ技術報告書（Overleaf/ACM形式）: [`report/main.tex`](report/main.tex)
   （公式Overleafテンプレート準拠、著者情報記入済み、**4回の外部査読を反映**、
@@ -307,10 +307,10 @@ drop_contained再調整・V46・V47のすべて)は、fold0限定の探索に留
 詳細は以下を参照。
 
 - [`RESEARCH_LOG.md`](RESEARCH_LOG.md) — 実験カタログを論文構成に整理したノート(独立投稿を見据えた草稿)
-- [`TECHNICAL_REPORT_DRAFT.md`](TECHNICAL_REPORT_DRAFT.md) — コンペ提出用4ページ技術報告書の草稿(生きている文書、随時更新)
-- [`V35_PQ_REALIGNMENT_REPORT_2026-08-15.md`](V35_PQ_REALIGNMENT_REPORT_2026-08-15.md) — 【凍結】指標再整合と実測(2026-08-15時点)
-- [`SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md`](SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md) — 【凍結・改訂10で更新停止】V19〜V35 の全経緯、既知の落とし穴、提出仕様
-- [`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md) — 科学・実運用価値を検証する今後の正本計画(別トラック、並行セッション管理)
+- [`TECHNICAL_REPORT_DRAFT.md`](docs/history/TECHNICAL_REPORT_DRAFT.md) — 4ページ技術報告書の旧草稿（**`report/main.tex` が正本**となり凍結）
+- [`V35_PQ_REALIGNMENT_REPORT_2026-08-15.md`](docs/history/V35_PQ_REALIGNMENT_REPORT_2026-08-15.md) — 【凍結】指標再整合と実測(2026-08-15時点)
+- [`SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md`](docs/history/SOLAR_FILAMENT_EXPERIMENT_HANDOVER_2026-08-15.md) — 【凍結・改訂10で更新停止】V19〜V35 の全経緯、既知の落とし穴、提出仕様
+- [`SCIENTIFIC_UTILITY_ROADMAP.md`](docs/history/SCIENTIFIC_UTILITY_ROADMAP.md) — 科学・実運用価値を検証する今後の正本計画(別トラック、並行セッション管理)
 
 ### 2.1 pseudo-labeling計画(2026-08-29策定、次の優先施策)
 
@@ -532,7 +532,7 @@ fold2単体モデルのみ(refiner shrink@0.45・drop_contained_then_area_asc
 
 ### 2.1.5 V51/V52: EdgeAttNet refinerの採用(2026-08-29〜30、確定・Public LB反映済み)
 
-優勝を狙う実験計画([`WINNING_STRATEGY_2026-08-29.md`](WINNING_STRATEGY_2026-08-29.md))
+優勝を狙う実験計画([`WINNING_STRATEGY_2026-08-29.md`](docs/history/WINNING_STRATEGY_2026-08-29.md))
 の一環として、EdgeAttNet論文(arXiv:2509.02964)のEdge-Guided Multi-Head
 Self-Attention(EG-MHSA)を標準`MediSegUNet`のボトルネックへ移植した
 `MediSegEdgeAttUNet`(`solar_filament/models/mediseg_models.py`、
@@ -891,7 +891,7 @@ space-weather運用やchirality推定への適合は`not evaluated`と扱う。
 今後はCompetitionとScientific / Operationalを別トラックで管理する。次期モデルを科学・実運用候補へ
 昇格するには、PQに加えてspine・接続性・barb・chirality・時系列・time/site holdoutを評価する。
 数値ゲートはV35、raw YOLO、V34を同一条件で再評価してから事前登録する。詳細と実行順序は
-[`SCIENTIFIC_UTILITY_ROADMAP.md`](SCIENTIFIC_UTILITY_ROADMAP.md)を正本とする。
+[`SCIENTIFIC_UTILITY_ROADMAP.md`](docs/history/SCIENTIFIC_UTILITY_ROADMAP.md)を正本とする。
 
 ---
 
@@ -932,13 +932,14 @@ H-Alpha 2048x2048
 モジュール)。旧`scratch/`スクリプトの `from src.xxx import ...` はそのまま
 動くが、**新規コードは `solar_filament.xxx` を直接importすること。**
 
-**⚠️ `config.py`・`dataset.py`・`model.py`・`train.py`・`infer.py`・
-`utils.py` の6つはシムではない。** V30以降は使われなくなった512×512/5-fold
-の旧パイプラインの実装がそのまま残っているだけで、`solar_filament/`
-側には対応物が無い(移行されていない)。特に `utils.py` の `rle_encode`/
-`rle_decode` は Kaggle形式(10進ペア文字列)であり、`solar_filament/pipeline/
-rle.py`(pycocotools圧縮カウント形式)とは**別のコーデック**なので、
-新規コードで誤って `src.utils` 側を使うと提出CSVの形式が壊れる。
+**なお `config.py`・`dataset.py`・`model.py`・`train.py`・`infer.py`・
+`utils.py` の6つは 2026-11-01 に削除済み。** V30以降は使われなくなった
+512×512/5-fold の旧パイプラインの実装で、`solar_filament/` 側には対応物が
+無く(移行されていない)、全参照ゼロを確認して撤去した。旧 `utils.py` の
+`rle_encode`/`rle_decode` は Kaggle形式(10進ペア文字列)であり、
+`solar_filament/pipeline/rle.py`(pycocotools圧縮カウント形式)とは
+**別のコーデック**だった — 万が一旧実装が必要になった場合は git 履歴から
+復元すること。
 
 ```text
 Solar_Filament_Segmentation/
@@ -948,9 +949,7 @@ Solar_Filament_Segmentation/
 │   ├── pipeline/                     # v32_overlap_cluster・mask_wbf・ownership・refine等
 │   ├── s1/                           # Scientific/Operational S1トラック(別セッション管理)
 │   └── candidate_verifier.py / timing.py
-├── src/                          # ほぼ後方互換シム層。実装はすべてsolar_filament/側
-│   └── config.py / dataset.py / model.py / train.py / infer.py / utils.py
-│                                 # ⚠️ 旧構成(512x512/5-fold)。V30以降は未使用、シムでもない生きた旧実装
+├── src/                          # 後方互換シム層のみ。実装はすべてsolar_filament/側
 ├── tests/
 │   └── test_metrics_official.py   # 19件。公式実装との差分テストを含む
 ├── scratch/                    # ノートブック生成器と診断スクリプト（§5参照）
@@ -960,18 +959,22 @@ Solar_Filament_Segmentation/
 │   ├── v35/                    # PQ再採点・天井診断・アブレーションの結果
 │   ├── refiner_retrain/        # V46/V47のmanifest・チェックポイント・評価レポート
 │   └── pseudo_label_raw/       # pseudo-labelingパイロット用のGONG生データ・変換画像
+├── docs/history/               # 凍結済みセッション資料・計画書の保管庫
 ├── README.md                   # ★現在地の正本。まずここを読む
 ├── RESEARCH_LOG.md             # 実験カタログを論文構成に整理したノート
-├── TECHNICAL_REPORT_DRAFT.md   # コンペ提出用4ページ報告書の草稿(生きている文書)
+├── HANDOVER.md / SUBMISSION_FORM_DRAFT.md
+├── S1_ENDPOINT_REGISTRATION_DRAFT_2026-08-24.md
+│                               # ⚠️ S1_HARM_FIRST_MODEL_SPEC_2026-08-24.json の
+│                               #    execution_inputs.endpoint_registration が
+│                               #    root 相対で参照する契約入力 — 移動禁止
 └── solar_filament_v*.ipynb     # 各版のColabノートブック（scratch/build_*.py から生成）
+                                # ⚠️ tests/builders が root 相対パスを契約とするため移動禁止
 ```
 
-> ⚠️ **`src/config.py`・`dataset.py`・`model.py`・`train.py`・`infer.py`・
-> `utils.py` を読んで V30 以降の実験条件を判断してはいけない。** 汎用の
-> 512×512 / 5-fold / UnetPlusPlus 設定であり、V30 以降は各ビルダー内に独自 CFG を持つ。
-> 設定の二重管理は既知の技術的負債（HANDOVER §17.4）。これら6ファイルは`src/`の
-> 他のモジュールと異なりシムではなく、本当に使われなくなった旧実装がそのまま
-> 残っているだけ。
+> **旧 `src/config.py`・`dataset.py`・`model.py`・`train.py`・`infer.py`・
+> `utils.py` は削除済み（2026-11-01）。** 汎用の 512×512 / 5-fold / UnetPlusPlus
+> 設定の旧実装であり、V30 以降は各ビルダー内に独自 CFG を持つ。全参照ゼロを
+> 確認して撤去した（設定の二重管理 = HANDOVER §17.4 の技術的負債の解消）。
 
 **ノートブックは直接編集せず、`scratch/build_*.py` を直してから再生成すること。**
 ipynb の JSON を手編集するより再現性が高い。

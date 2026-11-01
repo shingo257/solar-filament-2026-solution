@@ -28,6 +28,9 @@ output/s0/prediction_cache_512/
 output/s0/s1_proposal_marginal_refined_cache/
 output/s0/v42_verifier_official_cache/
 
+# fold2 誤差分解の推論キャッシュ(npz、再生成可能。結果のJSON/CSVのみコミット対象)
+output/error_decomp_fold*/cache/
+
 # タイル推論評価の提案キャッシュ(npz、再生成可能。結果のJSON/CSVのみコミット対象)
 output/tile_pipeline_oof/cache/
 
@@ -59,4 +62,3 @@ report/*.out
 
 # discussion/LB 定期調査の生データ (再取得可能。結果は RESEARCH_LOG §2.28+ に記録)
 scratch/_survey*/
-output/**/cache/
