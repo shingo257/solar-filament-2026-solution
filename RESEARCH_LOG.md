@@ -3004,3 +3004,67 @@ kernel (Kaggle GPU、各 ~7h 想定):
 
 最終 2 提出の選択は引き続きユーザー操作 (prod `57039986` /
 plain_mhsa_f2 `57072525` / 本 2 件の結果次第で再判断)。
+### 2.63 disjoint 強制の確定 — v94/probe 提出 ERROR とローカル評価の修正 (2026-11-01)
+
+prod_v94 (refined 直接 emit、1328 rows・重複 364K px) と
+probe_refprop (refined+proposal、2656 rows) を Kaggle へ提出 —
+**両者とも SubmissionStatus.ERROR** (ref 57859708 / 57860275)。
+prod・conf032 等の disjoint 提出 17 件は全て COMPLETE しており、
+**test 側 ingestion は画像あたり重複しない mask のみ受理する**。
+discussion 735377「Score-ordered panoptic painting — why raw
+Mask R-CNN output gets ERROR under PQ」(競合が同じ ERROR を記録)
+とも整合。これは §2.60–2.62 の解釈を部分的に覆す重要な事実:
+
+1. **v94 採用は取消** — local +0.0133 は重複 mask による TP ペア
+   多重計上を含む artifact で、提出可能形式では再現不能。
+   disjoint 保持版 (refined → greedy_disjoint only、包含 drop 無し)
+   は全 fold で prod より悪い (fold0 −0.020 / fold1 −0.020 /
+   fold2 −0.014): containment drop は重複 pred の抑制として
+   実質的に有効で、ownership は「害」ではなく **提出形式が要求する
+   disjoint 化そのもの**だった。
+2. **多仮説 emit の LB 経路は存在しない** — TP ペア計上を利用する
+   ref_prop/all3 (+0.03〜+0.06 local) は受理されないため、
+   採点面最適化ラインは閉鎖。top 0.70 層のスコアは仮説多重度
+   では説明できず、純粋な検出/分割品質または別要因
+   (733912 の評価器バージョン混在問題) に起因する。
+3. **ローカル評価の修正が必要** — 我々の公式 PQ レプリカは
+   重複 pred を受理するため、overlap を含む emission arm の
+   スコアは deployable でない。今後の emission 実験は
+   **disjoint 制約を課した状態**でのみ評価する。
+
+残る提出可能なレバー (disjoint 内での最適化): disjoint clip の
+順序 (現行は面積昇順 → conf 降順など)、containment 閾値、
+min_area、clip 後の再 refine。提案盲域 (FN 65%) は真のモデル
+ギャップだが pooled 採点で期待価値が薄い層に集中している。
+
+提出枠: v94/probe の両 submit とも「4 submissions remaining today」を
+返した (ERROR 提出は日次枠を消費しない)。本日残り 4 件。
+
+**disjoint 内バリアント掃引 (全 fold、提出可能な改変のみ)**:
+
+| arm | fold0 | fold1 | fold2 |
+|---|---|---|---|
+| prod (area-asc disjoint, cont0.90, min20) | **0.4458** | **0.4448** | **0.4463** |
+| disjoint 順序=conf 降順 | 0.4305 | 0.4326 | 0.4343 |
+| disjoint 順序=面積降順 | 0.4303 | 0.4328 | 0.4313 |
+| containment 0.80 | 0.4452 | 0.4448 | 0.4453 |
+| containment 0.95 | 0.4450 | 0.4439 | 0.4459 |
+| min_area 10 / 50 | 0.4458 | 0.4448 | 0.4463 (同一) |
+
+**prod の ownership 構成は disjoint 制約内で既に局所最適** —
+conf/面積降順は −0.012〜−0.015、containment/min_area 微動は中立以下。
+面積昇順 disjoint (小さい物体が先に画素を確保し、大きい物体が
+クリップされる順序) がこのタスクでは正しい選択。後処理ラインは
+これで全閉鎖。
+
+**OOF↔LB ギャップ (0.445 vs 0.39) の現状解釈 (改訂)**: 多重度経路は
+消えたため、残る候補は (a) test 側の annotator 数が少なく
+sparse であること、(b) 733912 が報告する評価器バージョン混在、
+(c) top 陣の検出器自体の性能差。我々の予測品質 (SQ 0.68) は
+人間一致度 (0.63) を既に超えており、正直な単一仮説パイプライン
+では 0.45 前後が実力値 — 採点器の古いバージョンで採点された
+提出が 0.5 超に乗っている可能性が 733912/736921 で示唆されている。
+
+成果物: `output/v95_features/disjoint_variants.json`、
+kernel artifact (v94 `submission_master_pipeline_prod_v94.csv`
+1328 rows / probe 2656 rows、いずれも提出 ERROR)。
