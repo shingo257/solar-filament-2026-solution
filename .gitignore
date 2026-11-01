@@ -59,3 +59,4 @@ report/*.out
 
 # discussion/LB 定期調査の生データ (再取得可能。結果は RESEARCH_LOG §2.28+ に記録)
 scratch/_survey*/
+output/**/cache/

@@ -37,9 +37,9 @@
     "n_clusters": 2168
   },
   "fn_by_class": {
-    "proposal_blind": 696,
+    "proposal_blind": 691,
     "near_miss": 287,
-    "ownership_lost": 52,
+    "ownership_lost": 57,
     "cross_covered": 29
   },
   "fp_by_class": {
@@ -55,8 +55,8 @@
   "fn_area_median_by_cls": {
     "cross_covered": 1450.0,
     "near_miss": 1815.0,
-    "ownership_lost": 953.5,
-    "proposal_blind": 714.5
+    "ownership_lost": 889.0,
+    "proposal_blind": 714.0
   },
   "fp_area_median_by_cls": {
     "annotator_gap": 1365.0,
@@ -151,35 +151,35 @@
   },
   "per_pred_marginal": {
     "n_preds": 1501,
-    "value_negative_n": 432,
-    "value_negative_share": 0.28780812791472354,
-    "neg_conf_median": 0.4206402003765106,
-    "pos_conf_median": 0.5809521675109863,
+    "value_negative_n": 355,
+    "value_negative_share": 0.23650899400399733,
+    "neg_conf_median": 0.3806215822696686,
+    "pos_conf_median": 0.5688217282295227,
     "conf_band_value": {
       "(0.0, 0.3]": {
-        "n": 70,
-        "ratio_mean": 0.5987965308096711,
-        "neg_share": 0.18571428571428572
+        "n": 132,
+        "ratio_mean": 0.6006798903728037,
+        "neg_share": 0.5
       },
       "(0.3, 0.5]": {
-        "n": 391,
-        "ratio_mean": 0.599888002604886,
-        "neg_share": 0.15601023017902813
+        "n": 565,
+        "ratio_mean": 0.7899916956783971,
+        "neg_share": 0.3345132743362832
       },
       "(0.5, 0.7]": {
-        "n": 401,
-        "ratio_mean": 0.6554232143366989,
-        "neg_share": 0.04987531172069826
+        "n": 469,
+        "ratio_mean": 1.098964885680845,
+        "neg_share": 0.15778251599147122
       },
       "(0.7, 0.9]": {
-        "n": 301,
-        "ratio_mean": 0.6879716790263674,
-        "neg_share": 0.03322259136212625
+        "n": 324,
+        "ratio_mean": 1.264039128912822,
+        "neg_share": 0.07716049382716049
       },
       "(0.9, 1.0]": {
-        "n": 10,
-        "ratio_mean": 0.7676888451186389,
-        "neg_share": 0.0
+        "n": 11,
+        "ratio_mean": 1.395797900215707,
+        "neg_share": 0.09090909090909091
       }
     }
   }

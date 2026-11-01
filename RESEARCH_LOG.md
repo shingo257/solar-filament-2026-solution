@@ -2807,6 +2807,7 @@ ckpt で、YOLO11m-seg 学習→refine→公式 PQ の全経路が bit 等価の
 本項は Colab→Colab の再実行一致)。評価コード・分割・重み解決の
 健全性の追加証拠。manifest は同一経路
 `artifacts/v89_yolo_cls15_fold0_manifest.json` に再書き込み。
+
 ### 2.60 fold2 prod 完全誤差分解 — 根本原因特定 (2026-11-01)
 
 ユーザ指示「まず我々のモデルの問題点を分析して、根本的なところを
@@ -2823,14 +2824,20 @@ min_area_sweep 時点の記録 0.44423 との差 +0.0021 は refiner 重みが
 fold2 専用ではなく all_data である点・推論キャッシュ経路差の範囲で、
 実装誤差ではなく再現差として記録 (以降の Δ は本ラン 0.44630 基準)。
 
-**FN 分解 (1064)**:
+**FN 分解 (1064)** (2026-11-01 Codex review 修正後の再集計値):
 
 | class | n | 内訳 |
 |---|---|---|
-| proposal_blind | 696 | どの proposal も IoU≤0.3 (median GT 714 px) |
+| proposal_blind | 691 | どの proposal も IoU≤0.5 (median GT 714 px) |
 | near_miss | 287 | 最良 pred IoU が 0.3–0.5 (median 1815 px) |
-| ownership_lost | 52 | refined では被覆、ownership で消失 (954 px) |
+| ownership_lost | 57 | refined では被覆、ownership で消失 (889 px) |
 | cross_covered | 29 | 他 annotator 側クラスタは被覆 (1450 px) |
+
+(初版は proposal_blind 696 / ownership_lost 52。被覆は stage 間で
+単調ではなく refined が proposal IoU を 0.5 超に救済し得るため、
+「最初に被覆の無い段階」帰属で 5 件の singleton が blind と誤記
+されていた。§2.64 の修正コミットで「最後に被覆が残った段階」
+帰属に訂正。)
 
 **FP 分解 (747)**: free 267 (median 1084 px) /
 annotator_gap 263 (他 annotator の GT には一致、1365 px) /
@@ -2863,13 +2870,18 @@ ownership 後処理 (disjoint 化 + containment drop) が被覆を
 される構造 (oracle GT emission を k 重複しても 0.762→0.764 と
 dup 自体はほぼ中立 — 利得は variant 間の被覆差＋TP 多重計上)。
 
-**Prediction marginal value**: final 1501 件のうち 432 件
-(28.8%) が pooled annotator 採点で価値負 (うち 328 件は全
-record で FP、104 件は一部 TP でも他 record の FP 罰が勝つ)。
-価値負 pred の median conf 0.421 vs 正 0.581 — しかし conf 帯別
-neg share は 0.3 帯 18.6% → 0.9 帯 0% と単調で、**raw conf 閾値では
+**Prediction marginal value**: final 1501 件のうち 355 件
+(23.7%) が pooled annotator 採点で価値負 (うち 328 件は全
+record で FP、27 件は一部 TP でも他 record の FP 罰が勝つ)。
+価値負 pred の median conf 0.381 vs 正 0.569。conf 帯別 neg
+share は (0,0.3] 50% → (0.3,0.5] 33.5% → (0.5,0.7] 15.8% →
+(0.7,0.9] 7.7% と低下するが 0.9 帯 9.1% で、**raw conf 閾値では
 再現不能** (conf>0.30 → 0.4407、>0.50 → 0.3995 と全閾値で悪化)。
-oracle で価値負を全 drop すると PQ 0.5031 (+0.0568)。
+oracle で価値負を全 drop すると PQ 0.4935 (+0.0472)。
+(初版は marginal 分母に「その pred が唯一被覆した GT の
+新規 FN 化」を反映していなかったため 432 件/28.8%・oracle
++0.0568 と過大計上。§2.64 で厳密式 n_tp+0.5·n_fp−0.5·n_unique
+に訂正。)
 
 **根本原因の整理**:
 
@@ -2882,8 +2894,8 @@ oracle で価値負を全 drop すると PQ 0.5031 (+0.0568)。
    disjoint 性を強制する設計が coverage を 82 clusters 分削り、
    TP ペアの重複計上も潰す。refined のみ emit で +0.013 — **これは
    誠実なパイプライン修正として採用候補** (fold0/1 で要検証)。
-3. **採点ペア計上 + annotator pooling の構造税**: 29% の pred が
-   価値負・oracle gate で +0.057、複数仮説 emit で +0.058。
+3. **採点ペア計上 + annotator pooling の構造税**: ~24% の pred が
+   価値負・oracle gate で +0.047、複数仮説 emit で +0.058。
    LB 0.70 層との乖離の一部は、sparse test ラベルに加えて
    「仮説多重度を正直に 1 mask/物体に絞っている」側面が大きい。
 
@@ -2896,7 +2908,8 @@ oracle で価値負を全 drop すると PQ 0.5031 (+0.0568)。
   refiner prob 統計・prop⊃ref 収縮率・他 pred との包含構造・
   前処理画像の contrast/limb 距離) で marginal value>0 を
   cross-fit 予測 (fold0+1 学習 → fold2 評価で rotate)。
-  oracle 上限 +0.057。採用条件: fold2 ΔPQ ≥ +0.010 かつ
+  oracle 上限 +0.047 (修正後の厳密 marginal 分母で再計算)。採用条件:
+  fold2 ΔPQ ≥ +0.010 かつ
   rotate 全 fold で非負、conf-only baseline を明確に上回ること。
 - **探索的提出 (任意)**: refined+proposals の 2 仮説 emit は
   format 適合だが採点器のペア計上を明示的に利用する設計のため、
@@ -2904,7 +2917,8 @@ oracle で価値負を全 drop すると PQ 0.5031 (+0.0568)。
   て 1 回だけ試すかはユーザー判断。
 
 成果物: `scratch/analyze_error_decomposition.py` (SHA256
-`cc5114b42cf4d6ee5cfa6aa1773d19024315f491a6c6d09ed2fd0f89f09e56d3`)、
+`cc5114b42cf4d6ee5cfa6aa1773d19024315f491a6c6d09ed2fd0f89f09e56d3`
+→ §2.64 修正版 `c2ec60b0e875dbd14cf2d961481d3b026e519c76a63c964bf23fc018151a4976`)、
 `output/error_decomp_fold2/{summary.json,fn_decomp.csv,fp_decomp.csv,
 tp_decomp.csv,cluster_coverage.csv,per_pred_marginal.csv,per_photo.csv}`。
 cache/ (packed mask npz) は再生成可能のため gitignore。
@@ -2919,8 +2933,8 @@ ultralytics 8.4.120 (.venv-prod)、metric_version
 yolo_fold1 `44ba9381a5` + refiner `e9f0e8dd7f`) し、同一分解を
 実施。3 fold の prod baseline は **0.4458 / 0.4448 / 0.4463** と
 ±0.001 の fold 安定性。分解構造も全 fold で一致 (proposal_blind
-692–699 枚・coverage funnel で refined→final 間に 66–82 clusters
-消失・価値負 pred share 28.8–30.3%)。
+687–695 枚・coverage funnel で refined→final 間に 66–82 clusters
+消失・価値負 pred share 23.7–24.7% — §2.64 修正後の再集計値)。
 
 **v94 refined-only emission (ownership 撤廃、min_area=20 のみ)**:
 
@@ -2952,7 +2966,7 @@ exact 採点では全 fold 負 — ゲートが TP を持つ pred も落とし�
 GT が orphan 化して FN 罰 (+0.5) が近似を上回る。AUC 自体は
 conf-only 0.730 → 全特徴 0.768 (fold2 in-fold CV) と信号はあるが
 **annotator 由来の価値負性は画像根拠から予測不能**、という
-fold 横断の否定結果として記録。oracle 上限 +0.057 は到達不能。
+fold 横断の否定結果として記録。oracle 上限 +0.047 (修正後) は到達不能。
 
 **境界校正 (dilation/erosion) — REJECT**: refined/final mask の
 morphological dilation/erosion (r∈{−3..+5}px) を fold2 で掃引。
@@ -2980,6 +2994,7 @@ pooled 採点で期待価値が薄く、v88–v93 で recall 系は全て reject
 cache/ は gitignore)、`output/v95_features/fold{0,1,2}.csv` +
 `fold{0,1,2}_arms.json` + `gate_results.json`、
 `scratch/run_v94_v95_emission.py` (emission arm 評価 + 特徴抽出)。
+
 ### 2.62 v94 採用 + probe kernel 提出 (2026-11-01、ユーザー承認)
 
 v94 (refined-only emission) は事前ゲート合格 (全 fold 正、
@@ -3004,6 +3019,7 @@ kernel (Kaggle GPU、各 ~7h 想定):
 
 最終 2 提出の選択は引き続きユーザー操作 (prod `57039986` /
 plain_mhsa_f2 `57072525` / 本 2 件の結果次第で再判断)。
+
 ### 2.63 disjoint 強制の確定 — v94/probe 提出 ERROR とローカル評価の修正 (2026-11-01)
 
 prod_v94 (refined 直接 emit、1328 rows・重複 364K px) と
@@ -3068,3 +3084,59 @@ sparse であること、(b) 733912 が報告する評価器バージョン混�
 成果物: `output/v95_features/disjoint_variants.json`、
 kernel artifact (v94 `submission_master_pipeline_prod_v94.csv`
 1328 rows / probe 2656 rows、いずれも提出 ERROR)。
+
+### 2.64 Codex PR #584 レビュー対応 — 誤差分解スクリプトの3点修正 (2026-11-01)
+
+PR #584 の chatgpt-codex-connector レビュー (P1×2・P2×2) で指摘された
+`analyze_error_decomposition.py` の問題を修正し、3 fold 全 artifact を
+キャッシュから再集計 (`--skip-infer`)。
+
+**修正内容**:
+
+1. **stage 帰属 (P2)**: クラスタ被覆は proposal→refined で非単調
+   (refined は proposal の縮小ゆえ IoU を 0.5 超に引き上げ得る)。
+   「最初に被覆の無い段階」帰属では refined 救済後に ownership で
+   失われた物体を proposal_blind と誤帰属していた。
+   `stage_lost()` を「最後に被覆が残っていた段階」帰属に修正。
+   → 各 fold で proposal_blind −4〜−5、ownership_lost +4〜+5
+   (fold2: 696→691 / 52→57) — Codex が例示した 5 singleton と一致。
+2. **all-FP pred の conf (P2)**: conf が TP 行のみから集約され
+   全 FP pred (fold2 328 件) で欠損していた。FP 側 conf で
+   補完するよう修正 — 帯別 neg share が全 conf 帯で計算可能に。
+3. **marginal 分母 (P1)**: pred 除去時に「その pred が唯一被覆した
+   GT の新規 FN 化」を反映していなかった。厳密式
+   n_tp + 0.5·n_fp − 0.5·n_unique に修正 (unique = 同一
+   (file,record,gt) に届く pred がその pred のみの TP ペア、
+   tp_rows に `gt_local` 列を追加して厳密集計)。
+   Codex は 0.5·(n_tp+n_fp) を提案したが、これは全 TP が unique
+   の場合の上界 — 非 unique TP も数える厳密式を採用。
+4. **行為テスト追加 (P1)**: `tests/test_analyze_error_decomposition.py`
+   — 非単調被覆の stage 帰属・all-FP conf 保持・unique-cover の
+   marginal 分母を検証する 8 case (全 pass、slim env では
+   importorskip で skip)。
+
+**再集計による数値変更 (fold2)**:
+
+| 指標 | 初版 | 修正後 |
+|---|---|---|
+| proposal_blind / ownership_lost | 696 / 52 | **691 / 57** |
+| 価値負 pred | 432 (28.8%) | **355 (23.7%)** |
+| 内訳 allFP / partialTP | 328 / 104 | **328 / 27** |
+| neg/pos conf median | 0.421 / 0.581 | 0.381 / 0.569 |
+| oracle drop-neg 上限 | +0.0568 | **+0.0472** (fold0/1: +0.0455/+0.0452) |
+
+結論は不変: proposal_blind が FN の ~65% で最大源・ownership が
+disjoint 制約内で局所最適・emission gate の oracle 上限は +0.047
+と下方修正 (v95 判定を強化する方向)。ただし初版の marginal 分母
+バグは partial-TP の価値負数 (104→27) と oracle 上限を過大計上
+していた — §2.60–2.61 の数値は修正版で上書き済み。
+
+**v95 caveat**: v95 の学習ラベルは修正前の marginal 定義で生成
+された。gate の held-out 判定 (Δ −0.008〜−0.029) はラベル変動
+(~77 件/1501) では反転しない桁なので判定は維持するが、厳密な
+再学習は未実施である点を記録する。
+
+成果物: 修正版スクリプト SHA256
+`c2ec60b0e875dbd14cf2d961481d3b026e519c76a63c964bf23fc018151a4976`、
+更新済み `output/error_decomp_fold{0,1,2}/` 一式、
+`tests/test_analyze_error_decomposition.py`。

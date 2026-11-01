@@ -223,6 +223,75 @@ class UnionFind:
             self.parent[ra] = rb
 
 
+def stage_lost(prop_cov: bool, ref_cov: bool, fin_cov: bool) -> str:
+    """クラスタ被覆 (>0.5) を失った段階の帰属。
+
+    被覆は単調ではない: refined は proposal の縮小なので IoU を
+    0.5 以上に引き上げることがある (prop_uncovered → ref_covered)。
+    「最初に被覆の無い段階」で break すると救済後に ownership で
+    失われた物体を proposal_blind と誤帰属するため、被覆が存在した
+    最後の段階で判定する。
+    """
+    if fin_cov:
+        return "survived_boundary"
+    if ref_cov:
+        return "ownership_lost"
+    if prop_cov:
+        return "refiner_lost"
+    return "proposal_blind"
+
+
+def marginal_pred_frame(tp_df: pd.DataFrame,
+                        fp_df: pd.DataFrame) -> pd.DataFrame:
+    """per-(file, pred) の marginal 価値フレーム。
+
+    pred を除去した場合の分母変化は厳密には
+    -n_tp (TP 喪失) -0.5·n_fp (FP 喪失) +0.5·n_unique (その pred が
+    唯一被覆していた GT が新たに FN 化)。よって marginal 分母は
+    n_tp + 0.5·n_fp - 0.5·n_unique。unique 被覆とは、同一
+    (file_name, record_id, gt) に IoU>0.5 で届く pred がこの pred
+    だけの TP ペア。
+    """
+    if len(tp_df):
+        tp_g = tp_df.groupby(["file_name", "pred_idx"]).agg(
+            tp_iou_sum=("iou", "sum"), n_tp=("iou", "size"),
+            conf=("conf", "first"))
+    else:
+        tp_g = pd.DataFrame(
+            columns=["file_name", "pred_idx", "tp_iou_sum", "n_tp",
+                     "conf"]).set_index(["file_name", "pred_idx"])
+    if len(tp_df) and "gt_local" in tp_df.columns:
+        cover = (tp_df.groupby(["file_name", "record_id", "gt_local"])
+                 ["pred_idx"].nunique())
+        uq = tp_df.merge(cover.rename("cover_n").reset_index(),
+                         on=["file_name", "record_id", "gt_local"])
+        uniq = (uq[uq["cover_n"] == 1]
+                .groupby(["file_name", "pred_idx"]).size()
+                .rename("n_unique"))
+        tp_g = tp_g.join(uniq)
+    if len(fp_df):
+        fp_g = fp_df.groupby(["file_name", "pred_idx"]).agg(
+            n_fp=("cls", "size"),
+            fp_conf=("conf", "first"),
+            fp_cls=("cls", lambda s: s.value_counts().to_dict()))
+    else:
+        fp_g = pd.DataFrame(
+            columns=["file_name", "pred_idx", "n_fp", "fp_conf",
+                     "fp_cls"]).set_index(["file_name", "pred_idx"])
+    pred = tp_g.join(fp_g, how="outer").reset_index()
+    for col, fill in (("tp_iou_sum", 0.0), ("n_tp", 0),
+                      ("n_fp", 0), ("n_unique", 0)):
+        if col not in pred.columns:
+            pred[col] = fill
+        pred[col] = pred[col].fillna(fill)
+    if "fp_conf" in pred.columns:
+        pred["conf"] = pred["conf"].fillna(pred["fp_conf"])
+    pred["marginal_denom"] = (pred["n_tp"] + 0.5 * pred["n_fp"]
+                              - 0.5 * pred["n_unique"])
+    pred["ratio"] = pred["tp_iou_sum"] / pred["marginal_denom"]
+    return pred
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ann", type=Path, required=True)
@@ -417,17 +486,18 @@ def main() -> int:
                 mates = [i for i in clusters[root] if i != gidx]
                 mate_hit = (float(m_fin[mates].max())
                             if mates and m_fin.size else 0.0)
-                # 最初にクラスタ被覆を失った段階
-                stage = "survived_boundary"
+                # クラスタ被覆を失った段階 (被覆は単調でない:
+                # refined が proposal の IoU を 0.5 超に救済し得るため
+                # 最後に被覆が残っていた段階で帰属する)
+                cov = {}
                 for stage_name, m_all in (("proposal", m_prop),
                                           ("refined", m_ref),
                                           ("final", m_fin)):
-                    if not (m_all.size and float(
-                            m_all[clusters[root]].max()) > CLUSTER_IOU):
-                        stage = {"proposal": "proposal_blind",
-                                 "refined": "refiner_lost",
-                                 "final": "ownership_lost"}[stage_name]
-                        break
+                    cov[stage_name] = bool(
+                        m_all.size and float(
+                            m_all[clusters[root]].max()) > CLUSTER_IOU)
+                stage = stage_lost(cov["proposal"], cov["refined"],
+                                   cov["final"])
                 cls = ("cross_covered" if mate_hit > CLUSTER_IOU
                        else ("near_miss" if best_final > NEAR_MISS_LO
                              else stage))
@@ -457,6 +527,7 @@ def main() -> int:
                 gidx = rec_idx[int(gi)]
                 tp_rows.append({
                     "file_name": name, "record_id": rid, "pred_idx": int(pi),
+                    "gt_local": int(gi),
                     "conf": float(pred_conf[int(pi)]),
                     "cluster_k": cluster_k[cluster_of[gidx]],
                     "iou": float(mat[gi, pi]),
@@ -552,22 +623,11 @@ def main() -> int:
                 "recall": 1.0 - missed / int(tot)}
 
     # --- per-pred marginal 価値 -----------------------------------------
-    # 各 final pred の真の PQ 寄与: Σ hit IoU / (n_TP + 0.5·n_FP_records)。
+    # 各 final pred の真の PQ 寄与: Σ hit IoU / marginal 分母。
     # pred は写真の全 record で採点されるので、ratio > 現 PQ なら正味プラス。
 
     if len(tp_df) or len(fp_df):
-        tp_g = tp_df.groupby(["file_name", "pred_idx"]).agg(
-            tp_iou_sum=("iou", "sum"), n_tp=("iou", "size"),
-            conf=("conf", "first"))
-        fp_g = fp_df.groupby(["file_name", "pred_idx"]).agg(
-            n_fp=("cls", "size"),
-            fp_cls=("cls", lambda s: s.value_counts().to_dict()))
-        pred = tp_g.join(fp_g, how="outer").reset_index()
-        pred["tp_iou_sum"] = pred["tp_iou_sum"].fillna(0.0)
-        pred["n_tp"] = pred["n_tp"].fillna(0).astype(int)
-        pred["n_fp"] = pred["n_fp"].fillna(0).astype(int)
-        pred["ratio"] = pred["tp_iou_sum"] / (
-            pred["n_tp"] + 0.5 * pred["n_fp"])
+        pred = marginal_pred_frame(tp_df, fp_df)
         cur_pq = base["pq"]
         neg = pred[pred["ratio"] < cur_pq]
         summary_pred = {
