@@ -3131,12 +3131,49 @@ disjoint 制約内で局所最適・emission gate の oracle 上限は +0.047
 バグは partial-TP の価値負数 (104→27) と oracle 上限を過大計上
 していた — §2.60–2.61 の数値は修正版で上書き済み。
 
-**v95 caveat**: v95 の学習ラベルは修正前の marginal 定義で生成
-された。gate の held-out 判定 (Δ −0.008〜−0.029) はラベル変動
-(~77 件/1501) では反転しない桁なので判定は維持するが、厳密な
-再学習は未実施である点を記録する。
+**v95 caveat → 解消 (再評価済み)**: v95 の学習ラベルは修正前の
+marginal 定義で生成されていたため、
+`scratch/rerun_v95_gate_corrected_labels.py` で新旧両ラベル ×
+GBM/LR × 厳密 PQ (線形除去デルタ + newly_fn 厳密集計) の
+cross-fit を再実行。修正ラベルでも判定不変: GBM held-out
+Δ −0.0217/−0.0171/−0.0228 (fold0/1/2、dropped 369/349/400)、
+LR は ±0.000 台でゲート効果なし — oracle 上限 +0.047 に対し
+学習 gate はいずれのラベル規約でも到達不能。**v95 reject
+確定 (ラベル規約に依存しない)**。成果物:
+`output/v95_features/gate_results_corrected.json`。
 
 成果物: 修正版スクリプト SHA256
 `c2ec60b0e875dbd14cf2d961481d3b026e519c76a63c964bf23fc018151a4976`、
 更新済み `output/error_decomp_fold{0,1,2}/` 一式、
 `tests/test_analyze_error_decomposition.py`。
+
+### 2.65 discussion 定期調査 — 主催者が disjoint 提出要件を公式確認 (2026-11-01)
+
+§2.28+ の定期調査。前回 (max id 749526) 以降の新規 topic 3件を確認。
+
+- **753816** (10-29〜31): test 側が self-eval notebook と同一の
+  multi-annotator pooling かの質問に対し、主催者は「**いくつかの
+  微妙な差異があるが、予測品質の改善に資さないので公開しない**」
+  と明言 — test scorer が public self-eval と厳密同一でないことの
+  公式証言 (OOF↔LB ギャップの評価器混在仮説 733912/736921 を支持)。
+  さらに follow-up で「**提出に overlapping prediction は不可、
+  あれば error が投げられる**」と主催者が直接確認 —
+  **§2.63 の v94/probe ERROR で実測確定した disjoint mask 要件が
+  公式発言で裏付けられた**。refined 直接 emit・多仮説 emit の
+  local 利得が提出形式として無効であることが二重に確定。
+- **753665** (10-28): final ranking は PQ ベースだが top-3 は審査団
+  評価で決定。「Provide the one that you want us to evaluate...
+  Make sure your demo can be executed completely on a different
+  system」— **審査団が notebook を再実行する前提が確認された**。
+  我々の reproduction kernel は clean Kaggle 環境で両提出を
+  byte-identical 再現済み (§2.48) なので要件充足。ensemble 可、
+  ImageNet pretrain 可も確認。test 注釈プロトコルの質問には回答せず。
+- **753043** (10-27): test の multi-annotator pooling 質問には
+  「この情報は品質改善に資さない」として回答拒否 — annotator
+  構造が意図的に非開示である方針の再確認。我々が per-record
+  pooling を train 側実測から推定した経路は正当。
+
+**含意**: disjoint 要件・scorer 差異・審査団再実行の3点で我々の
+パッケージ (disjoint 保持・repro kernel・weights 同梱) は全て
+公式要件と整合。LB との乖離説明として test scorer の非公開差異が
+強化されたが、我々側に新規の対応項目はなし。
