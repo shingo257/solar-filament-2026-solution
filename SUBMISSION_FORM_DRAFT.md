@@ -16,7 +16,7 @@
 | Email | shingo257@gmail.com (report と一致) |
 | Kaggle account / team name | `shingo257` (要 UI 確認: leaderboard の表示名) |
 | Team members | Shingo Hara (単独) |
-| Technical report (PDF) | `report/main.pdf` — 4ページ本文 + acknowledgments/references |
+| Technical report (PDF) | `report/main.pdf` — **4ページ全体** (本文 + acknowledgments + references を含む; Overleaf テンプレ準拠) |
 | Code repository URL | `https://github.com/shingo257/solar-filament-2026-solution` — **public 済み・匿名 clone/LFS 検証済み** |
 | (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57072525` (plain_mhsa_f2) |
 | (あれば) Public score | 0.39 (両提出とも; conf032 A/B `57843737` も 0.39、§2.57) |
@@ -69,9 +69,10 @@
 1. repo public + 上記ファイル群がログアウト状態で閲覧できる
 2. **repo 内の weights (LFS) が公開 clone で取得できる** +
    notebook が repo 内パスから重みをロードできる
-3. report PDF が最新 — **v92 flow-field・v93 consensus-class の
-   負結果と annotator 不一致天井まで反映済み** (本文5p + refs、
-   PR #575)。conf032 A/B (public 0.39 で prod と表示同等) は
+3. report PDF が最新 — **v92 flow-field・v93 consensus-class・
+   §2.60–2.63 の3-fold誤差分解・v94/v95 reject・disjoint提出制約
+   まで反映済み**。本文+ack+refs でちょうど4ページに圧縮済み
+   (PR #584・standalone `d3bcc2ed`)。conf032 A/B (public 0.39) は
    §2.57 に記録 — report 本文は確定済み
 4. Kaggle 最終選択が prod + plain_mhsa_f2 になっている
 5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
