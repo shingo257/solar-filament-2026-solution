@@ -41,6 +41,14 @@
       "source_sha256": "b5f331e150bad237a095372df5ff6d0df41ce20a3224efedbbcb86029a9c4748",
       "size_bytes": 141041333,
       "sha256": "edc4e6660a709f9a173cd78c6e56656fd5f67634c1fe6c9de0a0e20600a83526"
+    },
+    {
+      "copied": true,
+      "file_name": "yolo_full_fold2_best.pt",
+      "source_path": "G:\\マイドライブ\\solar_filament_v30\\runs\\v96_data_scaling\\yolo_full_fold2\\weights\\best.pt",
+      "source_sha256": "f54c812d7406dafad82f02b6d320b634ccf0efb21f2f78c9d1be44fa41895afa",
+      "size_bytes": 45317878,
+      "sha256": "f54c812d7406dafad82f02b6d320b634ccf0efb21f2f78c9d1be44fa41895afa"
     }
   ]
 }
