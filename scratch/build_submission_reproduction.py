@@ -91,6 +91,18 @@ plain-MHSA fold2 重みに差し替えた構成、アーキテクチャ差によ
   公式採点が (annotator, pred, GT) ペア単位で TP を計上する構造への
   探索的 probe (local OOF +0.03 台)。重複 mask を意図的に含むため、
   監査セルの disjoint assert は本バリアントでは計数報告に緩和される。
+
+## prod_dedup030 バリアント (v97 探索、§2.72)
+
+v97 RT-DETR ensemble 実験の実質的な成果物: 第2検出器は寄与ゼロで、
+増分は「YOLO 候補への dedup+isotonic 受理」に起因すると判明した。
+fold2 で dedup 0.08-0.30 が +0.006〜+0.0075 のプラトー (主評価点 +0.0075)。
+
+`prod_dedup030` は prod の emission を以下に置き換える:
+conf floor 0.02 で候補収集 → fold2 で fit したグローバル isotonic
+(conf→E[hit-IoU]) → cal 降順 greedy dedup (mask-IoU>0.30 で統合) →
+cal > 0.2221 で受理 → refine → ownership (prod と同一)。
+重み・refiner は prod と同じで検出器の追加は無い。
 """
 
 SETUP_CELL = """\
@@ -160,6 +172,8 @@ class CFG:
     #   (ownership 撤廃、§2.60/2.61 で全 fold +0.006〜+0.013 検証済み)
     # "probe_refprop": refined + proposal の 2 仮説 emit (採点機構の
     #   探索的 probe、§2.61。重複 mask を許容するため監査は緩和済み)
+    # "prod_dedup030": 候補 conf floor 0.02 + isotonic cal 受理 + dedup0.30
+    #   (v97 探索 §2.72 — fold2 で +0.0075、第2検出器不要と判明)
     SUBMISSION_VARIANT = "prod"
     SUBMISSION_CONF = float(os.environ.get("SOLAR_SUBMISSION_CONF", "0.26"))
     REFINER_THRESHOLD = 0.45
@@ -167,10 +181,34 @@ class CFG:
     MIN_AREA = 20
     PREDICT_IOU = 0.55
     SINGLE_FOLD = 2  # V50/V52で確認済み
+    # --- prod_dedup030 (v97 §2.72) ---
+    DEDUP030_FLOOR = 0.02      # 候補収集 conf floor (v97 と同値)
+    DEDUP030_IOU = 0.30        # dedup mask-IoU 閾値 (探索プラトー中央)
+    DEDUP030_LAM = 0.22210895069309958  # 0.5 * prod_pq@0.26 (v97 lam)
 
 if CFG.SUBMISSION_VARIANT not in ("prod", "plain_mhsa_f2",
-                                  "prod_v94", "probe_refprop"):
+                                  "prod_v94", "probe_refprop",
+                                  "prod_dedup030"):
     raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")
+
+# prod_dedup030: fold2 YOLO候補で fit したグローバル isotonic (conf→E[hit-IoU])
+# 生成元: artifacts/v97_global_iso_yolo.npz (v97_candidates.pt + fold2 GT から再計算可能)
+_DEDUP030_ISO_X = np.array([0.02,0.020105,0.020139,0.020552,0.020562,0.02384,0.023843,0.027903,0.027908,0.028246,0.028256,
+ 0.059672,0.059698,0.074134,0.074221,0.090902,0.090917,0.113631,0.113633,0.136366,0.136428,0.143479,
+ 0.143585,0.174872,0.174949,0.178863,0.178936,0.185378,0.185404,0.206758,0.207093,0.237964,0.238027,
+ 0.239962,0.240172,0.270273,0.270412,0.281988,0.282317,0.311203,0.311203,0.316774,0.316778,0.319917,
+ 0.320677,0.32262,0.323107,0.360924,0.361121,0.424795,0.425563,0.51176,0.512022,0.525446,0.525681,
+ 0.527111,0.527382,0.539506,0.539533,0.539667,0.542749,0.542991,0.548397,0.548914,0.556279,0.55635,
+ 0.591952,0.592479,0.602875,0.602954,0.652627,0.653144,0.653744,0.654048,0.714972,0.715212,0.786183,
+ 0.786261,0.806709,0.807188,0.835821,0.836108,0.882366,0.882583,0.908297,0.912588,0.920422,0.927839])
+_DEDUP030_ISO_Y = np.array([0.,0.,0.034669,0.034669,0.044255,0.044255,0.051897,0.051897,0.055786,0.055786,0.070211,
+ 0.070211,0.089896,0.089896,0.091767,0.091767,0.110615,0.110615,0.124438,0.124438,0.142942,0.142942,
+ 0.154256,0.154256,0.175119,0.175119,0.176797,0.176797,0.18954,0.18954,0.190792,0.190792,0.222751,
+ 0.222751,0.22927,0.22927,0.234975,0.234975,0.252475,0.252475,0.274541,0.274541,0.279051,0.279051,
+ 0.318257,0.318257,0.318698,0.318698,0.345522,0.345522,0.365547,0.365547,0.392446,0.392446,0.411749,
+ 0.411749,0.42515,0.42515,0.434515,0.435781,0.435781,0.450402,0.450402,0.477405,0.477405,0.502928,
+ 0.502928,0.503932,0.503932,0.506256,0.506256,0.508845,0.508845,0.520103,0.520103,0.571897,0.571897,
+ 0.57241,0.57241,0.59312,0.59312,0.614713,0.614713,0.632157,0.632157,0.749471,0.749471,0.77391])
 
 for path in (CFG.LOCAL_ROOT, CFG.PREPROC_DIR, CFG.ARTIFACT_ROOT, CFG.YOLO_ROOT, CFG.RUNS_ROOT):
     path.mkdir(parents=True, exist_ok=True)
@@ -371,8 +409,9 @@ freeze_path.write_text(
 print(f"pip freeze -> {freeze_path}")
 
 refiner_label, refiner_path = (
-    ("refiner_all_data", ALLDATA_CKPT) if CFG.SUBMISSION_VARIANT == "prod"
-    else ("refiner_" + CFG.SUBMISSION_VARIANT, plain_ckpt))
+    ("refiner_plain_mhsa_f2", plain_ckpt)
+    if CFG.SUBMISSION_VARIANT == "plain_mhsa_f2"
+    else ("refiner_all_data", ALLDATA_CKPT))
 for label, path in [
     ("yolo_fold2", yolo_weight_paths.get(CFG.SINGLE_FOLD)),
     (refiner_label, refiner_path),
@@ -489,11 +528,52 @@ refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
             "repo weights/、重み dataset、または Drive artifacts に配置してください")
     refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
-elif CFG.SUBMISSION_VARIANT in ("prod", "prod_v94", "probe_refprop"):
+elif CFG.SUBMISSION_VARIANT in ("prod", "prod_v94", "probe_refprop",
+                                "prod_dedup030"):
     refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
 else:
     raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")""")
+    # prod_dedup030: 候補収集 floor 0.02 + isotonic dedup/accept を
+    # single_fold_proposals に内包させる (emission 経路は prod と同一)
+    old_sfp = """def single_fold_proposals(image_path):
+    result = yolo_model.predict(str(image_path), imgsz=CFG.YOLO_IMGSZ,
+                                 conf=max(0.08, CFG.SUBMISSION_CONF * 0.75), iou=CFG.PREDICT_IOU,
+                                 agnostic_nms=True, retina_masks=True, verbose=False)[0]
+    masks = result_masks(result)
+    confidences = result.boxes.conf.detach().cpu().numpy().tolist() if result.boxes is not None else []
+    return [(s, m) for s, m in zip(confidences, masks) if s >= CFG.SUBMISSION_CONF]"""
+    assert old_sfp in src12, "cell12 single_fold_proposals anchor mismatch"
+    src12 = src12.replace(old_sfp, """def dedup030_accept(proposals):
+    # cal 降順 greedy dedup (mask-IoU>0.30) + isotonic 受理 (v97 §2.72)
+    if not proposals:
+        return proposals
+    pool = sorted(((float(np.interp(s, _DEDUP030_ISO_X, _DEDUP030_ISO_Y)), s, m)
+                   for s, m in proposals), key=lambda t: -t[0])
+    kept = []
+    for cal, s, m in pool:
+        if kept:
+            ious = np.array([float((m & km).sum()) / float((m | km).sum())
+                             for _, _, km in kept])
+            if (ious > CFG.DEDUP030_IOU).any():
+                continue
+        kept.append((cal, s, m))
+    return [(s, m) for cal, s, m in kept if cal > CFG.DEDUP030_LAM]
+
+def single_fold_proposals(image_path):
+    floor = (CFG.DEDUP030_FLOOR if CFG.SUBMISSION_VARIANT == "prod_dedup030"
+             else max(0.08, CFG.SUBMISSION_CONF * 0.75))
+    keep = (CFG.DEDUP030_FLOOR if CFG.SUBMISSION_VARIANT == "prod_dedup030"
+            else CFG.SUBMISSION_CONF)
+    result = yolo_model.predict(str(image_path), imgsz=CFG.YOLO_IMGSZ,
+                                 conf=floor, iou=CFG.PREDICT_IOU,
+                                 agnostic_nms=True, retina_masks=True, verbose=False)[0]
+    masks = result_masks(result)
+    confidences = result.boxes.conf.detach().cpu().numpy().tolist() if result.boxes is not None else []
+    proposals = [(s, m) for s, m in zip(confidences, masks) if s >= keep]
+    if CFG.SUBMISSION_VARIANT == "prod_dedup030":
+        proposals = dedup030_accept(proposals)
+    return proposals""")
     old_test_copy = """for file_name in tqdm(test_files, desc="test画像をローカルへ"):
     local = CFG.PREPROC_DIR / file_name
     if not local.exists():
@@ -570,7 +650,7 @@ print({"rows": len(submission), "images_with_predictions":
                    'f"重複: {image_id}"\n    occ |= decoded.astype(bool)')
     assert old_overlap in src14, "cell14 overlap anchor mismatch"
     src14 = src14.replace(old_overlap, """    overlap_n = int(np.logical_and(occ, decoded.astype(bool)).sum())
-    if CFG.SUBMISSION_VARIANT in ("prod", "plain_mhsa_f2"):
+    if CFG.SUBMISSION_VARIANT in ("prod", "plain_mhsa_f2", "prod_dedup030"):
         assert overlap_n == 0, f"重複: {image_id}"
     overlap_pixels += overlap_n
     occ |= decoded.astype(bool)""")

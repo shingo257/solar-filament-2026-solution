@@ -3235,3 +3235,386 @@ fold 単独 CI 幅 ~0.035 では Δ±0.01 を判別できない (判定不能が
 (~470 画像) のみで学習 — refiner は all-data だが YOLO の全データ
 学習は一度も行っていない。識別力不足に最も直接効く標準手段として
 §2.67 で学習曲線ゲートを事前登録する。
+
+### 2.67 v96 事前登録: 検出器のデータ量スケーリング — 全データ YOLO の採否ゲート (2026-11-01)
+
+**動機 (§2.66)**: 残差の主因は検出器の順位付け (低 conf 帯の識別力)。
+提出 YOLO (`yolo_fold2_best.pt`) は fold0+1 (学習データの 2/3、
+~470 観測) のみで学習され、YOLO の全データ学習は未試行。全データ
+モデルは OOF 評価できないため、**学習曲線の傾きで採否を事前に決める**。
+
+**arm (全て fold2 val・prod 評価経路を凍結再利用)**:
+
+- `prod`: 既存 `yolo_fold2_best.pt` (train = fold0+1、2/3 データ)
+- `third_f0`: train = fold0 のみ (1/3 データ)
+- `third_f1`: train = fold1 のみ (1/3 データ)
+- 学習レシピは prod と完全一致 (yolo11m-seg・imgsz1280・batch4・
+  epoch70・patience14・seed 3409・cls 0.5・増強同一)。ultralytics は
+  prod 学習時の **8.4.118 に固定**。評価は v88 Kaggle 版 (§2.48 で
+  Colab と deterministic 一致を確認済み) のセルを無改変で再利用し、
+  fold2 EdgeAtt refiner・thr 0.45・drop 0.90・min_area 20・公式 PQ
+
+**事前固定ゲート**:
+
+- Δ = PQ(prod, 0.26) − mean(PQ(third_f0, 0.26), PQ(third_f1, 0.26))
+- 全データへの外挿利得 g = Δ × log(3/2) / log(2) ≈ **0.585·Δ**
+  (データ量の対数に線形な学習曲線を仮定)
+- **g ≥ +0.005 (Δ ≥ +0.0085) かつ両 third arm が prod を下回る** →
+  全データ YOLO を学習し提出候補化 (public LB で確認、最終 2 枠の
+  差し替えは LB で prod 以上の場合のみ)
+- それ以外 → reject_noise、データ量レーンを閉じる
+
+**同時実行 (判定前に学習のみ開始、判定に使わない)**: `full` arm
+(train = fold0+1+2) を同レシピで学習し重みと SHA256 だけを保存。
+val=fold2 は学習集合に含まれるため評価値は記録しても判定に使わない。
+ゲート不合格なら破棄する。
+
+**診断 (判定不使用)**: third arm の best.pt と last.pt の PQ 差
+(全データ学習では汚染 val で best を選ぶため、last との差を把握)、
+v88 と同一の低 conf 被覆診断。
+
+**誠実留保**: (a) prod は 2026-08 に Colab A100 で学習、third arm は
+Kaggle GPU — 同一 recipe でも学習の GPU 非決定性 (σ≈0.003、§2.44)
+が残る。2 つの third arm の平均でこれを緩和する。(b) 対数線形外挿は
+近似で、データ量の飽和が近ければ過大評価になる。(c) 1/3 データは
+validation 観測と train 観測の比が変わるだけで、テスト分布の
+annotator 構成 (非公開) への効果は LB でしか確認できない。
+
+実装: `scratch/build_v96_data_scaling_kaggle.py` (v88 Kaggle notebook
+の凍結セルに最小置換を適用、置換は各 1 回を assert) →
+`solar_filament_v96_data_scaling_{third_f0,third_f1,full}_kaggle.ipynb`。
+
+**§2.67 追補 (2026-11-01、結果取得前)**: Colab 版ノート
+`solar_filament_v96_data_scaling_{third_f0,third_f1,full}_colab.ipynb`
+を追加 (セル 1-2 は v89 Colab の Drive 解決、セル 3-6 は Kaggle 版と
+同一文字列 — テストで固定)。prod (`runs/yolo_fold_2`) は Colab で
+70 epoch 完走 (early stop なし、best epoch 57、1.14h) しており、
+**ゲート判定は prod と同じ Colab GPU 上の third arm 2 本で行う**。
+Kaggle T4 で先行実行中の `third_f0` はハードウェア間の複製として
+記録のみ (判定に使わない)。Kaggle の third_f1/full の自動 push は停止。
+
+### 2.68 v96 判定: データ量スケーリング・ゲート通過 — 全データ YOLO を LB 確認へ (2026-11-01)
+
+**結果** (Colab A100-SXM4-40GB、ultralytics 8.4.118 固定、fold2 val・
+prod 評価経路凍結、refiner b1c0f353…、manifest:
+`artifacts/v96_{third_f0,third_f1,full}_colab_manifest.json` @ Drive):
+
+| arm | train | PQ@0.26 | PQ@0.32 | TP/FP/FN@0.26 | Δ@0.26 vs prod |
+|---|---|---|---|---|---|
+| prod (fold0+1, 2/3) | 707 obs | **0.444218** | 0.4416 | 1715/750/1070 | — |
+| third_f0 (fold0, 1/3) | 391 obs | 0.432870 | 0.434419 | 1711/875/1074 | **−0.01135** |
+| third_f1 (fold1, 1/3) | 367 obs | 0.435800 | 0.440200 | 1772/953/1013 | **−0.00842** |
+
+**ゲート (§2.67、結果取得前に固定)**: Δ = 0.444218 − mean(0.432870,
+0.435800) = **+0.00988 ≥ +0.0085** かつ両 third arm が prod 未満 →
+**通過**。対数線形外挿 g = 0.585·Δ ≈ **+0.0058** (2/3→3/3 で
+PQ +0.006 程度と予測)。→ 全データ YOLO (`yolo_full_fold2`,
+train 1154 obs / 8199 instances / 104min) を提出候補として
+public LB で確認する。最終 2 枠の差し替えは LB で prod 以上の
+場合のみ。LB が prod 未満なら本 arm は破棄し prod /
+plain_mhsa_f2 を維持。
+
+**誠実留保**: g = +0.0058 はゲート閾値 +0.005 をわずかに超える
+点推定であり、2 arm 平均でも GPU 非決定性・データ抽選の不確実性
+(§2.67 誠実留保 a–c) で誤差 ±0.005 程度は残る。外挿が対数飽和を
+過大評価する可能性もある。よって「通過」は *LB 確認に進む権利* で
+あり、採用の保証ではない — 最終判断は public LB。
+
+**判定不使用の診断**:
+- third_f0 は best.pt = last.pt と同じ評価値 (best epoch = 最終
+  epoch)。third_f1 は last.pt の方が高い (0.4424/0.4435@0.26/0.32)
+  — best 選択は val mAP ベースで PQ 最適とは限らない。
+- 全データ版の best.pt (sha256 `f54c812d…`) は汚染 val (fold2 を
+  含む) で選択された点推定; last.pt は `5a714908…`。提出候補は
+  再現パイプラインとの一致を優先し best.pt を用いる。
+- 低 conf 被覆: prod 543/953, third_f0 513/952, third_f1 466/871 —
+  データ量増で primary FN が減る傾向 (953→871) は FN 側に一貫。
+- Kaggle T4 の third_f0 複製は RUNNING 継続 (記録のみ、判定不使用)。
+
+### 2.69 採点機構 probe 結果: disjoint ピクセル強制を実証 — prod_v94 の OOF 改善は提出不可 (2026-11-01/02)
+
+**背景**: §2.60/2.61 で refined mask 直接 emit (ownership 撤廃) が
+局所 3-fold OOF で +0.006..+0.013 と計測され、variant `prod_v94`
+として実装済みだった。ただし採点機構が重複ピクセルを許容するかは
+未検証だったため、`probe_refprop` (refined + proposal の 2 仮説
+emit、意図的に重複を含む) と `prod_v94` の 2 提出を probe として
+投入した。
+
+**結果 (2026-11-01 提出)**:
+
+| ref | file | status |
+|---|---|---|
+| 57859708 | submission_master_pipeline_prod_v94.csv | **ERROR** |
+| 57860275 | submission_master_pipeline_probe_refprop.csv | **ERROR** (予想通り) |
+
+**解釈**: 採点機構は非重複 (disjoint) ピクセル割当を強制する。
+全有効提出 (V30–conf032) は `apply_ownership` / disjoint 後処理を
+経ており、重複を含む 2 提出のみが ERROR となった。
+**prod_v94 の局所 OOF +0.006..+0.013 はそのままでは実提出に
+使えない** — 重複 refined mask を disjoint 化する手段が
+`apply_ownership` (prod 経路) そのものであり、v94 の利得は
+「重複を残したまま採点できる」前提でのみ成立する仮想値だった。
+probe は事前に「disjoint 強制なら ERROR」と予測を登録済みで、
+結果は予測と一致。本発見により v94 レーンは閉鎖 (採点機構適合の
+後処理を入れると prod と等価になるため)。
+
+**v96 全データ候補への影響**: LB 確認カーネル
+`solar-filament-2026-v96-full` は prod-v94 由来ノートブックの
+variant を `prod` に修正して再 push した (v1 push は prod_v94 の
+まま起動、提出には使わない)。候補 CSV は `submission.csv`
+(apply_ownership 済み、disjoint) として生成される。
+### 2.70 競合・ディスカッション定期調査: public LB は死んだメトリクス/リークに汚染 — 正直フロンティアは ~0.36-0.40 で我々はそこにいる (2026-11-02)
+
+定期調査 (ユーザー要求) で公開情報を収集。結論:**public LB 上位
+(0.6-0.75 群・トップ 0.70) は正当なモデル成果ではない可能性が高い**。
+
+**証拠 (複数独立ソース)**:
+1. **メトリクスが 2026-08-07~09 に切替** (too.foo/Shivam Bhardwaj の
+   フォレンジック調査、主催者確認済みテスト: 同一ファイルが切替前 0.66
+   → 切替後 0.31)。旧スコアラーは設定ミスの Dice 評価器で **空提出が
+   0.88-1.00**。旧スコアは未再採点で LB に残存 — 1.00 が 29 件、
+   0.6-0.75 のパック、中央値 0.665、公開 notebook 自称 0.59 は全て
+   旧メトリクスの残滓。Valentin Haase の「予測が少ないほど高い
+   (18個→0.77、空→0.93)」測定は旧メトリクス時代の記録。
+2. **test set の 77% が公開 MAGFiLO 1.0 (GT 付き) とバイト一致**
+   (biconcavelens 記録)。上位スコアはリーク GT 参照でも説明可能。
+   主催者見解: 真の評価は定量+定性ルーブリックであり「PQ>0.3 で
+   十分に価値がある」。
+3. **最終評価 = 70% 定量 (PQ + IoU/Dice 分布 + one-to-many 関係) +
+   30% 定性** (4頁レポート・公開 repo・予測の形態)。締切 2026-11-15。
+
+**正直フロンティア (現行真 PQ での実測)**:
+
+| チーム | 公開 LB | 備考 |
+|---|---|---|
+| biconcavelens (Mellimi+Bhargava+Gupta) | 0.40 | OOF 0.461、SABiD 2026 論文化・全コード公開 |
+| **我々 (prod)** | **0.39-0.40** | fold2 YOLO + EdgeAtt refiner |
+| ameypawar | 0.37 | U-Net ResNet34 + YOLO11s/m 3検出器融合、val PQ 0.421 |
+| too.foo | 0.36 | 公式プロトコル val 0.423、selector+tiling+TTA |
+| ektarr | ~0.36 | 5-fold PQ パイプライン公開 |
+
+**公式スコアラーの実プロトコル** (too.foo がホスト公開の自己評価
+notebook を移植して確認): 予測は **annotator record ごと (~2.44/test
+画像) に個別採点** し TP/FP/FN を pooled 集計。union ではない。
+アノテータ間 Kappa 0.66 で実効天井 ≈ PQ 0.45-0.55。
+**我々のローカル評価は既に annotator×image 単位の公式プロトコルで
+実装済み** (scratch 内 evaluator 群のコメントで確認) — OOF↔LB の
+オフセットは主に分布差由来と解釈できる。
+
+**biconcavelens の独立再現で我々の結論が裏付けられた点**:
+- **cls=1.5 修正は彼らも有効** (real PQ 0.37→0.38、検出器の
+  confidence head 未訓練が共通の根本原因 — bbox-IoU 良好なのに
+  conf が低い見逃し)。cls=3.0 は過剰。Mask R-CNN は cls×3・6epoch。
+- **post-hoc rescue フィルタは 4 方式全て閉鎖** (refiner conf ゲート・
+  局所 contrast・マルチ特徴 classifier — 全て PQ 悪化)。
+  「rescue pool に安価に分離可能な信号は存在しない」= 我々の
+  §2.65-2.66 訂正後の分解と整合 (低 conf 候補に IoU>0.5 は存在するが
+  識別できない)。**上流モデル修正のみが有効** = 我々のデータ量
+  スケーリング/検出器改善路線の正当性を支持。
+- **refiner は非律速** (spine 重み sweep 平坦、clDice は悪化、
+  我々の EdgeAtt plateau と一致)。
+- **self-training/擬似ラベルは明確に悪化** (0.417→0.393)。
+- **「complete」ラベル絞り込みは悪化** — データ量損失 > ラベル品質
+  → 我々の全データ化方向を支持。
+- **cross-arch ensemble は dedup-before-paint (IoU 0.05 一括破棄) で
+  初めて成功** (local +0.015、real 0.38→0.39)。4-way は val 過剰適合
+  で real 後退 — 116 枚 val での多軸 sweep は過学習する。
+- RT-DETR cls=2.0 で solo 0.4296 (最強単体)、YOLO+RT-DETR 2-way は
+  real 0.39 で同率。YOLO26 は diversity なしで無価値。SAM2
+  zero-shot 0.08、Mask2Former 0.28-0.34、watershed 0.20、VAE 異常
+  検知 AUC 0.44 (棄却)、FITS 原データは flat-field 不可で不発、
+  CLAHE 学習は悪化。
+
+**too.foo のレーン測定**: component selection oracle **+0.083**
+(最大、学習 selector で +0.018 実現、我々の A1 scorer と同方向)、
+fragment merge oracle +0.026、trim oracle 0.756 は実現不能、
+union+agreement-weights 学習 +0.01 (純 soft label は悪化)、
+overlap-max tiling +0.029、TTA +0.011、6 損失変種全て ±0.02 内で
+semantic 単体天井 ~0.34。**~210/576 val フィラメントが全変種で
+未検出 = recall が律速** (我々の結論と同一)。
+
+**戦略含意**:
+1. 我々の 0.39-0.40 は正直フロンティアの先端。0.70 型スコアを
+   追う必要はない (旧メトリクス残滓 or リーク参照、private/定性
+   評価で無効化される見込み)。
+2. 疎化 emit は旧メトリクスの exploit であり現行真 PQ では
+   限界効用のみ (emit iff p·IoU > PQ/2)。top-K 疎化は大きな
+   ゲインを生まない見込み — probe するなら低期待値で。
+3. 残りの実ゲイン: 検出器 recall (データ量・学習改善 = 進行中)、
+   component selector 精緻化 (oracle +0.083、実現 +0.018 止まりは
+   各チーム共通)。
+4. 30% 定性 = report + repo の品質が効く。我々は既に 4 頁
+   report + 公開 standalone repo を保有 — 最終仕上げの価値大。
+5. 締切 2026-11-15。最終 2 枠選択と Google Form が残る。
+### 2.68追補 — v96-full 提出カーネル修復と LB 確認 (2026-11-02)
+
+- `solar-filament-2026-v96-full` v1 は `SUBMISSION_VARIANT=prod_v94`
+  で誤 push 済みだったため ERROR で終了(§2.69 の既知無効レーン)。
+- v2 (prod 化) は In[9] で `NameError: OUTPUT_PATH`。原因は test 推論
+  セル全体が改行喪失の1行コメント化していた生成バグ(§2.71 ノートの
+  構築で潰したのと同種)。prod_v94 健全版から cell を復元し、
+  `yolo_full_fold2_best.pt` 明示解決を再適用した v3 を push。
+- v3 完走 → `submission_master_pipeline.csv` (1,141 rows, prod variant,
+  full-data YOLO + all-data EdgeAtt refiner) を API 提出
+  (ref 57897560)。
+- **LB 結果: 0.39 (COMPLETE)** — prod 提出群と同点。事前登録の採用規則
+  (「公開 LB が prod 以上なら採用可」) を満たすが改善は実証されず。
+  同点なら全データ学習側は private LB での微優位を期待できるため、
+  最終2枠は (a) prod 系確立提出 + (b) v96-full の分散構成が有力
+  (§2.70 の正直フロンティア水準を維持しつつ構成を分ける)。
+
+### 2.71 v97 事前登録: RT-DETR 第2検出器 + 校正済み true-dedup ensemble — 残存する唯一の未試行上流レバー (2026-11-02)
+
+**出自**: §2.70 競合調査。biconcavelens はこのコンペで「calibrate +
+dedup-before-paint (mask IoU>0.05 で一括破棄)」が 4 度目の ensemble
+失敗の後に初めて real LB を動かした唯一の merge 機構と報告
+(0.38→0.39)。彼らの RT-DETR-l (cls=2.0) は solo local PQ 0.4296 で
+3 検出器中もっとも強い。我々は同一アーキ fold ensemble (V53) と
+低 conf rescue は棄却済みだが、**異種検出器 + 校正 + dedup の
+組合せは未試行** — 残存する最後の上流レバー。
+
+**設計 (変更は検出器の追加のみ。refiner・後処理・評価経路・fold2・
+paired prod 基準は v88/v96 と完全一致)**:
+
+- RT-DETR-l: folds 0+1 の全アノテータ分独立ラベル (bbox = polygon
+  外接矩形) で学習。imgsz 1280・epoch 70・patience 14・
+  seed=3407+2=3409・deterministic・cls=2.0 (biconcavelens 検証値;
+  ultralytics RT-DETR は検出のみで box を出し、提案 mask は box 充填)
+- ensemble: 両検出器の生提案 (conf>=0.02) を集め、検出器別 isotonic
+  校正 (X=conf、y=record 平均 hit-IoU = 各 record で IoU>0.5 なら
+  その IoU ・否 0) で P(matched-IoU) へ写像。cal 降順に貪欲受理、
+  受理済みと mask-IoU>0.05 の候補を破棄 (dedup-before-refine)。
+  受理候補のうち cal > λ のみ emit → EdgeAtt refiner → ownership
+  → 公式 PQ (record 単位 pooled、既存 eval と同一)
+- λ (採用点) = 0.5 × PQ(prod,0.26) — PQ の限界 emit 条件
+  (p·E[IoU] > PQ/2) から導出、実行時に prod 実測値で決定
+- 校正の honest 化: valid_files を deterministic 2 分割し A→B・B→A
+  で cross-fit (in-sample 校正は診断のみ)
+
+**事前固定ゲート (結果取得前に確定)**:
+
+- 主判定: `Δ = PQ(ens, cross-fit, dedup=0.05, λ) − PQ(prod, 0.26)`
+  - `>= +0.005`: 両検出器を全データ再学習 → LB 確認へ昇格
+  - `[0, +0.005)`: reject_noise (ensemble 機構を閉鎖)
+  - `<0`: reject (同上)
+- sanity: prod paired 再現値が既知 0.444218 ±0.002 内であること
+- conf sweep・dedup_iou {0.03,0.05,0.10}・λ 倍数 {0.8,1.0,1.2}・
+  in-sample 校正・各検出器単体値は判定不使用の診断として記録
+
+**誠実留保**: (a) RT-DETR は box 提案のみ — refiner が box 充填 mask
+を整形するため EdgeAtt の crop 文脈が seg 提案と異なり、solo 値は
+過小評価の可能性 (b) isotonic は proposal→hit-IoU 写像で、
+biconcavelens の P(TP) 校正とは目標が異なる (emit 条件の Dinkelbach
+形に直結するよう選択) (c) RT-DETR の学習安定性は未検証 — 収束
+不良なら arm のみ棄却として記録 (d) fold2 ゲート通過でも LB では
+非対称の可能性 (疎 GT で FP が効くため dedup の価値は LB で
+大きくなる可能性も、小さくなる可能性もある)
+
+**実装**: `scratch/build_v97_rtdetr_ensemble_colab.py` (v96 third_f0
+Colab ノートの凍結セル再利用 + bbox データセット・RT-DETR 学習・
+候補収集/isotonic/dedup/ensemble 評価セル追加) →
+`solar_filament_v97_rtdetr_ensemble_colab.ipynb`。RT-DETR 学習は
+`runs/v97_rtdetr_ensemble/rtdetr_fold2`、manifest は
+`artifacts/v97_rtdetr_ensemble_colab_manifest.json`。
+
+**v97 結果 (2026-11-02、Colab A100 完走)**:
+
+- RT-DETR-l 学習完走: 82 分、best.pt SHA256
+  `0dca102e…a99550`、train 5414 inst / valid 1784 inst
+- prod 再現 sanity: 0.444218 vs 既知 0.444238 (Δ −2e-05、合格)
+- **主判定 (cross-fit 校正・dedup0.05・λ=0.2221)**:
+  PQ 0.448036 / TP 1743 / FP 775 / FN 1042 / sparse 0.3924、
+  **Δ = +0.0038 → 事前登録ゲート未達で `reject_noise`** (採用は棄却)
+- 診断:
+  - RT-DETR solo: conf 0.15→0.266 / 0.20→0.311 / 0.26→0.353 / 0.32→0.390
+    (YOLO 0.444 を全点で下回る。box 提案の過小評価留保はあるが弱い)
+  - dedup sweep: 0.03→0.4464 / 0.05→0.4480 / **0.10→0.4503**
+  - λ sweep: 0.8×→0.4475 / 1.0×→0.4480 / 1.2×→0.4455 (1.0×が最適)
+  - in-sample 校正 0.4506 (cross より +0.0025、過適合は軽微)
+  - **detector ablation が決定的**: yolo_only (cal+dedup) = 0.4480
+    ≡ ensemble と完全一致、rtdetr_only = PQ 0・受理 0 件。
+    **+0.0038 は RT-DETR 相補ではなく dedup+isotonic 受理パイプライン
+    自体の YOLO への効果** — 第2検出器仮説はこの fold で棄却
+
+### 2.72 v97b/v97c 探索: dedup プラトー発見 → prod_dedup030 LB probe (2026-11-02)
+
+reject_noise は採用ゲート不達の意味であって探索禁止ではない。
++0.0038 と dedup0.10 の +0.0061 を手がかりに近傍を系統探索
+(候補・校正・パーツキャッシュ再利用、manifest は v97b/v97c 別系):
+
+**v97b (rescue+λgrid)**: prod 土台 + 高 cal RT-DETR 追加救済
+(λ_hi 0.30/0.35/0.40) は 3 条件とも **Δ=0.0000・追加候補ゼロ**
+— RT-DETR の cal>0.30 候補が存在しない (= 校正済み価値が全て λ 未満)。
+λ grid (dedup0.05): 0.1999 でピーク +0.0048 の単峰。
+
+**v97c (dedup 拡張 + 交互作用 + ablation)**:
+
+- dedup sweep (λ=0.2221): 0.03→+0.0022 / 0.05→+0.0038 /
+  0.08-0.15→+0.0058〜0.0061 / **0.20→+0.0073 / 0.30→+0.0075** /
+  0.50→+0.0019 / 1.00→−0.0020。
+  **0.08〜0.30 の広いプラトー** — 局所ピークではなく実効果。
+  dedup=1.0 (実質オフ) で prod 割れも理屈通り (重複候補が FP 化)
+- λ×dedup: d0.10/d0.15 とも λ1.0× が最適 (dedup が支配因子)
+- ablation: rtdetr_only は dedup に依らず受理ゼロと論理確定
+  (v97c の ablation 実行は tag 衝突で combined 再生になり無効だが、
+  rtdetr の cal>λ 候補が存在しない以上どの dedup でも寄与 0)
+- per-file Δ (d0.10 vs prod): 勝ち 51・負け 46 ファイルだが
+  勝ちは +0.17〜+0.28 の非対称大勝 (prod=0 のファイル救済)、
+  負け最大 −0.16。低 conf 候補救済が FN 層に効いている構造と整合
+
+**機構の解釈**: prod の conf>0.26 一律カットは、valid FN の 57% を
+カバーする低 conf 提案を捨てていた。dedup0.30+isotonic 受理は
+(実効 conf*≈0.238) でそれらを cal>0.2221 相当として救い、
+dedup が重複提案の FP 化を防ぐ。改善は第2検出器ではなく
+**受理規則の改良**。
+
+**prod_dedup030 バリアント (LB probe)**: 提出は test に GT が無い
+ため fold2 全候補 (5604 件) で fit したグローバル isotonic
+(conf→E[hit-IoU]、88 閾値、`artifacts/v97_global_iso_yolo.npz` /
+`v97_global_iso.pt`) をカーネルに埋め込み。受理規則のみ変更で
+重み・refiner・ownership・emit は prod と同一 (RT-DETR 不要と
+判明したため第2検出器は含めない)。誠実留保: 局所 +0.0075 は
+探索的事後選択で LB 移行は不確か、グローバル写像は cross-fit
+より僅かに楽観的の可能性。Kaggle
+`shingo257/solar-filament-2026-reproduction-dedup030` で採点待ち。
+
+**v97d 追補 (2026-11-03、出荷写像の fold2 検証)**:
+
+- dedup030 カーネルのグローバル isotonic 写像を再 fit — Drive 保存版と
+  閾値配列が完全一致 (88 点、出荷再現性 OK)。実効 conf* = 0.238
+- **halfcross** (反対 half で fit した写像を適用 = test 状況の近似):
+  dedup 0.10→+0.0061 / 0.20→+0.0073 / **0.30→+0.0075** / 0.50→+0.0019
+  — per-file cross-fit 値と全点一致、写像の過適合は無いと確認
+- insample (楽観側): 0.30→+0.0100。insample−halfcross 差 ≈ +0.0025
+- **機構分解**: conf0.238 単純閾値 = +0.0011 のみ、conf0.20 = −0.0070。
+  つまり +0.0075 のうち conf 緩和は +0.001、**dedup 機構が ≈+0.006**。
+  閾値を下げるだけでは悪化するため受理規則 (dedup) が主因と確定
+- dedup030 カーネル v1 は推論・監査を完走 (180 test images, 1244 rows,
+  overlap 0、2.7 s/img) したが末尾の環境記録セルで plain_ckpt NameError
+  → v3 で修正済み再実行。局所期待値 +0.0075 の LB probe として継続
+
+### 2.73 定期競合調査 (2026-11-03) — 正直フロンティアの転移率が 3 チームで一致
+
+- **biconcavelens が最終系を公開** (GitHub + SABiD 2026 論文投稿):
+  public LB 0.40 / OOF PQ 0.461。3検出器 (Mask R-CNN 2048 +
+  YOLO11m/l-seg 1280 + RT-DETR-l 1280) calibrated ensemble + smp
+  U-Net crop refiner + ConvNeXt semantic U-Net + mask vote。
+  彼らの RT-DETR は P(TP) 校正 + vote で機能 — 我々の hit-IoU
+  isotonic 受理で寄与ゼロだったのは検出器ではなく受理設計の差
+- **dariushafshar**: 10-fold U-Net ensemble、OOF 0.4502 → LB 0.39
+- **我々**: fold2 0.444 → LB 0.39 — **3チームとも local→LB 転移率
+  ≈0.87 で一致**。dedup030 の局所 +0.0075 は LB で +0.006 級の
+  見込み → 表示 0.39→0.40 で正直フロンティア並を現実的に狙える
+- **HDJoJo 0.52 (1位)**: hetspookjee の分析で Dataverse リーク
+  (~77% カバレッジ) の部分混合とほぼ確定。主催者はアーカイブ使用を
+  明示禁止。定性評価 (30%) ではリーク説明責任が問われる立場
+- QiuweiLiu: CLAHE + tiled U-Net + skeleton-endpoint graph merge
+  (距離≤50px・cos≥0.80・gap prob≥0.40) — 分断フィラメントの
+  グラフ再接続は未試行の機構。参考実装として記録
+
+**dedup030 LB 結果 (2026-11-03, ref 57933888): 0.39 — prod/v96-full と
+同点、可視改善なし**。局所 halfcross +0.0075 は LB で実証されず
+(2桁表示に収まる差、または転移せず)。採用ゲート相当の証拠には
+ならないため最終枠の現行案 (prod + v96-full) を維持。dedup030 は
+受理規則の探索的派生として記録に留める (CSV・写像・カーネルは
+全て保存済み、private LB での参考値として残る可能性はある)。

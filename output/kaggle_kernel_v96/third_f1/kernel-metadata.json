@@ -1,0 +1,21 @@
+{
+  "id": "shingo257/solar-v96-data-scaling-third-f1",
+  "title": "solar-v96-data-scaling-third-f1",
+  "code_file": "solar_filament_v96_data_scaling_third_f1_kaggle.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "shingo257/solar-filament-v35-artifacts",
+    "shingo257/solar-filament-2026-weights",
+    "shingo257/solar-v73-assets"
+  ],
+  "competition_sources": [
+    "filament-segmentation-2026"
+  ],
+  "kernel_sources": [],
+  "category_ids": []
+}

@@ -18,8 +18,8 @@
 | Team members | Shingo Hara (単独) |
 | Technical report (PDF) | `report/main.pdf` — **4ページ全体** (本文 + acknowledgments + references を含む; Overleaf テンプレ準拠) |
 | Code repository URL | `https://github.com/shingo257/solar-filament-2026-solution` — **public 済み・匿名 clone/LFS 検証済み** |
-| (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57072525` (plain_mhsa_f2) |
-| (あれば) Public score | 0.39 (両提出とも; conf032 A/B `57843737` も 0.39、§2.57) |
+| (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57897560` (v96-full 全データ学習、ゲート +0.0099 通過)。代替候補: `57072525` (plain_mhsa_f2 アーキテクチャ hedge), `57933888` (prod_dedup030、v97 探索 — dedup0.30+isotonic受理、局所+0.0075/LB0.39) |
+| (あれば) Public score | 0.39 (上記4提出とも; conf032 A/B `57843737` も 0.39、§2.57/§2.72) |
 | (あれば) Method/efficiency | detect-then-refine 2 構成。主催者 rubric は品質目視 + feasibility (理解可能な実装を高評価、topic 724503 追記) — 単純で再現可能な構成をそのまま記述 |
 
 ## リポジトリ方針 — A 決定・実行済み (2026-10-19)
@@ -62,7 +62,7 @@
   2026-10-26 にローカル clone で E2E 検証済み (5 重み全て repo 解決・
   fold CSV sha256 `24367120…` 一致)。残るのは public 化後の
   匿名 clone + `git lfs pull` 再確認のみ
-- [ ] prod + plain_mhsa_f2 を Kaggle UI で最終選択
+- [ ] prod + v96-full を Kaggle UI で最終選択 (代替: plain_mhsa_f2 / dedup030、いずれも LB 0.39)
 
 ## 提出前の最終確認リスト
 
@@ -74,7 +74,9 @@
    まで反映済み**。本文+ack+refs でちょうど4ページに圧縮済み
    (PR #584・standalone `d3bcc2ed`)。conf032 A/B (public 0.39) は
    §2.57 に記録 — report 本文は確定済み
-4. Kaggle 最終選択が prod + plain_mhsa_f2 になっている
+4. Kaggle 最終選択が prod + v96-full になっている (§2.72: dedup030 は
+   局所 +0.0075 だが LB 0.39 で可視改善なしのため採用見送り、
+   探索結果は RESEARCH_LOG と v97b/c/d manifest に記録済み)
 5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
    主催者回答: 再送信はファイル差替ではなく**追加**になり、
    旧ファイルは消せない。委員会は「最後の提出」を見ると明言。
