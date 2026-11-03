@@ -3634,3 +3634,67 @@ dedup が重複提案の FP 化を防ぐ。改善は第2検出器ではなく
 再現性・報告品質が残る勝ち筋 — 4頁 report + 公開 repo + 凍結
 マニフェストの整備がそのまま対応する。新トップ IONode 0.70 も
 既知のリーク帯パターンの範囲内。
+
+### 2.74 v98 fold-ensemble: 前提誤認による汚染の発見と onlyfold 設計 (2026-11-03)
+
+**⚠️ 汚染警告 — v98 の pooled 結果は honest 証拠に使わないこと。**
+
+v98 (`solar_filament_v98_foldensemble_colab.ipynb`) は「fold0/1 の重みは
+fold2 未学習」を前提に設計したが、これは誤りだった。fold 命名の慣例:
+`yolo_fold_k` = **fold_k 以外で学習**するモデル。したがって:
+
+| 重み | 学習 fold | fold2 に対して |
+|---|---|---|
+| yolo_fold_2 (prod) | 0+1 | honest ✓ |
+| yolo_fold_0 | 1+**2** | **in-sample 汚染** |
+| yolo_fold_1 | 0+**2** | **in-sample 汚染** |
+
+solo 実測が汚染を裏付けた (fold2 上):
+
+| model | PQ @0.26 | Δ vs prod |
+|---|---|---|
+| yolo_fold_0 (fold2 学習済み) | 0.4812 | **+0.0370** |
+| yolo_fold_1 (fold2 学習済み) | 0.4677 | **+0.0235** |
+| yolo_fold_2 (honest) | 0.4442 | 0 |
+
+→ fold2-in-training の記憶プレミアムは **+0.02〜+0.04 PQ**。v98 の
+`results.pooled` (f2f0*/f2f0f1) は全てこの汚染を含み、**受理パイプラインの
+改善証拠としては無効**。将来の読者が誤用しないよう manifest の
+contract ではなく本節で宣告する (manifest は Drive 上で immutable)。
+
+**副次的収穫**: このプレミアムは v96-full (全データ学習) の test での
+強さの直感を与える — 学習データ増は実利あり。
+
+**v98b (honest 設計)**: fold0-only / fold1-only YOLO を新規学習。
+train も val も fold 内ファイルのみ (val = sorted 5 番目毎 = 20%) で
+**fold2 に train/val 両面で非接触**。prod と同一ハイパラ (70ep,
+1280, AdamW)。さらに fail-closed ガード: onlyfold solo が prod を
++0.01 超で上回れば fold2 接触の兆候として評価を中止する。
+pooled 評価は v98 と同型 (5 pool × dedup {0.10, 0.30} × half-cross
+共有 isotonic)。`v98b_foldonly_colab_manifest.json` に分離記録。
+
+**意味論の注意**: onlyfold モデルは 1/3 データ学習で prod (2/3) より
+弱い想定 — pooled の Δ が正なら「弱いパートナーの追加でも多様性が
+効く」と解釈でき、test 提出では正規の fold モデル (各 2/3 学習)
+でより強い効果が期待できる (honest 評価は下振れ側 = 保守的)。
+
+**v98b 結果 (2026-11-03 完走, fold2 honest)**: onlyfold 学習は健全
+(f0only 0.4245 / f1only 0.4328 — 1/3 データで prod 0.4442 より弱い
+想定どおり、fail-closed ガード未発火)。pooled 評価 (half-cross 共有
+isotonic + dedup + λ0.2221):
+
+| pool | d0.10 | d0.30 |
+|---|---|---|
+| f2 のみ (対照) | +0.0060 | **+0.0074** |
+| f2+f0 | −0.0007 | +0.0009 |
+| f2+f1 | +0.0018 | +0.0021 |
+| f0+f1 | −0.0057 | −0.0039 |
+| f2+f0+f1 | −0.0042 | −0.0029 |
+
+**判定: 多様性仮説の2回目の閉鎖。** 弱いパートナー (1/3 データ学習)
+は dedup 衝突・共有校正の過大評価でアンサンブルを希釈する —
+f2 追加するほど悪化する単調傾向。RT-DETR 寄与ゼロと合わせて
+「受理パイプラインの局所天井は f2 単独 dedup +0.0075」が確定。
+dedup030 の LB 0.39 同点と整合し、受理側改善の test 転移限界を示唆。
+検出器多様化によるさらなる局所改善の探索はここで打ち止めとする
+(v98b で質の異なる2検出器族・量の異なる3モデル全て棄却済み)。

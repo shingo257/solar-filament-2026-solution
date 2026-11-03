@@ -17,6 +17,7 @@ from scratch import (
     build_v97_rtdetr_ensemble_colab as v97,
     build_v97b_explore_colab as v97b,
     build_v97c_explore_colab as v97c,
+    build_v98_foldensemble_colab as v98,
 )
 
 
@@ -48,6 +49,11 @@ def nb_v97c():
 @pytest.fixture(scope="module")
 def nb_repro():
     return json.loads(repro.OUTPUT.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def nb_v98():
+    return json.loads(v98.DST.read_text(encoding="utf-8"))
 
 
 # ---- v97 main notebook: resume machinery + crash fix ----
@@ -168,3 +174,84 @@ def test_repro_env_record_refiner_label(nb_repro):
     env_src = _src(nb_repro["cells"][16])
     assert 'SUBMISSION_VARIANT == "plain_mhsa_f2"' in env_src
     assert 'else ("refiner_" + CFG.SUBMISSION_VARIANT, plain_ckpt)' not in env_src
+
+
+# ---- v98 fold-ensemble exploratory notebook ----
+
+def test_v98_all_cells_parse(nb_v98):
+    _parseable(nb_v98)
+
+
+def test_v98_separate_manifest_and_cache(nb_v98):
+    src1 = _src(nb_v98["cells"][1])
+    assert "v98_foldensemble_colab_manifest.json" in src1
+    src7 = _src(nb_v98["cells"][7])
+    assert "v98_candidates.pt" in src7
+    assert "v97_rtdetr_ensemble_colab_manifest" not in src7
+    # resume 機構: 破損 cache 除去 + 原子保存
+    assert "V98_CAND_CACHE.unlink(missing_ok=True)" in src7
+    assert "_part_save(V98_CAND_CACHE" in src7
+
+
+def test_v98_pool_coverage_and_honest_contract(nb_v98):
+    src7 = _src(nb_v98["cells"][7])
+    # fold0/1 重みの sha を contract に固定 (honest 評価の入力凍結)
+    assert "yolo_f0_sha256" in src7 and "yolo_f1_sha256" in src7
+    # プール組合せ + half-cross isotonic + dedup 2値
+    for pool in ("f2f0", "f2f1", "f0f1", "f2f0f1"):
+        assert f'"{pool}"' in src7
+    assert "crossfit_halves" in src7 or "half_a" in src7
+    assert "(0.10, 0.30)" in src7
+    # eval parts の tag は v98 prefix で v97 parts と衝突しない
+    assert 'tag=f"v98_' in src7
+
+
+def test_v98_uses_cfg_drive_root(nb_v98):
+    # regression: DRIVE_ROOT は CFG クラス属性。裸の DRIVE_ROOT は
+    # cell7 スコープでは NameError (Colab 実害)
+    src7 = _src(nb_v98["cells"][7])
+    assert "CFG.DRIVE_ROOT" in src7
+    import re as _re
+    assert not _re.search(r"(?<!CFG\.)DRIVE_ROOT", src7)
+
+
+@pytest.fixture(scope="module")
+def nb_v98b():
+    from scratch import build_v98b_foldonly_colab as v98b
+    return json.loads(v98b.DST.read_text(encoding="utf-8"))
+
+
+# ---- v98b honest fold-only ensemble ----
+
+def test_v98b_all_cells_parse(nb_v98b):
+    _parseable(nb_v98b)
+
+
+def test_v98b_isolation_and_failclosed(nb_v98b):
+    src7 = _src(nb_v98b["cells"][7])
+    assert "v98b_foldonly_colab_manifest.json" in _src(nb_v98b["cells"][1])
+    # fold2 非接触: val は fold 内 deterministic 20%
+    assert "members[4::5]" in src7
+    # 学習済み fold 重みではなく onlyfold 学習成果を使う
+    # (runs/yolo_fold_0|1 へのパス参照禁止 — コメント中の言及は許容)
+    assert '"runs" / "yolo_fold_0"' not in src7
+    assert '"runs" / "yolo_fold_1"' not in src7
+    # fail-closed: onlyfold が prod を不審に上回ったら中止
+    assert "fold2 接触の兆候" in src7
+    # 汚染警告が contract とヘッダに入っている
+    assert "contaminated" in src7
+    hdr = _src(nb_v98b["cells"][0])
+    assert "汚染" in hdr and "証拠に使わない" in hdr
+
+
+def test_v98b_resume_and_tags(nb_v98b):
+    src7 = _src(nb_v98b["cells"][7])
+    assert "TRAINING_COMPLETE" in src7
+    assert "V98_CAND_CACHE.unlink(missing_ok=True)" in src7
+    assert 'tag=f"v98b_' in src7
+
+
+def test_v98_header_marks_contamination(nb_v98):
+    # v98 pooled は汚染結果 — ヘッダで証拠不適格を宣告 (Codex P1 対応)
+    hdr = _src(nb_v98["cells"][0])
+    assert "汚染" in hdr and "証拠に使わない" in hdr and "§2.74" in hdr
