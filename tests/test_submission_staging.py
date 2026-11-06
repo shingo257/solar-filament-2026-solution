@@ -63,6 +63,23 @@ def test_weights_dir_missing_weights_raises(tmp_path):
         resolve(tmp_path / "nonexistent", "edgeatt_all")
 
 
+def test_weights_dir_full_detector_resolves_v96_weights(tmp_path):
+    resolve = _resolve_weights_dir_paths()
+    for name in ("yolo_fold2_best.pt", "yolo_full_fold2_best.pt", "refiner_all_data.pt"):
+        (tmp_path / name).write_bytes(b"x")
+    assert resolve(tmp_path, "edgeatt_all")[0].name == "yolo_fold2_best.pt"
+    yolo, refiner = resolve(tmp_path, "edgeatt_all", "full")
+    assert (yolo.name, refiner.name) == ("yolo_full_fold2_best.pt", "refiner_all_data.pt")
+
+
+def test_weights_dir_full_detector_missing_never_falls_back(tmp_path):
+    resolve = _resolve_weights_dir_paths()
+    for name in ("yolo_fold2_best.pt", "refiner_all_data.pt"):
+        (tmp_path / name).write_bytes(b"x")
+    with pytest.raises(FileNotFoundError, match="yolo_full_fold2_best.pt"):
+        resolve(tmp_path, "edgeatt_all", "full")
+
+
 def test_changed_equal_size_inputs_receive_fresh_staging(tmp_path):
     source = tmp_path / "drive"
     source.mkdir()

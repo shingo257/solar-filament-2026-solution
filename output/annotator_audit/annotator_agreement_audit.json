@@ -1,0 +1,35 @@
+{
+  "images": 1154,
+  "unique_file_names": 707,
+  "multi_record_files": 296,
+  "records_per_file": {
+    "1": 411,
+    "3": 151,
+    "2": 145
+  },
+  "annotations": 8199,
+  "category_counts": {
+    "2": 2590,
+    "3": 3074,
+    "1": 2535
+  },
+  "area_min": 9.0,
+  "area_lt20": 1,
+  "within_record_overlap_px": 5041,
+  "within_record_overlap_frac": 0.0002900372353496531,
+  "within_record_overlap_pairs": 5,
+  "ordered_annotator_pairs": 1196,
+  "inter_annotator_pq_mean": 0.3411995707277676,
+  "inter_annotator_pq_median": 0.3421340898127782,
+  "cluster_coverage": {
+    "recs=2_marked=1": 867,
+    "recs=2_marked=2": 560,
+    "recs=3_marked=1": 985,
+    "recs=3_marked=2": 341,
+    "recs=3_marked=3": 446
+  },
+  "clusters_total": 3199,
+  "singleton_frac": 0.5789309159112223,
+  "matched_pair_iou_mean": 0.6327066472620184,
+  "matched_pair_iou_median": 0.629297037160407
+}

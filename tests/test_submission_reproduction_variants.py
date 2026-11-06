@@ -16,11 +16,15 @@ def _notebook():
                       .read_text(encoding="utf-8"))
 
 
-def _dispatch(variant, attachment):
+def _variant_if(marker):
     source = "".join(_notebook()["cells"][12]["source"])
-    nodes = ast.parse(source).body
-    dispatch = next(node for node in nodes if isinstance(node, ast.If)
-                    and "SUBMISSION_VARIANT" in ast.unparse(node.test))
+    return next(node for node in ast.parse(source).body if isinstance(node, ast.If)
+                and "SUBMISSION_VARIANT" in ast.unparse(node.test)
+                and marker in ast.unparse(node))
+
+
+def _dispatch(variant, attachment):
+    dispatch = _variant_if("refiner =")
     loaded = []
     patterns_seen = []
 
@@ -74,6 +78,55 @@ def test_missing_plain_attachment_stops_before_model_creation():
 def test_unknown_variant_cannot_fall_back_to_prod():
     with pytest.raises(ValueError, match="Unknown submission variant"):
         _dispatch("plain_mhsa_typo", None)
+
+
+def _detector(variant, attachment):
+    dispatch = _variant_if("detector_ckpt =")
+    patterns_seen = []
+
+    def resolve(patterns):
+        patterns_seen.extend(patterns)
+        return attachment
+
+    scope = {"CFG": SimpleNamespace(SUBMISSION_VARIANT=variant, SINGLE_FOLD=2),
+             "resolve_pretrained": resolve,
+             "yolo_weight_paths": {2: Path("yolo_fold_2/best.pt")}}
+    tree = ast.fix_missing_locations(ast.Module(body=[dispatch], type_ignores=[]))
+    exec(compile(tree, "generated-detector-dispatch", "exec"), scope)
+    return scope["detector_ckpt"], patterns_seen
+
+
+def test_prod_detector_is_fold2_yolo():
+    ckpt, patterns = _detector("prod", None)
+    assert ckpt == Path("yolo_fold_2/best.pt")
+    assert not patterns
+
+
+def test_v96full_detector_resolves_exact_full_data_weights():
+    full = Path("weights/yolo_full_fold2_best.pt")
+    ckpt, patterns = _detector("prod_v96full", full)
+    assert ckpt == full
+    assert patterns == ["yolo_full_fold2_best.pt"]
+
+
+def test_missing_v96full_weights_never_fall_back_to_fold2():
+    with pytest.raises(FileNotFoundError):
+        _detector("prod_v96full", None)
+
+
+def test_v96full_dispatch_uses_prod_all_data_refiner():
+    kind, loaded, patterns = _dispatch("prod_v96full", None)
+    assert kind == "edge"
+    assert loaded == [Path("all-data.pt")]
+    assert not patterns
+
+
+def test_v96full_is_a_disjoint_audited_variant():
+    nb = _notebook()
+    setup = "".join(nb["cells"][2]["source"])
+    audit = "".join(nb["cells"][14]["source"])
+    assert '"prod_v96full"' in setup
+    assert '"prod_v96full"' in audit.split("assert overlap_n == 0")[0]
 
 
 def test_notebook_contains_plain_model_definition():

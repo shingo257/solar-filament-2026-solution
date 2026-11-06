@@ -4,7 +4,7 @@ topic 724503: "the weights are stored in the repository and are loaded in
 the notebook"。standalone 公開 repo に Git LFS で同梱するための weights
 一式を生成し、全 bytes の SHA256 と tensor 等価性を検証する。
 
-エクスポート対象 (submissions prod / plain_mhsa_f2 が必要とする一式):
+エクスポート対象 (submissions prod / prod_v96full / plain_mhsa_f2 が必要とする一式):
 
   source (Drive reviewed artifacts)                  -> repo weights/
   -------------------------------------------------------------------
@@ -15,6 +15,8 @@ the notebook"。standalone 公開 repo に Git LFS で同梱するための weig
       (model+best_model の2重格納 282MB)                 fold2_s8407.pt
                                                        (best_model のみ
                                                         抽出で 141MB)
+  runs/v96_data_scaling/yolo_full_fold2/weights/     -> yolo_full_fold2_best.pt
+      best.pt (全データ学習 YOLO、45MB、そのまま)
 
 抽出される `best_model` はローダの `ckpt.get("best_model") or ckpt["model"]`
 で原本と同一オブジェクトを返すため、推論は byte ではなく tensor 一致で
@@ -50,6 +52,9 @@ EXPORTS = [
      ARTIFACTS / "mediseg_edgeattnet_refiner_all_data_resume.pt", None),
     ("refiner_plain_mhsa_fold2_s8407.pt",
      ARTIFACTS / "ablation_plain_mhsa_seed8407_fold2.pt", "best_model"),
+    # prod_v96full (第2提出): 全データ学習 YOLO (RESEARCH_LOG §2.68)
+    ("yolo_full_fold2_best.pt",
+     RUNS / "v96_data_scaling/yolo_full_fold2/weights/best.pt", None),
 ]
 
 # frozen grouped_folds.csv (registry copy, notebook が sha256 検証するもの)

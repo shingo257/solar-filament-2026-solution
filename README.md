@@ -96,6 +96,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | Public LB の採点対象 | **testの約50%（≈90枚）**（LBページ明記、2026-10-09確認）。2桁表示では0.01未満の差を識別できないため提出間比較はOOFのみ |
 | 作者調査の参照例（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr` の公開記述。分割・来歴は独立未確認）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
 | **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）、Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却 + v69タイル推論 + v70深層verifier、作者記録）のため確定 |
+| **最終2枠（2026-11-03 更新）** | **prod + prod_v96full**（検出器のみ全データ学習 YOLO に差し替え、データ量スケーリング・ゲート通過、Public 0.39、RESEARCH_LOG §2.67/2.68）。dedup030 は独立 fold で再現せず不採用（§2.75）。plain_mhsa_f2 は代替候補として再現経路を維持 |
 
 ### 最終提出の再現（最短経路）
 
@@ -107,7 +108,14 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 §5.0 の `solar_filament_submission_reproduction.ipynb` を参照。
 **選択候補2提出（prod + plain_mhsa_f2）の再現コード経路を整備済み**。2026-10-15 にクリーン環境（Kaggle kernel v3/v4、`solar_filament_submission_reproduction.ipynb` + 重み dataset 参照のみ）で両経路の提出 CSV が byte-identical に再現されることを受入済み（prod sha16 `84f1b89466f988d9`、plain_mhsa_f2 sha16 `7b3de4e78a543cf2`、ともに提出済み参照と一致）。
 2026-10-13の作者記録にはCLI両経路の180枚CSVバイト一致（PR #351）と、v69タイル推論のfold2棄却（PR #352）が追加された。
-最終選択はprod＋plain_mhsa_f2（作者報告はいずれもPublic 0.39）。これらは過去実行の履歴として保持し、独立受入とは区別する。
+2026-10-11 時点の最終選択はprod＋plain_mhsa_f2（作者報告はいずれもPublic 0.39）。これらは過去実行の履歴として保持し、独立受入とは区別する。
+**2026-11-03 更新: 最終2枠は prod + prod_v96full。** prod_v96full は
+`solar_filament_submission_reproduction.ipynb` の `CFG.SUBMISSION_VARIANT = "prod_v96full"`
+で再現する（repo `weights/yolo_full_fold2_best.pt`、sha256 `f54c812d…`）。
+**2026-11-04 受入**: ローカル隔離 CPU 環境で生成した提出 CSV が参照
+（Kaggle ref `57897560`）と **byte-identical**（SHA256 `684ff6d6…`、
+RESEARCH_LOG §2.77）。Colab GPU での同一検証ノートは Drive
+`solar_filament_v30/v96full_clean_repro/` に配置済み。
 
 ```bash
 # test 180枚 → submission_prod.csv（ローカルCPU ~50分 / Colab GPU ~4分）
@@ -126,7 +134,9 @@ python scratch/run_test_submission.py --mode prod \
 
 - **重み（提出用正本・repo 同梱）**: `weights/` 以下に Git LFS で同梱
   （`yolo_fold{0,1,2}_best.pt` + `refiner_all_data.pt` +
-  `refiner_plain_mhsa_fold2_s8407.pt`、計 ~418MB、
+  `refiner_plain_mhsa_fold2_s8407.pt`、計 ~418MB。第2提出用の
+  `yolo_full_fold2_best.pt`（45MB）も standalone repo `weights/` に
+  LFS 同梱済み（`e5b1bc13`）、
   `weights/weights_manifest.json` に sha256 一覧）。
   **clone 後は `git lfs pull` で実体化**（git-lfs 未導入環境では
   pointer file のみ降りるので注意）。提出再現 notebook は
@@ -154,6 +164,7 @@ python scratch/run_test_submission.py --mode prod \
 - **提出履歴**: prod 0.39 → A1 scorer 0.37（OOF→LB反転）→ plain_mhsa_f2 **0.39**、
   edgeatt_f2 **0.39**（ablation 重み流用の refiner バリアント、学習コスト0）。
   **最終選択の推奨**: prod + plain_mhsa_f2（アーキテクチャ差で private ヘッジ最大）。
+  2026-11-03 に prod + prod_v96full（v96-full 0.39）へ更新。
   `output/submission_log/log.json`
 - **推論環境 freeze**: `pip-freeze-prod-2026-10-11.txt`（torch 2.11.0、ultralytics 8.4.120）
 

@@ -18,7 +18,7 @@
 | Team members | Shingo Hara (単独) |
 | Technical report (PDF) | `report/main.pdf` — **4ページ全体** (本文 + acknowledgments + references を含む; Overleaf テンプレ準拠) |
 | Code repository URL | `https://github.com/shingo257/solar-filament-2026-solution` — **public 済み・匿名 clone/LFS 検証済み** |
-| (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57897560` (v96-full 全データ学習、ゲート +0.0099 通過)。代替候補: `57072525` (plain_mhsa_f2 アーキテクチャ hedge), `57933888` (prod_dedup030、v97 探索 — dedup0.30+isotonic受理、局所+0.0075/LB0.39) |
+| (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57897560` (v96-full 全データ学習、ゲート +0.0099 通過)。代替候補: `57072525` (plain_mhsa_f2 アーキテクチャ hedge)。`57933888` (prod_dedup030) は v99 で fold0/1 再現せず (Δ −0.0038/−0.0019、§2.75) のため候補から除外 |
 | (あれば) Public score | 0.39 (上記4提出とも; conf032 A/B `57843737` も 0.39、§2.57/§2.72) |
 | (あれば) Method/efficiency | detect-then-refine 2 構成。主催者 rubric は品質目視 + feasibility (理解可能な実装を高評価、topic 724503 追記) — 単純で再現可能な構成をそのまま記述 |
 
@@ -62,7 +62,19 @@
   2026-10-26 にローカル clone で E2E 検証済み (5 重み全て repo 解決・
   fold CSV sha256 `24367120…` 一致)。残るのは public 化後の
   匿名 clone + `git lfs pull` 再確認のみ
-- [ ] prod + v96-full を Kaggle UI で最終選択 (代替: plain_mhsa_f2 / dedup030、いずれも LB 0.39)
+- [ ] prod + v96-full を Kaggle UI で最終選択 (代替: plain_mhsa_f2、LB 0.39)
+- [x] 再現 notebook に `prod_v96full` バリアントを追加 (検出器のみ
+  `yolo_full_fold2_best.pt`、欠落時は fold 重みへフォールバックせず停止)
+- [x] `yolo_full_fold2_best.pt` (sha256 `f54c812d…`、45MB) を standalone repo
+  `weights/` (LFS) + `weights_manifest.json` に追加して push
+  (standalone `e5b1bc13`、公開 clone + `git lfs pull` で実体確認済み)
+- [x] `prod_v96full` を実行し、提出済み CSV (`57897560`) と再現性を確認
+  — ローカル隔離 CPU 環境の `run_test_submission.py --detector full` で
+  SHA256 `684ff6d6…` が全バイト一致 (RESEARCH_LOG §2.77)。GPU クリーン
+  環境 (L4) では byte 差は GPU FP 非決定論の範囲で予測等価
+  (全 1,141 filament が 1-to-1 対応・平均 IoU 0.9993・全件 IoU≥0.9、
+  §2.77 GPU 補完結果)
+- [ ] report §Submission evidence を最終2枠 (prod + full-data detector) に更新して再ビルド
 
 ## 提出前の最終確認リスト
 
@@ -75,8 +87,10 @@
    (PR #584・standalone `d3bcc2ed`)。conf032 A/B (public 0.39) は
    §2.57 に記録 — report 本文は確定済み
 4. Kaggle 最終選択が prod + v96-full になっている (§2.72: dedup030 は
-   局所 +0.0075 だが LB 0.39 で可視改善なしのため採用見送り、
-   探索結果は RESEARCH_LOG と v97b/c/d manifest に記録済み)
+   局所 +0.0075 だが LB 0.39 で可視改善なし、§2.75: 独立 fold でも
+   再現せず採用見送り、探索結果は RESEARCH_LOG と v97b/c/d manifest に記録済み)
+4b. **repo が選択した両提出を再現できる** (747960): prod と prod_v96full の
+   両バリアントが repo `weights/` だけで解決できること
 5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
    主催者回答: 再送信はファイル差替ではなく**追加**になり、
    旧ファイルは消せない。委員会は「最後の提出」を見ると明言。

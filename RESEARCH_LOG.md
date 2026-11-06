@@ -3698,3 +3698,804 @@ f2 追加するほど悪化する単調傾向。RT-DETR 寄与ゼロと合わせ
 dedup030 の LB 0.39 同点と整合し、受理側改善の test 転移限界を示唆。
 検出器多様化によるさらなる局所改善の探索はここで打ち止めとする
 (v98b で質の異なる2検出器族・量の異なる3モデル全て棄却済み)。
+
+
+### 2.75 v99 事前登録: dedup030 受理規則の fold0/fold1 独立再現 (2026-11-03)
+
+**動機**: §2.72 の dedup030 (+0.0075 halfcross) は fold2 上で dedup・λ を
+掃引して選んだ探索的事後選択であり、独立 fold での確認がない。public LB
+(≈90枚・2桁) は 0.39 同点で識別不能 (§2.73)。最終順位を決める private
+側の期待値で 2 枠目を選ぶには、**fold2 で選んだ設定をそのまま fold0/1 に
+当てて再現するか**が唯一の honest な判別手段。新規学習なし・CPU のみ。
+
+**入力 (凍結)**: v80 candidates cache `solar_filament_v80/candidates/fold_{0,1,2}`
+(fold_k は `yolo_fold_k` = fold_k 非学習の OOF 提案 conf≥0.08、fold 別
+標準 MediSeg refiner の shrink@0.45 済み `rle_final` と raw `rle_prop`)。
+分割 `grouped_folds.csv` sha256 `febb3f67…` (OOF cache と一致する実験分割、§2.26)。
+cache の上流は評価 fold に対し honest で、本実験は fold 跨ぎの学習を含まない
+(isotonic は fold 内 halfcross のみ) ため v80 scorer の non-nested 留保は該当しない。
+
+**arm (fold ごと・paired)**:
+- `prod`: yolo conf≥0.26 ∧ usable → drop_contained@0.90 → 面積昇順 greedy_disjoint (min_area 20)
+- `dedup`: fold 内ファイルを sorted parity で 2 分割し、反対 half で fit した
+  isotonic (conf → record 平均 hit-IoU、raw 提案で計算) を適用。cal 降順
+  (同値は conf 降順) に raw 提案同士の mask-IoU>d で貪欲 dedup → cal>λ
+  (λ = 0.5·PQ(prod, fold)) → usable のみ → prod と同一 ownership → 公式 PQ
+- 主設定 **d=0.30** (fold2 で選択済みの値をそのまま固定。fold0/1 では掃引しない)
+
+**事前固定ゲート (結果取得前に確定)**:
+- Δ_k = PQ(dedup_d0.30, fold k) − PQ(prod, fold k)
+- **replicated**: Δ_0 > 0 **かつ** Δ_1 > 0 **かつ** fold0+1 pooled 観測
+  bootstrap (2000 回、seed 3407) の Δ の CI95 下限 > 0
+- それ以外は **not_replicated** — dedup030 は fold2 特有の事後選択と記録し、
+  最終 2 枠は現行案 (prod + v96-full) を維持
+- replicated の場合も「fold2 選択の 2 独立 fold 確認」であり、提出採用は
+  ユーザー判断 (LB では識別不能のため OOF 根拠のみで private 期待値を比較)
+
+**判定不使用の診断**: fold2 での同一エミュレーション (§2.72 の EdgeAtt 経路
++0.0075 との整合 sanity)、d∈{0.10, 0.20, 0.50} の各 fold 値、dedup なし
+で cal>λ のみ (= 実効 conf 閾値) の arm (dedup 機構と閾値緩和の分離)。
+
+**誠実留保**: (a) refiner は fold 別標準 MediSeg で、prod 提出の EdgeAtt
+all-data とは異なる — 受理規則の相対効果の検証であって絶対値の再現ではない。
+(b) cache は conf≥0.08 のみ。cal>λ 相当の実効 conf*≈0.24 より十分低く、
+降順貪欲では低 conf 候補が高 conf 候補を抑制しないため受理集合は不変。
+(c) 1 fold あたり ~236 観測で fold 単独 CI 幅は ~0.035 (§2.5) — 符号一致と
+pooled CI を併用するのはそのため。
+
+実装: `scratch/run_v99_dedup_replication.py`、テスト
+`tests/test_run_v99_dedup_replication.py`。出力 `output/v99_dedup_replication/`。
+
+#### v99 結果 (2026-11-03、CPU 23 分 × 2、`output/v99_dedup_replication/`)
+
+**事前登録ゲート (isotonic halfcross・d=0.30・λ=0.5·PQ(prod)) — `not_replicated`**:
+
+| fold | prod | dedup0.30 | Δ | nodedup Δ | 最良 d の Δ (診断) |
+|---|---|---|---|---|---|
+| 0 | 0.4393 | 0.4355 | **−0.0038** | −0.0051 | −0.0029 (d0.10) |
+| 1 | 0.4415 | 0.4396 | **−0.0019** | −0.0026 | −0.0009 (d0.20) |
+| 2 (sanity) | 0.4471 | 0.4460 | −0.0010 | −0.0016 | −0.0004 (d0.20) |
+
+fold0+1 pooled Δ −0.0029、CI95 [−0.0062, +0.0006]。**sanity 不一致**: fold2 の
+同一規則が §2.72 の +0.0075 を再現しない。isotonic の λ が実効 conf を 0.26 超に
+押し上げ、prod より TP を減らしている (fold2 TP 1729→1682)。
+
+**事後診断 (判定不使用、`posthoc_fixedconf_0.238.json`)**: 受理を v97d の
+実効 conf*=0.238 に固定し dedup だけを残した場合:
+
+| fold | nodedup Δ | d0.10 | d0.20 | d0.30 |
+|---|---|---|---|---|
+| 0 | +0.0008 | +0.0042 | +0.0029 | +0.0027 |
+| 1 | −0.0005 | −0.0010 | +0.0001 | **−0.0012** |
+| 2 | −0.0004 | +0.0018 | +0.0022 | +0.0017 |
+
+d0.30 の fold0+1 pooled Δ +0.0008、CI95 [−0.0023, +0.0041] — 同じく不一致。
+dedup 機構の上乗せ (dedup − nodedup) は fold0 +0.002〜+0.003・fold1 −0.0007〜+0.0006・
+fold2 +0.002 程度で、§2.72 の「dedup ≈ +0.006」より 1 桁小さく fold1 で符号が揃わない。
+
+**判定**: dedup030 は独立 fold で再現しない。§2.72 の +0.0075 は fold2 での
+dedup・λ 掃引による事後選択の楽観と、EdgeAtt 経路固有の差の合成と解釈する
+(本検証は標準 refiner・v80 cache 提案で行ったため、後者の寄与は分離できない —
+留保 (a))。public 0.39 同点 (§2.73) とも整合。**最終 2 枠は現行案
+(prod + v96-full) を維持し、dedup030 は採用しない**。
+
+### 2.76 v100 事前登録: 検出器容量スケーリング (yolo11l/x-seg) — fold2 paired 判定 (2026-11-03)
+
+(注: §2.75 は別ブランチの v99 dedup030 再現ゲートで使用中 — PR #607)
+
+**出自 (§2.66)**: 残差の主因は検出器の順位付け = モデル能力。
+V36–V41 の検出器強化 (imgsz・augmentation・モデルサイズ) は
+ほぼ fold0 単独判定で、§2.5 の fold 単独 CI 幅 ~0.035 では
+Δ±0.01 を判別できず **判定不能** と訂正済み。受理側の改善は
+v97 (RT-DETR 寄与ゼロ)・v98b (多様化で希釈)・v99 (dedup030
+非再現) で尽きたため、検出器容量は**一度も honest 評価されていない
+最後の上流レバー** として残る。
+
+**設計 (変更はモデルスケールのみ。学習レシピ・評価経路・fold2・
+paired prod 基準は v96 と完全一致)**:
+
+- `prod`: 既存 `yolo_fold_2/weights/best.pt` (yolo11m-seg、
+  train = fold0+1) を再評価して sanity 基準とする
+- `yolo11l`: train = fold0+1 (all-labeler)、**yolo11l-seg.pt**
+- `yolo11x`: train = fold0+1 (all-labeler)、**yolo11x-seg.pt**
+- 学習レシピは prod と完全一致 (imgsz 1280・batch 4・epoch 70・
+  patience 14・seed 3409・cls 0.5・増強同一・ultralytics 8.4.118
+  固定・cache="disk")。評価は v96 Colab ノートのセルを無改変で
+  再利用: fold2 EdgeAtt refiner・thr 0.45・drop 0.90・
+  min_area 20・公式 PQ (record 単位 pooled)
+
+**事前固定ゲート (結果取得前に確定)**:
+
+- 主判定: arm 毎に `Δ = PQ(arm, 0.26) − PQ(prod, 0.26)` (fold2 paired)
+  - `>= +0.010`: **fold0 honest 複製** (yolo_fold_0 構成で再学習、
+    fold0 paired 評価) へ昇格 — fold2 単独では提出変更しない
+  - `[0, +0.010)`: reject_noise — 容量スケーリングを閉鎖
+  - `<0`: reject — 同上
+- sanity: prod paired 再現値が既知 0.444218 ±0.002 内であること
+- conf sweep {0.15,0.20,0.26,0.32}・best/last・sparse PQ は
+  判定不使用の診断として記録 (閾値掃引しない)
+
+**誠実留保**: (a) fold2 は prod best.pt のモデル選択 fold でもある
+ため両 arm とも軽度の optimistic 選択を共有 — paired Δ が相殺する
+が、昇格時は必ず fold0 複製を通す (b) 単一 seed。GPU 非決定論の
+paired ノイズ ~0.003 をゲート幅 +0.010 で担保 (c) yolo11x-seg・
+imgsz1280・batch4 は Colab GPU で OOM の可能性。OOM の場合のみ
+batch=2 で一度だけ再試行し manifest に `batch_fallback: true` を
+記録 (レシピ差分として昇格判定の留保にする)。batch2 でも失敗する
+場合はその arm を `infeasible` として記録 (d) 容量増は v96-full
+(データ量) と直交のレバー — 昇格した場合も提出候補の置換は
+fold0 複製 + LB 確認の両方を通過して初めて検討する
+
+**実装**: `scratch/build_v100_capacity_colab.py` (v96 third_f0
+Colab ノートの凍結セル再利用、CFG の model/arms/paths のみ差替え)
+→ `solar_filament_v100_capacity_colab.ipynb`。学習は
+`runs/v100_capacity/yolo_{arm}_fold2`、manifest は
+`artifacts/v100_capacity_colab_manifest.json`。
+
+**結果 (2026-11-04、Colab NVIDIA L4、manifest updated 03:08 UTC)**:
+
+| arm | conf | PQ | Δ@0.26 vs prod | tp/fp/fn | verdict |
+|---|---|---|---|---|---|
+| prod (yolo11m) | 0.26 | 0.444247 | — | 1715/750/1070 | sanity 基準 |
+| yolo11l | 0.26 | 0.442641 | **−0.0016** | 1683/707/1102 | reject_capacity_fold2 |
+| yolo11x | 0.26 | 0.442377 | **−0.0019** | 1646/650/1139 | reject_capacity_fold2 |
+
+- sanity: prod paired 再現 0.444247 vs 既知 0.444218、差 +0.000029
+  で ±0.002 内 = 評価経路は再現されている
+- 両 arm `<0` → 事前固定ゲートにより **reject_capacity_fold2**。
+  fold0 複製は発動せず、容量スケーリングはここで閉鎖
+- 診断 (判定不使用): arm に事後最良 conf を許しても prod@0.26 を
+  上回らない (l 最良 = 0.26 で −0.0016、x 最良 = 0.20 で −0.0008)。
+  x は低 conf 0.15 では prod を上回る (0.4345 vs 0.4265) が、これは
+  FN 被覆の広さ (低 conf 提案で FN を覆う数 611 vs prod 543) に由来し、
+  動作点では予測数を絞り込めず (5.95/img vs 6.38/img) TP 減・FN 増。
+  sparse PQ も l −0.0006 / x +0.0002 で系統的改善なし
+- best=last で同一結果 (両 arm とも best epoch = 70)。学習時間
+  l=192.5min / x=293.4min。batch4 が L4 22.5GB に収まり
+  `batch_fallback` は未発火 (x は 20.9GB 使用)
+- 重み SHA256: l best `536726d0…`、x best `8cd43302…`
+  (manifest に全値)
+
+**解釈**: §2.66 の「残差の主因は検出器の順位付け = モデル能力」という
+仮説に対し、容量 2.2 倍 (x、62M params / 297 GFLOPs) でも順位付けは
+改善しなかった。x は低 conf でより多くの FN を覆う提案を出す
+(リコール源は増える) が、その候補を正しく上位に並べられない =
+ボトルネックは提案の**存在**ではなく候補間の**識別**で、容量増は
+この識別を改善しない。annotator 不一致が構造天井という既存解釈と
+整合。これで上流レバー (データ量・モデル種・容量・アンサンブル・
+重複除去) はすべて honest 評価済みとなり、**最終 pair
+prod + v96-full を据え置く判断が確定**した。
+
+### 2.77 v96-full 提出の byte-identical 再現を確認 (2026-11-04)
+
+(注: §2.75 = v99 dedup030 再現 (PR #606)、§2.76 = v100 容量ゲート
+(PR #608) は別ブランチで先行確保済み)
+
+**結果**: `scratch/run_test_submission.py --mode prod --detector full`
+(本番 cell12 と同一経路: solar_three_channel → 全データ学習 YOLO
+`yolo_full_fold2_best.pt` → all-data EdgeAtt refiner → drop@0.90 →
+面積昇順 ownership → RLE) を隔離 CPU 環境で実行。生成 CSV
+`submission_prod_v96full.csv` (1,141行 + ヘッダ) の SHA256 は
+`684ff6d60751249edfc7c9e1ae68828945ca77d9d272f1c868609fdbc12ca4e4`
+で、Kaggle 提出 `57897560` (v96-full、Public 0.39) の参照 CSV と
+**全バイト一致**。実行環境: CPU のみ・180枚・1371秒・
+code sha `a6edc0de`・隔離 uv 環境 (prod freeze 相当の依存)。
+
+**意味**: repo のパイプラインコード + 公開重み (detector + refiner)
++ test 画像だけで、選択済み第2提出が決定論的に再現できることを実証。
+主催者要件「repo が両提出を再現できる」(topic 747960) のうち
+v96-full 側を満たす (prod 側は 2026-10-15 に Kaggle kernel v3/v4 で
+byte-identical 受入済み、README §最終提出の再現)。CPU (非 GPU)
+での一致は、パイプラインが GPU 非決定論に依存しないことの追加証拠。
+
+**補完**: Drive `solar_filament_v30/v96full_clean_repro/` に
+`solar_filament_v96full_clean_repro_colab.ipynb` を配置済み
+(Colab GPU で同一検証を行う独立ノート、実行はユーザー)。
+重み `yolo_full_fold2_best.pt` は standalone repo `weights/` に
+LFS 同梱済み (`e5b1bc13`、manifest sha256 `f54c812d…`、
+公開 clone + `git lfs pull` で実体確認済み)。
+
+**GPU クリーン再現の実行結果 (2026-11-04、ユーザー実行)**:
+Kaggle 系ランタイム (NVIDIA L4、`/kaggle/input` が存在する環境) で
+上記ノートを実行。クリーンルート `/content/solar_clean_root` に
+Drive の競技データをコピー、standalone repo を `e5b1bc13` で
+clone + `git lfs pull` し、source nb sha256 `d9c1c05597fa2d47` を
+検証のうえ4箇所の制御置換 (variant・clean root・cache 無効・
+Kaggle 判定時のデータ検索 root 追加) のみ適用して全コードセル実行
+(wall 9,816 秒)。
+
+- 生成 CSV: 1,141 行、sha256 `151541db…`、350,196 bytes
+- **byte_identical: false** (参照 `684ff6d6…`、350,083 bytes)
+- 予測内容は**等価**: IoU 比較で生成・参照の全 1,141 filament が
+  IoU≥0.5 で 1-to-1 対応 (match_rate 1.0、177/177 画像で両者に
+  予測あり)。best-IoU 平均 0.9993・中央値 1.0・IoU=1.0 が 54.8%・
+  **全件 IoU≥0.9**。公式 PQ (IoU 0.5 判定) では TP/FP/FN が不変で
+  SQ への影響は最大 ~0.0007 程度
+- 差異の帰属: **GPU アーキテクチャの浮動小数点非決定論**。参照は
+  Kaggle GPU、今回は L4 で、境界画素のフリップが ~45% の
+  filament で生じた (インスタンスの存在/個数は不変)。CPU での
+  byte 一致と合わせると、パイプラインのコード・データ・重みは
+  決定論的で、byte 差は実行ハードウェアの FP 丸め差に限定される
+- 環境検出の補修も検証済み: 内側 nb が `/kaggle/input` の存在で
+  Kaggle 判定となっても clean root のデータを発見し、生成 CSV を
+  `/kaggle/working` の `OUTPUT_PATH` から正しく回収した
+  (wrapper fix `10c2e070`)
+
+**結論**: repo + 公開重み + test 画像のみで提出と予測等価な
+submission をクリーン環境から生成できることを確認 (CPU では
+byte 一致、GPU では IoU≥0.9 の境界画素差のみ)。主催者の再現性
+要件を満たすと判断する。結果 JSON は Drive
+`v96full_clean_repro/clean_repro_result.json`・`iou_compare.json`、
+生成 CSV は `submission_prod_v96full_colab.csv` に保存済み。
+
+### 2.78 データ監査: 「annotator 不一致天井」を一次データから直接計測 (2026-11-04)
+
+(注: §2.75=v99 dedup030 (PR #606)、§2.76=v100 容量 (PR #608)、
+§2.77=v96-full 再現 (PR #607) は別ブランチで先行確保済み)
+
+ユーザー指摘「前提を疑ってデータを見返す」に応じ、天井説を物語として
+引くのではなく COCO annotations から直接計測した
+(`scratch/audit_annotator_agreement.py`、合成マスクの単体テスト 11 件。
+出力 JSON: `output/annotator_audit/annotator_agreement_audit.json` /
+Drive `artifacts/annotator_agreement_audit.json`)。
+
+**構造 (train JSON)**: 707 物理画像 × 1154 annotator record
+(`image_id` = `<annotator_prefix>-<file stem>`)。record/画像 =
+1人:411 枚・2人:145 枚・3人:151 枚。全画像ネイティブ 2048×2048。
+
+**測定結果**:
+
+| 指標 | 値 | 解釈 |
+|---|---|---|
+| inter-annotator PQ (record A を予測として B に採点、1,196 順序対・296 画像) | **mean 0.3412** | §2.54 の 0.3399 と独立に一致。annotator 自身が他 annotator を「採点」しても ~0.34 — 我々の LB ~0.39-0.40 は**既に annotator 間一致を上回っている** |
+| 物理フィラメント cluster の annotator 被覆 (record 横断 IoU≥0.5 連結、3,199 cluster) | **singleton (1人のみマーク) 57.9%** | 2人ファイルで 60.8%・3人ファイルで 54.8% が 1人のみ。予測すると 1 record で TP・残り record で FP になる構造 |
+| matched-pair IoU (record[0] 基準で貪欲マッチした同一物理物体) | mean **0.633** / median 0.629 | 境界一致も低い。prod の SQ 0.68 は**既に annotator 間の境界一致を上回る** |
+| record 内 GT 同士の重複 | 17.38M px 中 5,041 px (0.029%)、実質 1 ペアのみ | 二重アノテーションはほぼ皆無 — 「disjoint 制約で構造的失点」仮説は棄却 |
+| 面積 <20px の GT | 8,199 中 1 件 | min_area=20 由来の不可避 FN は無視できる |
+| 多連結 GT マスク | 227 件 (2.8%) | 1 instance が複数 blob の GT は存在するが RLE 上予測も同表現可 |
+
+**解釈**: 天井は「annotator が同じ物を別々に判定した」存在の不一致
+(58% singleton) と「同じ物を違う境界で描いた」境界の不一致
+(matched IoU ~0.63) の2層で実測された。これは全失敗の説明とも
+整合する: 見逃し救出は singleton 側を多く拾うため、入れるほど他
+record 側の FP になり得る (rescue/semantic/verifier の連敗)、
+refiner は境界精度を既に annotator 一致以上にできており上乗せ
+余地が小さい、容量 (v100) は順位付けを変えない — 残る失点は
+「どのアノテータが描いたか」を当てる問題でありモデル側の情報
+改善では届かない領域が大きい。
+
+**残る正当な仮説**: 入力解像度。画像はネイティブ 2048² だが
+imgsz 1280 は 1.6 倍のダウンサンプルで細い構造の情報を物理的に
+捨てている。効き目があるとすれば (a) 提案品質より **SQ (境界品質)
+側** — recall 系レバーは singleton 構造上むしろ不利になり得る。
+V36–V41 が fold0 単独で「判定不能」と残した imgsz は、この構造を
+踏まえてもなお**一度も honest 評価されていない最後のレバー**。
+
+### 2.79 v101 事前登録: 入力解像度スケーリング imgsz {1536, 2048} — fold2 paired 判定 (2026-11-04)
+
+**出自 (§2.66 + §2.78)**: V36–V41 の検出器強化は fold0 単独判定で
+判定不能と訂正済み。v100 でモデル容量 (m→l/x) は棄却確定したが、
+**入力解像度は別のメカニズム** — ネイティブ 2048² を 1280 に縮小
+する過程で細いフィラメント構造の情報を実際に捨てている (§2.78)。
+v36 の imgsz1536 fold0 試行が残る「一度も honest 評価されていない
+上流レバー」であり、§2.78 の監査が示す残る改善余地 (SQ 側) に
+最も整合するレバーでもある。
+
+**fold0 の事前値 (V30-era baseline 0.4393 に対し、README §P2 記録)**:
+P2-2 (imgsz1536 で再学習) PQ 0.4295 (Δ **−0.0098**)、P2-3 (推論のみ
+1536) PQ 0.4320 (Δ **−0.0073**) — fold0 では両方負方向だが、
+fold0 単独 CI ~±0.035 (§2.5) では ±0.01 を判別できず「判定不能」
+として残置した (§2.66)。つまり正直な事前分布は負寄りであり、
+本実験はその負方向が真か fold0 ノイズかを fold2 paired で判別する。
+当時の eval 経路 (V30 時代) と現行 (EdgeAtt・ownership) の差分も
+Δ の転移を不確実にするが、方向の事前情報として記録する。
+
+**設計 (変更は imgsz のみ。モデル・学習 fold 集合・レシピ・評価経路は
+prod / v96 / v100 と完全一致)**:
+
+- `prod`: 既存 `yolo_fold_2/weights/best.pt` (yolo11m-seg、imgsz 1280、
+  train = fold0+1) を再評価して sanity 基準とする
+- `prod_infer1536`: **学習なし診断 arm** — prod 重みを imgsz 1536 で
+  推論するだけ。「解像度が効くなら再学習不要か」を分別する。
+  学習を伴わないためゲート判定の対象外、診断のみ
+- `imgsz1536`: yolo11m-seg、**imgsz 1536 のみ変更** (v36 の honest 複製)
+- `imgsz2048`: yolo11m-seg、**imgsz 2048 のみ変更** (ネイティブ解像度
+  = ダウンサンプル完全解消)
+- 学習レシピは prod と完全一致 (batch 4・epoch 70・patience 14・
+  seed 3409・cls 0.5・増強同一・ultralytics 8.4.118 固定・
+  cache="disk")。評価は v96/v100 と同じ凍結セル: fold2 EdgeAtt
+  refiner・thr 0.45・drop 0.90・min_area 20・公式 PQ (record 単位
+  pooled)。推論 imgsz も arm 値を使う (train/infer で解像度を揃える)
+
+**事前固定ゲート (結果取得前に確定)**:
+
+- 主判定: 学習 arm (imgsz1536・imgsz2048) 毎に
+  `Δ = PQ(arm,0.26) − PQ(prod,0.26)` (fold2 paired)
+  - `>= +0.010`: **fold0 honest 複製** (yolo_fold_0 構成で再学習、
+    fold0 paired 評価) へ昇格 — fold2 単独では提出変更しない
+  - `[0, +0.010)`: reject_noise — 解像度スケーリングを閉鎖
+  - `<0`: reject — 同上
+- `prod_infer1536` は診断のみ (ゲート判定対象外): その値が
+  prod@1280 と大きく違えば「推論解像度だけで効く」機構の存在を
+  示唆 (さらなる分離実験の検討材料とするが、提出変更はしない)
+- sanity: prod paired 再現値が既知 0.444218 ±0.002 内であること
+- conf sweep {0.15,0.20,0.26,0.32}・best/last・sparse PQ は
+  判定不使用の診断として記録 (閾値掃引しない)
+
+**誠実留保**: (a) fold2 は prod best.pt のモデル選択 fold でもある
+ため両 arm とも軽度の optimistic 選択を共有 — paired Δ が相殺する
+が、昇格時は必ず fold0 複製を通す (b) 単一 seed。GPU 非決定論の
+paired ノイズ ~0.003 をゲート幅 +0.010 で担保 (c) imgsz 2048・
+batch4 は L4/A100 でも OOM の可能性。OOM の場合のみ batch=2 へ
+一度だけ fallback し manifest に `batch_fallback` を記録
+(レシピ差分として昇格判定の留保にする)。batch2 でも失敗する
+場合はその arm を `infeasible` として記録 (d) imgsz 2048 の
+学習時間は 1280 の ~2.5 倍 — Colab ランタイム切断に備え
+manifest 逐次保存で resume 可能 (e) §2.78 の構造知見から、
+効くなら recall ではなく SQ 側と予想 — FN/FP/SQ 内訳を診断として
+記録する
+
+**実装**: `scratch/build_v101_imgsz_colab.py` (v96 third_f0
+Colab ノートの凍結セル再利用、CFG の arms/imgsz/paths と
+実行セルの verdict のみ差替え、arm ループ冒頭で
+`CFG.YOLO_IMGSZ` を arm 値に設定して凍結 eval セル無改変)
+→ `solar_filament_v101_imgsz_colab.ipynb`。学習は
+`runs/v101_imgsz/yolo_{arm}_fold2`、manifest は
+`artifacts/v101_imgsz_colab_manifest.json`。
+
+**v101 結果 (2026-11-05、Colab L4 完走)**: manifest
+`artifacts/v101_imgsz_colab_manifest.json`。prod sanity
+0.444247 vs 既知 0.444238 (+9e-06、合格)。両学習 arm **棄却**:
+
+| arm | PQ@0.26 | Δ vs prod | TP/FP/FN | SQ | 学習時間 | verdict |
+|---|---|---|---|---|---|---|
+| `prod_infer1536` (診断) | 0.442430 | −0.0018 | 1755/856/1030 | 0.6802 | infer のみ | diagnostic_no_train |
+| `imgsz1536` | 0.443110 | −0.0011 | 1661/661/1124 | 0.6812 | 247.7 min | reject_imgsz_fold2 |
+| `imgsz2048` | 0.441951 | **−0.0023** | 1634/631/1151 | **0.6829** | 455.2 min | reject_imgsz_fold2 |
+
+**判定: 入力解像度スケーリングの閉鎖。** 両 arm < 0 で fold0 複製は
+発動せず。fold0 の負方向事前値 (P2-2 −0.0098 / P2-3 −0.0073、§2.66)
+は fold0 ノイズではなく真の方向だった — fold2 paired で確定。
+
+診断 (判定不使用) — §2.78 監査の予測と正確に一致:
+
+- **高解像度は SQ を実際に改善するが存在判定を悪化させる**。
+  imgsz2048 の SQ 0.6829 は観測全 arm 最高 (prod 0.6800) — 細い構造の
+  境界品質は上がる。しかし検出は保守的になる (preds 6.38→5.5x/img、
+  TP −81・FN +81・FP −119)。existence 不一致 (singleton 57.9%) が
+  支配する天井構造で、境界品質向上は FN/FP バランス悪化に呑まれる。
+- **`prod_infer1536` (推論のみ) は逆に検出を増やす** (TP +40・
+  FN −40) が FP +106 が上回りネット負 — 「高解像度で追加検出される
+  ものは他 record で FP 化しやすい」という監査予測の直接確認。
+- 用量反応も単調: 1280 → 1536 → 2048 で Δ −0.0011 → −0.0023 と
+  解像度を上げるほど悪化 — データの細かさではなくラベルの
+  識別不可能性が律速であることの追加証拠。
+- batch4 が両 arm で L4 (22.5GB) に収まり OOM fallback 未発火。
+  全重み SHA256 記録済み。
+
+**全体の状態**: 上流レバー (データ量・モデル種・容量・アンサンブル・
+重複除去・verifier・ラベル構造・解像度) と下流パラメータ
+(v102 §2.80 で完結) が全て閉じた。**最終 pair prod (`57039986`)
++ v96-full (`57897560`) の据え置きが確定。**
+
+### 2.80 v102 事前登録: 推論パラメータ掃引 — 宣言済み掃引に列挙されなかった残存 CFG (事前登録, 2026-11-05)
+
+**出自**: §2.23 末で「prod の全チューニングパラメータが検証済み
+(conf/閾値/drop/min_area/重み選択、残存パラメータなし)」と宣言したが、
+その列挙には **`PREDICT_IOU`・`CROP_CONTEXT`・`CROP_SIZE`・
+proposal の refine 前カバー率** が含まれていなかった。§2.78 監査で
+残余余地は存在の不一致 (singleton 58%) ではなく**境界側**
+(matched-pair IoU 0.63、prod SQ 0.68) にあると定量されたため、
+refiner 幾何・proposal カバー率に効くこの4パラメータが最後の未検証口。
+
+**arm は全て推論のみ (prod fold2 YOLO + all-data EdgeAtt refiner、学習なし)**:
+
+| arm | 変更 (prod 既定 → arm 値) | 狙い |
+|---|---|---|
+| `nms_iou_035` | PREDICT_IOU 0.55→0.35 | detector NMS 強化で重複提案を前段除去 |
+| `nms_iou_075` | PREDICT_IOU 0.55→0.75 | 重複提案を温存し refiner/ownership に委譲 |
+| `crop_ctx_130` | CROP_CONTEXT 1.65→1.30 | refiner 視野を狭く (形状の局所判定) |
+| `crop_ctx_200` | CROP_CONTEXT 1.65→2.00 | refiner 視野を広く (文脈手掛かり) |
+| `crop_size_448` | CROP_SIZE 320→448 | refiner 入力を高精細化 (off-train-res リスク明示) |
+| `prop_dilate_2` | PROPOSAL_DILATE_PX 0→2 | `refined & proposal` のクリッピング緩和 |
+| `prop_dilate_4` | PROPOSAL_DILATE_PX 0→4 | 同上 (2px で効果兆候があれば量の確認) |
+
+- `prop_dilate_*` は refine **前** に proposal を disk dilate し、
+  refiner が「filament」と判定した ring 画素を受理可能にする
+  (prod は `refined & proposal` で proposal 外の refiner 判定を破棄)。
+  B2 (§2.37) は refine **後** マスクの盲目膨縮であり機構が異なる。
+- 推論のみなので学習レシピ差分なし。変更は上表の単一パラメータのみ。
+- 実装: 凍結 eval セル (v96 と byte 同一) を変えず、実行セルで
+  default-arg binding を回避する同等 wrapper を定義 (prod 既定値では
+  元関数と同一経路 — prod sanity ゲートが同一性を実測で担保)。
+
+**事前固定ゲート (結果取得前に固定)**:
+
+- 各 arm `Δ = PQ(arm,0.26) − PQ(prod,0.26) >= +0.010` → fold0 honest 複製へ。
+- 全 arm < +0.010 → 推論パラメータ空間を閉鎖し、宣言済み掃引の
+  列挙漏れも含めて prod のパラメータ確定を再確認する。
+- **多重比較の誠実留保**: 7 cell の固定 grid なので偶然の +0.01 超えを
+  排除できない。ゲート超過でも fold0 複製なしには採用しない。
+  exploratory_best_conf は診断のみで判定に使わない。
+- fold2 単独では提出を変更しない。
+
+**期待値の正直な見立て**: conf/drop/閾値の既掃引が全て ±0.002 帯に
+収まった実績から、残存パラメータが +0.010 を超える事前確率は低い
+(1〜2割以下)。ただし「列挙漏れのパラメータを全て潰した」という
+証拠自体が報告価値を持つ (§2.23 宣言の補完)。`prop_dilate_*` は
+refiner の判定権を proposal 外へ拡張する唯一の機構変更で、
+near-miss 帯の pred_area/gt_area 中央値 1.214 (pred がやや大きい)
+と逆向きなので負方向の可能性が高い — 符号は結果を見てからの
+採用判断に使わない事前情報として記録する。
+
+**実行**: `solar_filament_v102_infer_colab.ipynb` (Colab、GPU 必須、
+学習なし ~3h 見込み)。manifest `artifacts/v102_infer_colab_manifest.json`
+に逐次保存。
+
+**v102 結果 (2026-11-05、Colab L4 完走)**: manifest
+`artifacts/v102_infer_colab_manifest.json`。prod sanity
+0.444247 vs 既知 0.444238 (+9e-06、合格)。全 7 arm **棄却**:
+
+| arm | PQ@0.26 | Δ vs prod | TP/FP/FN | verdict |
+|---|---|---|---|---|
+| `nms_iou_035` | 0.4465 | **+0.0023** | 1722/744/1063 | reject_param_fold2 (ゲート未達) |
+| `nms_iou_075` | 0.4439 | −0.0003 | 1713/750/1072 | reject |
+| `crop_ctx_130` | 0.3010 | **−0.1433** | 1315/1391/1470 | reject (壊滅) |
+| `crop_ctx_200` | 0.4396 | −0.0046 | 1705/758/1080 | reject |
+| `crop_size_448` | 0.4412 | −0.0030 | 1706/752/1079 | reject |
+| `prop_dilate_2` | 0.4397 | −0.0046 | 1705/761/1080 | reject |
+| `prop_dilate_4` | 0.4343 | −0.0100 | 1690/770/1095 | reject |
+
+**判定: 推論パラメータ空間の閉鎖。** §2.23 の掃引宣言で列挙漏れだった
+4パラメータを全て潰し、prod 経路のパラメータ確定を補完した。
+
+注目点 (全て診断、判定不使用):
+
+- **`nms_iou_035` は唯一の正方向 (+0.0023) で全 4 conf で一貫**
+  (0.15: +0.0053 / 0.20: +0.0046 / 0.32: +0.0011)。一貫した符号は
+  実信号を示唆するが、事前固定ゲート +0.010 未達のため規約どおり
+  **reject、fold0 複製は行わない**。sub-gate delta の追跡は
+  dedup030 (§2.75) で fold0 複製失敗した前例と同じ構造であり、
+  LB 表示分解能 ~0.01 に対して +0.002 は不可視 — 追求しない。
+- **`crop_ctx_130` の壊滅 (−0.143)**: refiner の判定は 1.65x 周辺
+  コンテキストに強依存 (TP 1715→1315、FP 750→1391)。crop 幾何が
+  prod の load-bearing 要素であることを逆方向から実証。
+- **`prop_dilate` は用量反応で単調負** (2px −0.0046 → 4px −0.0100):
+  refiner が proposal 外に filament と判定する ring 画素は net-FP。
+  proposal のカバー不足は bottleneck ではなく、むしろ過剰側 —
+  near-miss の pred_area/gt_area 中央値 1.214 (§2.37) と整合。
+- `crop_size_448` −0.003: off-train-res の緩やかな劣化のみ。
+  refiner 入力解像度はレバーではない。
+- `nms_iou_075` −0.0003: 緩い NMS は無害だが無価値
+  (後段の drop_contained/ownership が冗長提案を処理)。
+
+**v101 (§2.79) との併せ読み**: 解像度スケーリング (v101) と推論
+パラメータ (v102) が閉じ、prod 経路の上流・下流・周辺パラメータは
+全て honest 評価済み。最終 pair (prod `57039986` + v96-full
+`57897560`) の据え置きが再確認された。
+
+### 2.81 v103 事前登録: 学習レシピ残差 — 未収束・マスク分解能・解像度下方向・copy-paste (事前登録, 2026-11-05)
+
+**出自**: v101 (§2.79) と v102 (§2.80) で解像度・推論パラメータが閉じた後、
+残るのは**学習レシピの単一パラメータ**のみ。3つの観測が動機:
+
+1. **prod は70エポックで未収束** — `runs/yolo_fold_2/results.csv` で
+   `metrics/mAP50-95(M)` の best_epoch = **70 (終端)**、v101_1536 も
+   同じく終端。学習が打ち切られた形跡があり、長期学習は証拠駆動の
+   正当なレバー (v101_2048 は epoch 62 で早停 = 解像度が上がると
+   収束が早い点も観測)。
+2. **境界側に残余余地** (§2.78: matched IoU 0.63、imgsz2048 で SQ
+   0.6829 の実績) — マスク proto 解像度 (YOLO_MASK_RATIO) は
+   入力解像度とは別経路で SQ に効くはず。
+3. **v101 の用量反応が単調負** (1280→1536→2048 で Δ −0.0011→−0.0023)
+   — prod の 1280 がピークとは限らず、**下方向 (960) の確認で
+   曲線を完結させる**。
+4. `copy_paste` aug は v60 でビルダーだけ存在し未実行・未記録。
+
+**arm (全て yolo11m-seg、train folds (0,1)、評価 fold2、prod レシピと
+評価経路は同一、変更は各 arm の単一パラメータのみ)**:
+
+| arm | 変更 (prod → arm) | 機構 |
+|---|---|---|
+| `prod_infer960` (診断) | 学習なし・prod 重みを imgsz960 で推論 | 推論のみの下方向確認 |
+| `imgsz960` | imgsz 1280→960 (train/infer) | 解像度曲線の下方向完結 |
+| `epochs120` | epochs 70→120 / patience 14→20 | 未収束の解消 (best=70 終端の実測) |
+| `mask_ratio1` | YOLO_MASK_RATIO 2→1 | mask proto 分解能 640²→1280² → SQ |
+| `copypaste01` | copy_paste 0.0→0.1 | instance 複製 aug (v60 未実行分) |
+
+- 学習が必要な arm は `CFG` で値を差替えて train/infer 両方に効かせる。
+  `copy_paste` は prod 既定 0.0 (不使用) を明示し arm のみ 0.1。
+- `mask_ratio1` は proto メモリが ~4x で batch4 OOM の可能性 —
+  v101 と同じ一度だけ batch2 fallback の規約を適用し manifest に記録。
+- `prod_infer960` は学習なし診断 (gate 対象外、`SKIP_TRAIN_ARMS`)。
+
+**事前固定ゲート (結果取得前に固定)**:
+
+- 各学習 arm `Δ = PQ(arm,0.26) − PQ(prod,0.26) >= +0.010` →
+  fold0 honest 複製へ昇格。全 arm < +0.010 → 学習レシピ空間を閉鎖。
+- 5 arm の固定 grid (学習 4 + 診断 1)。偶然超過は fold0 複製で制御。
+- exploratory_best_conf は診断のみ。fold2 単独では提出を変更しない。
+
+**期待値の正直な見立て**: `epochs120` が最も根拠がある
+(未収束の実測) が、v100 で容量を2倍にしても順位付けが変わらなかった
+実績から「同じデータで長く回しても識別限界は同じ」の可能性が高い。
+残りは全て事前確率 1〜2 割以下。負けても「レシピも潰した」記録価値。
+
+**実行**: `solar_filament_v103_recipe_colab.ipynb` (Colab GPU、
+~11–13h 見込み)。manifest `artifacts/v103_recipe_colab_manifest.json`
+逐次保存。学習は `runs/v103_recipe/`。
+
+#### §2.81 追補 (完走確定, 2026-11-05): v103 全 5 arm 完走 — 全棄却、mask_ratio1 は別途 fold-0 複製へ (§2.86)
+
+prod@0.26 = 0.4442468 (再現差 +9e-06) に対する paired Δ:
+
+| arm | PQ@0.26 | Δ | verdict |
+|---|---|---|---|
+| prod_infer960 (診断) | 0.4379841 | −0.0063 | diagnostic_no_train |
+| imgsz960 | 0.4465173 | +0.0023 | reject (< +0.010) |
+| epochs120 | 0.4434776 | −0.0008 | reject |
+| **mask_ratio1** | **0.4507483** | **+0.0065** | reject (< +0.010) → §2.86 fold-0 複製へ |
+| copypaste01 | 0.4456666 | +0.0014 | reject |
+
+- `epochs120` の学習曲線: best_ep=93 (mAP 0.2172, prod 0.2134) — 未収束仮説は
+  技術的に正しかったが、延長の mAP 微改善は refiner 後 PQ に転写しない。
+  1280 の実質収束点 ~90-100ep が特定されたが prod 70 との PQ 差は無差別。
+- `mask_ratio1` (proto 2→1, ~640²→1280²) は全 ~50 arm 史上最大の +0.0065
+  (ノイズ幅 ±0.002 の3倍、SQ +0.0014 の機構的一貫性あり) — §2.86 で
+  fold-0 honest 複製を事前登録 (基準 Δ≥+0.003、fold0 結果取得前に固定)。
+- copy-paste 0.1 は微プラスだがノイズ幅内。
+
+### 2.82 v104 事前登録: weight soup + ownership 順序 + refine 2回目 (事前登録, 2026-11-05)
+
+**出自**: v101–v103 で解像度・推論パラメータ・学習レシピが閉じた後に残る
+未試行機構。予測空間のアンサンブル/重複除去は v97–v99 で閉じたが、
+**重み空間の平均 (weight soup / tail averaging) は一度も試していない**。
+prod fold2 の `runs/yolo_fold_2/weights/` には epoch0–65 の周期
+checkpoint が残っており、prod の best_epoch=70 (終端・未収束、§2.81)
+なら末尾の重み平均 (SWA 的) が単純に有効な可能性がある。全メンバー
+folds (0,1) 学習 = fold2 では fold-naive → fold2 paired 評価で valid。
+
+**arm (全て推論のみ・学習なし、prod 評価経路と同一)**:
+
+| arm | 内容 |
+|---|---|
+| `soup_tail3` | prod epoch60/65/best の3重み平均 (近傍 tail SWA) |
+| `soup_tail7` | prod epoch40..65+best の7重み平均 (広い tail SWA) |
+| `soup_res3` | prod best + v101 imgsz1536 best + imgsz2048 best の
+  3系統平均 — 予測空間ではなく重み空間のアンサンブル
+  (同一 init からの fine-tune なので basin 同一の可能性) |
+| `own_desc` | greedy ownership を area 昇順→降順 (prod は昇順、
+  順序は一度も分離テストされていない) |
+| `refine_twice` | refiner 出力を proposal として再 refine
+  (境界判定の収束テスト、B2 morphology とは別機構) |
+
+- soup ckpt は notebook 内で組み立て、members・sha256 を manifest に記録。
+  epoch ckpt は EMA 重みを使い (best.pt は stripped 'model'、周期 ckpt は
+  'ema' が評価用重み — どちらを拾ったかも記録)、'ema' キーは外して
+  predict が soup 'model' を使う形で保存。
+- `own_desc` は凍結 eval セル無改変のまま実行セルで同等関数を override
+  (prod 既定 'asc' では元関数と同一経路)。`refine_twice` も同様に
+  refine_proposal を wrap (prod 既定 False では不活性)。
+
+**事前固定ゲート (結果取得前に固定)**:
+
+- 各 arm `Δ = PQ(arm,0.26) − PQ(prod,0.26) >= +0.010` → fold0 honest 複製。
+- 全 arm < +0.010 → 重み空間・順序・refine 反復の残差機構を閉鎖。
+- 5 arm 固定 grid。偶然超過は fold0 複製で制御。fold2 単独では
+  提出を変更しない。exploratory_best_conf は診断のみ。
+
+**期待値の正直な見立て**: 予測空間アンサンブルは dedup プラトーで
++0.0075 が局所天井 (§2.74)、重み空間平均は一般に予測空間より弱い
+効果か basin 不一致で壊れる可能性。soup_tail* は未収束の証拠に
+対する素直な arm で最も期待できるが、やはり事前確率は低い。
+**実行**: `solar_filament_v104_soup_colab.ipynb` (~2.5h、全 arm 推論のみ)。
+manifest `artifacts/v104_soup_colab_manifest.json`。
+
+### 2.82追補 — v104 判定: 全 5 arm 棄却。重み空間アンサンブル・ownership 順序・refine 再適用いずれも不発 (2026-11-05)
+
+manifest `artifacts/v104_soup_colab_manifest.json` (fold2 OOF、
+prod sanity +9e-06 で一致)。soup ckpt は Drive artifacts に保存済み、
+member・sha256 は manifest 記録。
+
+| arm | Δ@0.26 | verdict | 解釈 |
+|-----|--------|---------|------|
+| `soup_tail3` | **+0.00124** | reject | 唯一の正方向。prod best_ep=70 終端 = 未収束の仮説と整合 (末尾平均が「まだ到達していない改善」を僅かに拾う) だがゲート未達 |
+| `soup_tail7` | −0.00470 | reject | 早期 epoch を混ぜると悪化 — 平均窓が効くのは終端近傍のみ |
+| `soup_res3` | **−0.43057** | reject | prod+1536+2048 の重み平均は壊滅 (PQ 0.0137)。異なる学習軌跡間の重み平均は loss basin が違い線形接続が破壊される — 重み空間アンサンブルは単一軌跡内に限ることが確定 |
+| `own_desc` | −0.00339 | reject | ownership 面積降順は悪化。昇順 (小さい物体が先に領域確保) が正しい設計と確認 |
+| `refine_twice` | −0.00064 | reject | 2回目の refine は悪化。refiner 出力は1回でほぼ収束、再適用は過剰 |
+
+**v104 の貢献**: 「予測空間アンサンブル (v97-99 棄却) とは別機構の
+重み空間アンサンブル」は単一軌跡内でのみ有効範囲があり、その効果も
+sub-gate。残存機構 3 系統 (soup/ownership/refine再適用) 全て閉鎖。
+
+### 2.83 v105 事前登録: 解像度曲線の下方向拡張 imgsz{640,768} — 適応的逐次実験 (2026-11-05)
+
+**背景 (v103 途中結果に基づく適応設計)**: v103 §2.81 の `imgsz960`
+train arm が Δ=+0.0023 (PQ 0.4465) の正方向を示し棄却 (sub-gate)。
+これは推論のみの `prod_infer960` (Δ=−0.0063) と逆方向であり、
+**960 学習の改善は「低解像度での推論」ではなく「低解像度での学習」由来**
+であることを意味する。解像度の用量反応は 640←768←960(+0.0023)→
+1280(0)→1536(−0.0011)→2048(−0.0023) と読め、下方向は未探査のまま。
+**結果を見てから設計した逐次実験であることを明示し、同じゲート規律を
+維持する** (fold2 sub-gate delta は追わない → 学習 arm 2 本を追加するが
+昇格は fold2 Δ>=+0.010 → fold0 複製のみ)。
+
+| arm | 変更 | 仮説 |
+|-----|------|------|
+| `prod_infer640` (診断) | prod 重みを imgsz640 で推論のみ | 推論のみは 960 で既に負 → 640 でも負方向予測。「学習が効く、推論は効かない」の対称証拠 |
+| `imgsz640` | train/infer 1280→640 | 960 の正方向が傾向なら継続、小物体喪失で反転なら 960 が曲線の底 |
+| `imgsz768` | train/infer 1280→768 | 640–960 の間を埋め曲線形状を確定 |
+
+変更は各 arm の imgsz のみ。yolo11m-seg、train folds (0,1)、fold2 paired
+評価、refiner・後処理・PQ 実装は prod と完全一致。`prod_infer640` は
+学習なし診断でゲート対象外。**ゲート: fold2 学習 arm 毎に
+Δ=PQ(arm,0.26)−PQ(prod,0.26)>=+0.010 → fold0 honest 複製。fold2 単独
+では提出を変更しない。** OOM fallback は想定しない (低解像度はメモリ
+余裕側) が、既存フォールバック機構は残す。
+
+想定所要 ~3h (imgsz 低下で学習は高速化)。manifest
+`artifacts/v105_imgszlow_colab_manifest.json` へ逐次保存。
+
+### 2.83追補 — v105 判定: 全 arm 棄却。解像度用量反応が完結し 960-1280 が平坦頂部と確定 (2026-11-05)
+
+manifest `artifacts/v105_imgszlow_colab_manifest.json` (fold2 OOF、
+prod sanity +9e-06 で一致)。
+
+| arm | Δ@0.26 | verdict | 解釈 |
+|-----|--------|---------|------|
+| `prod_infer640` (診断) | **−0.07232** | diagnostic | 予測どおり壊滅 — 960 train が正で 960 infer が負だった対称が 640 でも確認され、「改善は学習由来」の仮説を再確認 |
+| `imgsz640` | −0.00617 | reject | 960 の正方向は継続せず反転 — 小物体分解能の喪失が支配 |
+| `imgsz768` | −0.00132 | reject | 640–960 の中間点も負 |
+
+**用量反応の完結** (fold2 学習 arm): 640(−0.0062) → 768(−0.0013) →
+**960(+0.0023)** → 1280(0) → 1536(−0.0011) → 2048(−0.0023)。
+960 が局所ピークだが 768/960/1280 は ±0.002 の差分範囲内で一貫した
+傾向とは言い切れない = **解像度は 960–1280 の平坦頂部にあり、
+1280 は実質最適域として正当化**。高解像度側の単調悪化のみが真の
+信号。v105 は「960 sub-gate delta を追って傾向を確認したら偽信号
+だった」記録として、適応的逐次実験の健全な閉じ方を示す。
+
+### 2.84 v106 事前登録: existence 救済 (refiner スコアによる低conf提案の再評価) + 未 sweep 後処理パラメータ (2026-11-05)
+
+**根拠**: §2.78 で「existence の不一致」が支配的 bottleneck と確定。
+prod 診断で primary conf の FN 953 のうち **543 (57%) が低conf生提案で
+カバー済み** — 検出器は存在に気づいているが flat な 0.26 閾値が捨てて
+いる。一方 refiner は提案毎に sigmoid 確率マップを出しており、その
+**提案画素上の平均確率は検出器 conf と独立の「実在性」信号**。
+この 2 信号で低conf提案を選別する機構は未試行。
+
+**固定式 (結果取得前)**: refiner スコア = prod crop 窓 (mask_square_box,
+context 1.65) 内の提案画素上の sigmoid 平均確率。
+- rescue: det_conf <0.26 かつ score>=τ → conf を 0.2601 にブースト
+  (primary 採点にのみ入る。refine/ownership/採点は prod 経路そのまま)
+- demote: det_conf >=0.26 かつ score <τ → conf=0 (全 sweep から除去)
+
+| arm | 変更 | 狙い |
+|-----|------|------|
+| `rescue_mean050` | τ=0.50 で低conf提案を救出 | FN 回収 (本命) |
+| `rescue_mean065` | τ=0.65 (厳格) | 同上・高精度方向 |
+| `demote_mean030` | τ=0.30 で高conf提案を除去 | FP 削減 |
+| `refiner_th040` / `refiner_th050` | REFINER_THRESHOLD 0.45→{0.40,0.50} | 未 sweep だった refiner 決定閾値 |
+| `drop080` / `drop097` | DROP_THRESHOLD 0.90→{0.80,0.97} | 未 sweep の包含閾値 |
+| `minarea10` / `minarea40` | MIN_AREA 20→{10,40} | 未 sweep の最小面積 |
+| `combo_960_nms35` | imgsz960 重み + predict_iou 0.35 | 独立 sub-gate 信号 (+0.0023×2) の加算テスト |
+
+全 arm 推論のみ (学習なし)、凍結 eval セル byte 同一、CFG 経由の
+同等 override のみ。fold2 paired 評価。**ゲート: arm 毎に
+Δ=PQ(arm,0.26)−PQ(prod,0.26)>=+0.010 → fold0 honest 複製。
+fold2 単独では提出を変更しない。** 探索 arm が多いため多重比較の
+観点から単発の fold2 プラスは絶対に昇格しない。想定 ~3-4h。
+manifest `artifacts/v106_rescue_colab_manifest.json` へ逐次保存。
+
+### 2.84追補 — v106 判定: 全 10 arm 棄却。existence 救済・後処理パラメータ・加算テスト全て閉鎖 (2026-11-05)
+
+manifest `artifacts/v106_rescue_colab_manifest.json` (fold2 OOF、prod sanity +9e-06)。
+
+| arm | Δ@0.26 | 解釈 |
+|-----|--------|------|
+| `rescue_mean050` / `rescue_mean065` | **−0.1365 / −0.1170** | τ=0.50/0.65 とも FP 爆発。fn_at_primary は 953→381/1038 に激減し機構は動作したが、**refiner 平均確率は existence の選別信号にならない** (低conf提案の大半を高評価する傾向)。救出 TP +46/+32 に対し FP +2257/+1815 |
+| `demote_mean030` | **±0.0000** | conf>=0.26 で refiner 平均 <0.30 の提案は**一件も存在せず** — demote も機能しない (refiner は高conf提案を殆ど減点しない) |
+| `refiner_th040` / `refiner_th050` | −0.0004 / +0.0003 | ノイズ幅内。0.45 は実質最適域 |
+| `drop080` / `drop097` | −0.0003 / +0.0002 | 同上 |
+| `minarea10` / `minarea40` | **±0.0000** | 変更帯に該当提案ゼロ = min_area 20 は非拘束と確定 |
+| `combo_960_nms35` | −0.0026 | **sub-gate 信号同士は加算されず打消し** — imgsz960(+0.0023) と nms035(+0.0023) の組合せは負。「2つの微益でゲート到達」仮説を閉鎖 |
+
+**v106 の貢献**: 「refiner 出力を existence の二次信号として使う」
+発想を3方向 (rescue/demote/score) で閉鎖 — refiner は提案内を
+フィラメント的に精製する性質上、実在性の識別器として機能しない。
+後処理パラメータ空間はこれで完全に網羅された。
+
+### 2.85 v107 事前登録: rank/count 補正 + 別系統 demote + multi-context refine (2026-11-05)
+
+**根拠**: v106 §2.84 の rescue が「refiner 平均確率の選別力不足」で
+壊滅 (τ=0.50/0.65 で FP 爆発) → スコア式 rescue は閉鎖。残る機構:
+1. **existence の under-count は小規模** — per-record GT ≈7.1 vs
+   prod preds 6.38@0.26 (record 毎採点のため差は ~0.7/img)。
+   フラット conf でなく **rank ベースで上位 K 個まで埋める** countfill
+   はスコア不要の別機構 (v106 と直交)。
+2. demote 側は別スコア族が未試行 — refined_area/proposal 比 (精製で
+   大幅縮小 = 不確か) と mask aspect (細長さ = filament 形状事前、
+   Unidentifiable 反証テスト兼)。
+3. **refine の context ensemble** は未試行 — ctx 単一値掃引 (v102) と
+   refine 再適用 (v104) は閉じたが、2 context の union/intersect は
+   マスク品質向きの新機構。
+
+| arm | 変更 | 狙い |
+|-----|------|------|
+| `countfill_k7` | conf<0.26 の上位を最大 7/img までブースト | under-count 補正 |
+| `countfill_k9` | 同上 K=9 | 同上・多め |
+| `demote_ratio030` | conf>=0.26 かつ refined/proposal<0.30 → 除去 | refiner 縮小 demote |
+| `demote_aspect15` | conf>=0.26 かつ aspect<1.5 → 除去 | 非細長 demote (形状事前の反証) |
+| `ctx_union` | refined = refine@1.45 ∪ refine@1.85 | 境界 union |
+| `ctx_intersect` | refined = refine@1.45 ∩ refine@1.85 | 保守 intersect |
+
+**固定式 (結果取得前)**: countfill は conf 上位順 (同点は index 順)、
+K 到達分を 0.2601 へ。aspect = bbox max(w,h)/min(w,h)。ctx は
+{1.45,1.85} 2窓の binary union/intersect。全 arm 推論のみ、凍結 eval
+セル byte 同一。**ゲート: Δ@0.26>=+0.010 → fold0 複製のみ。
+fold2 単独では提出不変。** 想定 ~2.5h。manifest
+`artifacts/v107_countfill_colab_manifest.json`。
+
+### 2.85追補 — v107 判定: 全 6 arm 棄却。rank/count・形状事前・ctx-ensemble 全て閉鎖 (2026-11-05)
+
+manifest `artifacts/v107_countfill_colab_manifest.json` (fold2 OOF)。
+
+| arm | Δ@0.26 | 解釈 |
+|-----|--------|------|
+| `countfill_k7` / `countfill_k9` | −0.0145 / −0.0277 | rank 補正でも +36/+45 TP vs +242/+430 FP。**低conf提案は本当にほぼ FP** — conf 0.15 一律引下げの悪化と同方向。rescue (v106)・countfill・診断 (fn_covered=543) の3機構が独立に「低conf層は価値なし」を確認 |
+| `demote_ratio030` | ±0.0000 | refined/proposal<0.30 の高conf提案はゼロ — demote_mean030 と一致。refiner は高conf提案を殆ど縮小しない |
+| `demote_aspect15` | **−0.1197** | **形状事前の完全な反証** — 非細長除去で tp 1715→1031 (実 TP の40%消滅)。GT 側にも非細長が多数 (Unidentifiable)。細長さは filament の存在証拠にならない |
+| `ctx_union` / `ctx_intersect` | −0.0021 / **−0.0471** | ctx ensemble は両方向で悪化 — union は FP 側・intersect は FN 側へ強く偏る (intersect が特に壊滅 = 2窓の厳格化は提案を削りすぎ) |
+
+**v107 の貢献**: existence 追加・除去の両方向で二次信号が存在しない
+ことを確定。残る機構は refiner 入力分布の整合 (v108 候補) のみ。
+
+### 2.86 v108 事前登録: mask_ratio1 の fold-0 honest 複製 — ゲート拡張の事前固定 (2026-11-05)
+
+**背景と誠実性の開示**: v103 `mask_ratio1` (mask proto 2→1) が
+fold2 で Δ=**+0.0065** — 全実験史上最大でノイズ幅 (±0.002) の3倍。
+ただし §2.81 の昇格ゲート +0.010 には未達で棄却判定済み。
+**本節は +0.010 未達の arm に対して fold-0 複製を「追加実施する」
+というゲート拡張であり、元規約の厳格な読みでは棄却のまま**。
+拡張を正当化するのは結果の大きさ (全 ~50 arm 中最大・方向一貫・
+SQ 上昇の機構的一貫性) であり、**複製の判定基準は fold-0 の結果を
+見る前にここで固定する**。
+
+**複製設計**: 評価 fold を 0 に変更し、train folds (1,2) で
+mask_ratio=1 のみ変更した YOLO11m-seg を学習 (prod recipe 完全同一、
+seed 3407+0=3407)。paired baseline は既存 `runs/yolo_fold_0`
+(prod recipe, mask_ratio=2, folds(1,2) 学習済み、同 seed) を同一
+経路で再評価。refiner は `mediseg_edgeattnet_refiner_fold0_resume.pt`。
+fold-0 prod OOF 既知値は 0.4443 (§2.x、経路一致の sanity 用)。
+
+**判定基準 (固定)**: Δ@0.26 = PQ(mr1_f0) − PQ(prod_f0) が
+**>= +0.003** (観測ノイズ幅の ~1.5 倍) なら「cross-fold で検証済み」
+とし、prod レシピへの mask_ratio=1 適用を提出変更の検討対象とする。
++0.003 未満なら未検証として棄却、提出は変更しない。
+fold-2 単独の値で昇格しない原則は本複製でも維持する。
+
+想定 ~6.5h (mask_ratio=1 は proto 4x で ~5.8h 学習 + 評価 2 回)。
+manifest `artifacts/v108_mr1_f0_colab_manifest.json` へ逐次保存。
+
+#### §2.86 追補 (判定確定, 2026-11-05): mask_ratio1 fold-0 複製 — unverified、提出不変
+
+- prod_f0 @0.26 = **0.444137** (既知値 0.4443 との差 −0.00016 で経路一致)
+- mask_ratio1_f0 @0.26 = **0.440174** (SQ 0.67889, tp 1666/fp 724/fn 1083)
+- **Δ = −0.003963 < +0.003 → unverified_fold0 → mask_ratio1 は
+  cross-fold 検証を通過せず。fold-2 の +0.0065 は再現せず、提出は変更しない**
+
+正直な caveat: fold-0 学習は L4 の OOM により事前登録済みの
+batch 4→2 fallback が発動 (manifest `batch_fallback: true`、学習 331.6分)。
+fold-2 側は batch=4 で完走していたため厳密な paired ではない。
+ただし判定基準は fold-0 結果取得前に固定済みであり、fallback も
+事前登録された1回限りの許容であったため、verdict はそのまま有効。
+「batch2 だから負けた」可能性を完全には排除できないが、
+-0.004 の方向は全 sweep 帯で一貫 (0.15〜0.32 全て prod 未満) しており、
+単なる batch ノイズというより fold-2 の +0.0065 が過大評価だった解釈が自然。
+
+**本判定をもって 2026 実験系は全て閉鎖**: 約 50 arm の探索で
+昇格基準を満たした arm はゼロ。fold-2 最大の +0.0065 すら
+fold-0 で −0.004 に反転し、±0.002 以上の fold 間分散があることを
+実証した — fold 単独昇格を禁止したゲート規律の正当性が確認された。
+最終提出 pair は従来どおり prod (57039986) + v96-full (57897560)。

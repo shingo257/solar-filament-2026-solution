@@ -65,12 +65,17 @@ refiner 学習 → test 推論 → `submission.csv` 生成まで一通り通り�
 
 ## 選択した2つの提出の再現
 
-最終選択は `prod`(上記構成)と `plain_mhsa_f2`(refiner を ablation の
-plain-MHSA fold2 重みに差し替えた構成、アーキテクチャ差による private ヘッジ)。
+最終選択は `prod`(上記構成)と `prod_v96full`(検出器だけを全データ学習の
+`yolo_full_fold2_best.pt` に差し替えた構成。refiner・後処理は prod と同一。
+RESEARCH_LOG §2.67/2.68 のデータ量スケーリング・ゲート通過、public 0.39)。
 `prod` は本 notebook をそのまま実行すれば再現できる。
-`plain_mhsa_f2` は setup セルの `CFG.SUBMISSION_VARIANT` を `"plain_mhsa_f2"`
-に変更して再実行する(重み dataset の `ablation_plain_mhsa_seed8407_fold2.pt`
-を使用、出力は `submission_plain_mhsa_f2.csv`)。
+`prod_v96full` は setup セルの `CFG.SUBMISSION_VARIANT` を `"prod_v96full"`
+に変更して再実行する(repo `weights/yolo_full_fold2_best.pt` を使用、
+出力は `submission_prod_v96full.csv`)。
+
+旧第2候補の `plain_mhsa_f2`(refiner を ablation の plain-MHSA fold2 重みに
+差し替えた構成)も `CFG.SUBMISSION_VARIANT = "plain_mhsa_f2"` で引き続き再現できる
+(重み `refiner_plain_mhsa_fold2_s8407.pt`、出力 `submission_plain_mhsa_f2.csv`)。
 
 ## 探索用 conf バリアント (sparse-label 仮説の A/B、§2.54)
 
@@ -174,6 +179,8 @@ class CFG:
     #   探索的 probe、§2.61。重複 mask を許容するため監査は緩和済み)
     # "prod_dedup030": 候補 conf floor 0.02 + isotonic cal 受理 + dedup0.30
     #   (v97 探索 §2.72 — fold2 で +0.0075、第2検出器不要と判明)
+    # "prod_v96full": prod の検出器を全データ学習 yolo_full_fold2_best.pt に
+    #   差し替え (第2提出、§2.67/2.68)。refiner・後処理は prod と同一
     SUBMISSION_VARIANT = "prod"
     SUBMISSION_CONF = float(os.environ.get("SOLAR_SUBMISSION_CONF", "0.26"))
     REFINER_THRESHOLD = 0.45
@@ -188,7 +195,7 @@ class CFG:
 
 if CFG.SUBMISSION_VARIANT not in ("prod", "plain_mhsa_f2",
                                   "prod_v94", "probe_refprop",
-                                  "prod_dedup030"):
+                                  "prod_dedup030", "prod_v96full"):
     raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")
 
 # prod_dedup030: fold2 YOLO候補で fit したグローバル isotonic (conf→E[hit-IoU])
@@ -412,8 +419,9 @@ refiner_label, refiner_path = (
     ("refiner_plain_mhsa_f2", plain_ckpt)
     if CFG.SUBMISSION_VARIANT == "plain_mhsa_f2"
     else ("refiner_all_data", ALLDATA_CKPT))
+yolo_label = "yolo_full_fold2" if CFG.SUBMISSION_VARIANT == "prod_v96full" else "yolo_fold2"
 for label, path in [
-    ("yolo_fold2", yolo_weight_paths.get(CFG.SINGLE_FOLD)),
+    (yolo_label, detector_ckpt),
     (refiner_label, refiner_path),
 ]:
     if path and Path(path).exists():
@@ -513,6 +521,20 @@ else:
 OUTPUT_PATH = (WORK_ROOT / f"submission{_conf_tag}.csv"
                if CFG.SUBMISSION_VARIANT == "prod"
                else WORK_ROOT / f"submission_{CFG.SUBMISSION_VARIANT}{_conf_tag}.csv")''')
+    # 検出器を提出バリアントに応じて解決(prod_v96full=全データ学習 YOLO、
+    # それ以外=fold2 YOLO)。欠落時は fold 重みへフォールバックせず停止する
+    old_yolo = "yolo_model = YOLO(str(yolo_weight_paths[CFG.SINGLE_FOLD]))"
+    assert src12.count(old_yolo) == 1, "cell12 yolo anchor mismatch"
+    src12 = src12.replace(old_yolo, """if CFG.SUBMISSION_VARIANT == "prod_v96full":
+    detector_ckpt = resolve_pretrained(["yolo_full_fold2_best.pt"])
+    if detector_ckpt is None:
+        raise FileNotFoundError(
+            "prod_v96full の検出器重み yolo_full_fold2_best.pt が見つかりません。"
+            "repo weights/、重み dataset、または Drive artifacts に配置してください")
+else:
+    detector_ckpt = yolo_weight_paths[CFG.SINGLE_FOLD]
+print(f"detector: {detector_ckpt}")
+yolo_model = YOLO(str(detector_ckpt))""")
     # refiner を提出バリアントに応じて解決(prod=all-data EdgeAtt、
     # plain_mhsa_f2=添付 dataset/Drive の ablation plain-MHSA fold2 重み)
     old_refiner = """refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
@@ -529,7 +551,7 @@ refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
     refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
 elif CFG.SUBMISSION_VARIANT in ("prod", "prod_v94", "probe_refprop",
-                                "prod_dedup030"):
+                                "prod_dedup030", "prod_v96full"):
     refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
 else:
@@ -650,7 +672,8 @@ print({"rows": len(submission), "images_with_predictions":
                    'f"重複: {image_id}"\n    occ |= decoded.astype(bool)')
     assert old_overlap in src14, "cell14 overlap anchor mismatch"
     src14 = src14.replace(old_overlap, """    overlap_n = int(np.logical_and(occ, decoded.astype(bool)).sum())
-    if CFG.SUBMISSION_VARIANT in ("prod", "plain_mhsa_f2", "prod_dedup030"):
+    if CFG.SUBMISSION_VARIANT in ("prod", "plain_mhsa_f2", "prod_dedup030",
+                                  "prod_v96full"):
         assert overlap_n == 0, f"重複: {image_id}"
     overlap_pixels += overlap_n
     occ |= decoded.astype(bool)""")

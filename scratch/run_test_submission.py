@@ -84,6 +84,8 @@ REFINER_VARIANTS = {
 # --weights-dir にダウンロードした dataset を渡すと Drive 無しで再現できる。
 DATASET_FILENAMES = {
     "yolo": f"yolo_fold{SINGLE_FOLD}_best.pt",
+    # 第2提出 prod_v96full の全データ学習 YOLO (RESEARCH_LOG §2.68)
+    "yolo_full": "yolo_full_fold2_best.pt",
     "edgeatt_all": "refiner_all_data.pt",
     "plain_mhsa_f2": "ablation_plain_mhsa_seed8407_fold2.pt",
     "edgeatt_f2": "ablation_edge_att_seed8407_fold2.pt",
@@ -93,12 +95,12 @@ DATASET_FILENAMES = {
 PLAIN_MHSA_ALT_NAME = "refiner_plain_mhsa_fold2_s8407.pt"
 
 
-def resolve_weights_dir_paths(weights_dir: Path, refiner: str):
+def resolve_weights_dir_paths(weights_dir: Path, refiner: str, detector: str = "fold2"):
     """--weights-dir 内の yolo/refiner 重みパスを解決して返す。"""
     if not weights_dir.is_dir():
         raise FileNotFoundError(
             f"--weights-dir が存在しません: {weights_dir}")
-    yolo_src = weights_dir / DATASET_FILENAMES["yolo"]
+    yolo_src = weights_dir / DATASET_FILENAMES["yolo_full" if detector == "full" else "yolo"]
     refiner_src = weights_dir / DATASET_FILENAMES[refiner]
     if not refiner_src.exists() and refiner == "plain_mhsa_f2":
         alt = weights_dir / PLAIN_MHSA_ALT_NAME
@@ -186,6 +188,8 @@ def _run_submission(local: Path) -> int:
     parser.add_argument("--refiner", choices=tuple(REFINER_VARIANTS),
                         default="edgeatt_all",
                         help="prod モードで使う refiner バリアント")
+    parser.add_argument("--detector", choices=("fold2", "full"), default="fold2",
+                        help="prod モードの検出器 (full = 第2提出 prod_v96full の全データ学習 YOLO)")
     parser.add_argument("--drive", type=Path, default=None)
     parser.add_argument("--weights-dir", type=Path, default=None,
                         help="Kaggle 重み dataset のダウンロード先。指定時は"
@@ -218,13 +222,14 @@ def _run_submission(local: Path) -> int:
     refiner_filename, refiner_kind = REFINER_VARIANTS[args.refiner]
     if args.weights_dir is not None:
         yolo_src, refiner_src = resolve_weights_dir_paths(
-            args.weights_dir, args.refiner)
+            args.weights_dir, args.refiner, args.detector)
     else:
-        yolo_src = (drive / "solar_filament_v30" / "runs"
-                    / f"yolo_fold_{SINGLE_FOLD}" / "weights" / "best.pt")
+        yolo_run = ("v96_data_scaling/yolo_full_fold2" if args.detector == "full"
+                    else f"yolo_fold_{SINGLE_FOLD}")
+        yolo_src = drive / "solar_filament_v30" / "runs" / yolo_run / "weights" / "best.pt"
         refiner_src = artifacts / refiner_filename
-    if args.mode == "a1" and args.refiner != "edgeatt_all":
-        raise ValueError("--refiner バリアントは prod モード専用です")
+    if args.mode == "a1" and (args.refiner != "edgeatt_all" or args.detector != "fold2"):
+        raise ValueError("--refiner / --detector バリアントは prod モード専用です")
     yolo_path = local_w / "yolo_fold2.pt"
     refiner_path = local_w / f"refiner_{args.refiner}.pt"
     for src, dst in ((yolo_src, yolo_path), (refiner_src, refiner_path)):
@@ -366,11 +371,12 @@ def _run_submission(local: Path) -> int:
 
     total_s = time.perf_counter() - started
     suffix = "" if args.refiner == "edgeatt_all" else f"_{args.refiner}"
+    suffix += "_v96full" if args.detector == "full" else ""
     tag = f"{args.mode}{suffix}"
     submission = pd.DataFrame(rows, columns=["filament_id", "segmentation_rle"])
     out_csv = args.out / f"submission_{tag}.csv"
     submission.to_csv(out_csv, index=False, lineterminator="\n")
-    efficiency = {"mode": args.mode, "refiner": args.refiner,
+    efficiency = {"mode": args.mode, "refiner": args.refiner, "detector": args.detector,
                   "test_images": len(test_files),
                   "total_wall_s": round(total_s, 1),
                   "s_per_image": round(total_s / len(test_files), 3),
