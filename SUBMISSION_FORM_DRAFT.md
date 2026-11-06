@@ -32,7 +32,8 @@
   `solar_filament_submission_reproduction.ipynb`・`report/main.pdf` が揃う。
   抽出側の追従ブランチは ER-FlowScan の `solar-solution-v4`
   (sync commit = main@837eccc3)。以降の更新は standalone main へ直接同期済み
-  (最新 `415d788c` = conf032 成果物含む)。
+  (最新 `2a8e1c00` = v99-v108 最終実験キャンペーン §2.75-§2.86 全記録・
+  v96-full byte-identical 再現証跡・conf032 成果物を含む)。
 - ~~B. モノレポを公開~~: 不採用 (他モジュールを晒すため)。
 - ~~weights dataset `shingo257/solar-filament-2026-weights` の public 化は
   要件再確認まで保留 (2026-10-19 ユーザー決定)。~~ **要件確定済み
