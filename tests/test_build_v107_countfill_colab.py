@@ -53,8 +53,8 @@ def test_config_declares_all_arms_and_params(nb):
     assert "'countfill_k': 7" in config and "'countfill_k': 9" in config
     assert "'demote_mode': 'ratio'" in config and "'demote_tau': 0.30" in config
     assert "'demote_mode': 'aspect'" in config and "'demote_tau': 1.5" in config
-    assert "'ctx_ensemble': ((1.45, 1.85), 'union')" in config
-    assert "'ctx_ensemble': ((1.45, 1.85), 'intersect')" in config
+    assert "'ctx_ensemble': [[1.45, 1.85], 'union']" in config
+    assert "'ctx_ensemble': [[1.45, 1.85], 'intersect']" in config
     assert "v107_countfill_colab_manifest.json" in config
     assert "GATE_DELTA = 0.010" in config
     for kept in ("REFINER_THRESHOLD = 0.45", "DROP_THRESHOLD = 0.90",
@@ -99,3 +99,20 @@ def test_header_declares_preregistered_gate(nb):
     assert "fold2 単独では提出を変更しない" in hdr
     assert "countfill_k7" in hdr
     assert "ctx_union" in hdr
+
+
+def test_params_of_arm_json_roundtrip_preserves_contract_equality(nb):
+    """Ensure CONTRACT['params_of_arm'] survives JSON round-trip for manifest resume."""
+    stripped = "\n".join(
+        line for line in _src(nb["cells"][1]).splitlines() if not line.lstrip().startswith("%")
+    )
+    tree = ast.parse(stripped)
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "CFG")
+    assign = next(
+        n for n in cls.body
+        if isinstance(n, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == "PARAMS_OF_ARM" for t in n.targets)
+    )
+    params_of_arm = ast.literal_eval(assign.value)
+    contract_params = {k: dict(v) for k, v in params_of_arm.items()}
+    assert json.loads(json.dumps(contract_params)) == contract_params

@@ -56,12 +56,12 @@ def test_config_declares_all_arms_and_params(nb):
     assert "'refiner_threshold': 0.40" in config and "'refiner_threshold': 0.50" in config
     assert "'drop_threshold': 0.80" in config and "'drop_threshold': 0.97" in config
     assert "'min_area': 10" in config and "'min_area': 40" in config
-    assert "'predict_iou': 0.35" in config
+    assert "'combo_960_nms35': {'predict_iou': 0.35, 'imgsz': 960}" in config
     assert "v103_recipe/yolo_imgsz960_fold2/weights/best.pt" in config
     assert "v106_rescue_colab_manifest.json" in config
     assert "GATE_DELTA = 0.010" in config
     for kept in ("REFINER_THRESHOLD = 0.45", "DROP_THRESHOLD = 0.90",
-                 "MIN_AREA = 20", "PREDICT_IOU = 0.55", "PRIMARY_CONF = 0.26"):
+                 "MIN_AREA = 20", "PREDICT_IOU = 0.55", "YOLO_IMGSZ = 1280", "PRIMARY_CONF = 0.26"):
         assert kept in config, kept
 
 
@@ -85,7 +85,9 @@ def test_run_cell_has_rescue_wrapper_and_gate(nb):
     assert "CFG.REFINER_THRESHOLD = p[\"refiner_threshold\"]" in run
     assert "CFG.DROP_THRESHOLD = p[\"drop_threshold\"]" in run
     assert "CFG.MIN_AREA = p[\"min_area\"]" in run
+    assert '"imgsz": 1280' in run
     assert "CFG.PREDICT_IOU = p[\"predict_iou\"]" in run
+    assert "CFG.YOLO_IMGSZ = p[\"imgsz\"]" in run
     assert "CFG.WEIGHTS_OF_ARM[arm]" in run
     assert "delta = by_conf[str(CFG.PRIMARY_CONF)][\"pq\"] - prod_pq" in run
 

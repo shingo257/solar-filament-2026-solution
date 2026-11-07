@@ -142,15 +142,16 @@ def test_repro_setup_has_dedup030_variant():
 def test_repro_iso_arrays_match_fitted_map():
     import numpy as np
 
-    npz = np.load(repro.MODULE / "artifacts" / "v97_global_iso_yolo.npz")
+    fixture_path = repro.MODULE / "output" / "v97" / "v97_global_iso_yolo.json"
+    ref = json.loads(fixture_path.read_text(encoding="utf-8"))
     ns = {"np": np}
     setup = repro.SETUP_CELL
     for name, key in (("_DEDUP030_ISO_X", "x"), ("_DEDUP030_ISO_Y", "y")):
         start = setup.index(f"{name} = np.array(") + len(f"{name} = np.array(")
         end = setup.index(")", start)
         arr = eval(setup[start:end], ns)  # 配列リテラルのみ (np.array(...) 内部)
-        np.testing.assert_allclose(arr, npz[key], atol=1e-6, err_msg=name)
-    assert float(npz["lam"]) == pytest.approx(0.22210895069309958)
+        np.testing.assert_allclose(arr, ref[key], atol=1e-6, err_msg=name)
+    assert float(ref["lam"]) == pytest.approx(0.22210895069309958)
 
 
 def test_repro_cell12_dedup030_path(nb_repro):

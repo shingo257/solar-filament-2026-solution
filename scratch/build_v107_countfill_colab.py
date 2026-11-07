@@ -147,8 +147,8 @@ def patch_config(src: str) -> str:
                        "        'countfill_k9': {'countfill_k': 9},\n"
                        "        'demote_ratio030': {'demote_mode': 'ratio', 'demote_tau': 0.30},\n"
                        "        'demote_aspect15': {'demote_mode': 'aspect', 'demote_tau': 1.5},\n"
-                       "        'ctx_union': {'ctx_ensemble': ((1.45, 1.85), 'union')},\n"
-                       "        'ctx_intersect': {'ctx_ensemble': ((1.45, 1.85), 'intersect')}}")
+                       "        'ctx_union': {'ctx_ensemble': [[1.45, 1.85], 'union']},\n"
+                       "        'ctx_intersect': {'ctx_ensemble': [[1.45, 1.85], 'intersect']}}")
     src = replace_once(src, 'RUNS_ROOT = DRIVE_ROOT / "runs" / "v96_data_scaling"',
                        'RUNS_ROOT = DRIVE_ROOT / "runs" / "v107_countfill"')
     src = replace_once(src, 'YOLO_ROOT = DRIVE_ROOT / "yolo_datasets" / "v96_data_scaling"',

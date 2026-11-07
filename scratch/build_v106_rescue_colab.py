@@ -150,7 +150,7 @@ def patch_config(src: str) -> str:
                        "        'drop097': {'drop_threshold': 0.97},\n"
                        "        'minarea10': {'min_area': 10},\n"
                        "        'minarea40': {'min_area': 40},\n"
-                       "        'combo_960_nms35': {'predict_iou': 0.35}}\n"
+                       "        'combo_960_nms35': {'predict_iou': 0.35, 'imgsz': 960}}\n"
                        "    WEIGHTS_OF_ARM = {'combo_960_nms35':\n"
                        "                      'runs/v103_recipe/yolo_imgsz960_fold2/weights/best.pt'}")
     src = replace_once(src, 'RUNS_ROOT = DRIVE_ROOT / "runs" / "v96_data_scaling"',
@@ -190,11 +190,11 @@ def patch_run(src: str) -> str:
     manifest["datasets"][arm] = stats
     by_conf = evaluate_yolo(weights, arm)""",
         """    p = {"rescue_tau": None, "demote_tau": None, "refiner_threshold": 0.45,
-         "drop_threshold": 0.90, "min_area": 20, "predict_iou": 0.55}
+         "drop_threshold": 0.90, "min_area": 20, "predict_iou": 0.55, "imgsz": 1280}
     p.update(CFG.PARAMS_OF_ARM.get(arm, {}))
     CFG.RESCUE_TAU = p["rescue_tau"]; CFG.DEMOTE_TAU = p["demote_tau"]
     CFG.REFINER_THRESHOLD = p["refiner_threshold"]; CFG.DROP_THRESHOLD = p["drop_threshold"]
-    CFG.MIN_AREA = p["min_area"]; CFG.PREDICT_IOU = p["predict_iou"]
+    CFG.MIN_AREA = p["min_area"]; CFG.PREDICT_IOU = p["predict_iou"]; CFG.YOLO_IMGSZ = p["imgsz"]
     if arm in CFG.WEIGHTS_OF_ARM:
         weights = CFG.DRIVE_ROOT / CFG.WEIGHTS_OF_ARM[arm]
         stats = {"infer_only": True, "weights_override": CFG.WEIGHTS_OF_ARM[arm]}

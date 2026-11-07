@@ -3699,7 +3699,6 @@ dedup030 の LB 0.39 同点と整合し、受理側改善の test 転移限界�
 検出器多様化によるさらなる局所改善の探索はここで打ち止めとする
 (v98b で質の異なる2検出器族・量の異なる3モデル全て棄却済み)。
 
-
 ### 2.75 v99 事前登録: dedup030 受理規則の fold0/fold1 独立再現 (2026-11-03)
 
 **動機**: §2.72 の dedup030 (+0.0075 halfcross) は fold2 上で dedup・λ を
@@ -4388,7 +4387,7 @@ fold2 単独では提出を変更しない。** 探索 arm が多いため多重
 観点から単発の fold2 プラスは絶対に昇格しない。想定 ~3-4h。
 manifest `artifacts/v106_rescue_colab_manifest.json` へ逐次保存。
 
-### 2.84追補 — v106 判定: 全 10 arm 棄却。existence 救済・後処理パラメータ・加算テスト全て閉鎖 (2026-11-05)
+### 2.84追補 — v106 判定: 全 10 arm 棄却。existence 救済・後処理パラメータ閉鎖 (combo_960_nms35 は推論解像度交絡を開示) (2026-11-05)
 
 manifest `artifacts/v106_rescue_colab_manifest.json` (fold2 OOF、prod sanity +9e-06)。
 
@@ -4399,7 +4398,7 @@ manifest `artifacts/v106_rescue_colab_manifest.json` (fold2 OOF、prod sanity +9
 | `refiner_th040` / `refiner_th050` | −0.0004 / +0.0003 | ノイズ幅内。0.45 は実質最適域 |
 | `drop080` / `drop097` | −0.0003 / +0.0002 | 同上 |
 | `minarea10` / `minarea40` | **±0.0000** | 変更帯に該当提案ゼロ = min_area 20 は非拘束と確定 |
-| `combo_960_nms35` | −0.0026 | **sub-gate 信号同士は加算されず打消し** — imgsz960(+0.0023) と nms035(+0.0023) の組合せは負。「2つの微益でゲート到達」仮説を閉鎖 |
+| `combo_960_nms35` | −0.0026 | **実行時は推論解像度交絡あり (未確定)** — 初回ビルダーが `CFG.YOLO_IMGSZ=960` 指定を欠落し 960 学習重みを `imgsz=1280` で推論していた（ビルダー/ノートブック修正済み）。1280 推論では負だが、native `imgsz=960` + `nms035` の加算/打消しは未検証として留保 |
 
 **v106 の貢献**: 「refiner 出力を existence の二次信号として使う」
 発想を3方向 (rescue/demote/score) で閉鎖 — refiner は提案内を
@@ -4499,3 +4498,218 @@ fold-2 側は batch=4 で完走していたため厳密な paired ではない�
 fold-0 で −0.004 に反転し、±0.002 以上の fold 間分散があることを
 実証した — fold 単独昇格を禁止したゲート規律の正当性が確認された。
 最終提出 pair は従来どおり prod (57039986) + v96-full (57897560)。
+
+### 2.87 v109 事前登録: refiner TTA + 同一モデル多スケール union + 未 sweep だった CROP_SIZE/ctx 単値 + conf 細粒度 (事前登録, 2026-11-05)
+
+v108 で「全実験系閉鎖」を宣言したが、残存する未試行機構の棚卸しで
+推論のみの残余 arm を特定した。全て学習なし・推論のみ。
+
+**Arm 一覧 (固定)**:
+
+| arm | 変更 (prod → arm) | 機構 |
+|---|---|---|
+| `refine_tta4` | refiner 確率マップを二面体4変換 (identity/hflip/vflip/hvflip) で平均 | refiner TTA は一度も未試行 (検出器 TTA は閉鎖済み)。境界品質向き |
+| `ms_union960` | 同一 prod 重みを imgsz 1280+960 で2回推論し提案を併合 | 960「学習」は棄却済みだが同一モデルの多スケール推論 union は未試行。存在の多様性向き |
+| `crop384` / `crop480` | CROP_SIZE 320→{384,480} | CROP_CONTEXT は掃引済みだが絶対 crop サイズは未 sweep。refiner 入力解像度・出力粒度を変える (入力分布シフトの caveat あり) |
+| `ctx145` / `ctx185` | CROP_CONTEXT 1.65→{1.45,1.85} 単値 | v107 は 2窓 ensemble のみで単値は未試行 |
+| `conf_fine` | CONF_SWEEP を {0.15,0.2,0.22,0.24,0.26,0.28,0.30,0.32} に拡張 | 運用点のみ・機構不変の診断 arm (verdict は常に diagnostic) |
+
+**採点経路**: 無改変。refine_tta4/ctx は refine_proposal を同等手順で
+ラップ (v107 と同型、prod 既定では元関数と同一経路)。ms_union は
+YOLO コンストラクタをラップして predict を2スケール併合
+(結果オブジェクトは最小互換 namespace)。crop/conf_fine は
+CFG 実行時参照パラメータの差替えのみ。
+
+**ゲート (固定)**: Δ = PQ(arm,0.26) − PQ(prod,0.26) >= **+0.010** →
+fold0 honest 複製へ。fold2 単独では提出を変更しない。conf_fine は
+運用点の診断であり、仮に細粒度点で高値が出ても fold0 paired 複製
+(+0.003 以上) を経ない限り採用しない (§2.86 と同じ規律)。
+
+想定 ~1.5h。manifest `artifacts/v109_tta_colab_manifest.json` へ逐次保存。
+
+**v109 結果 (2026-11-06 完走、3 arm は実行欠陥で再測定中)**: prod
+0.4442468 paired。
+
+有効 arm (crop_size=320 確定): `refine_tta4` 0.444991 (Δ+0.0007
+reject)、`ms_union960` 0.438038 (−0.0062 reject)、`crop384`
+0.442315 (−0.0019 reject)、`crop480` 0.441317 (−0.0029 reject)。
+
+**実行欠陥の開示**: arm ループの per-arm 既定値が `CFG.CROP_SIZE` /
+`CFG.CONF_SWEEP` を参照し、`crop480` が CFG を書き換えた後の
+`ctx145`/`ctx185`/`conf_fine` は **crop_size=480 経路**で評価された
+(`conf_fine` の値が crop480 と bit 完全一致するのが証拠)。
+一次値は Drive `v109_tta_colab_manifest_firstpass_contaminated.json`
+に退避保存: ctx145 0.439355 / ctx185 0.441491 / conf_fine 0.441317
+(全て crop480+該当 ctx の複合値であり ctx 単値ではない)。
+昇格判定への影響はなし (全 arm reject 方向)。既定値を prod リテラル
+(320, sweep 固定) に修正 (642215c8)、汚染キーを manifest から除去し
+該当3 arm のみ再実行予定 — 結果は追記する。
+
+**v109 再測定結果 (2026-11-07 完走)**: 修正版 (既定 prod リテラル) で
+汚染3 arm を再評価。`ctx145` **0.397399** (Δ−0.0468、context 縮小は
+refiner に壊滅的 — 汚染値 0.439355 が実害を隠していた)、`ctx185`
+0.441362 (−0.0029)、`conf_fine` @0.26 = **0.444247 で prod と bit
+完全一致** (リテラル既定の修正が正しいことの実証、diagnostic として
+prod 運用点を正しく再現)。
+
+**v109 全閉鎖**: 全7 arm reject。最良は refine_tta4 (+0.0007)。
+context 1.65・crop 320 が両側劣位の最適点として確定し、
+キャンペーンで未試行だった推論機構は全て負方向で閉じた。
+
+### 2.88 v110 事前登録: proposal-matched refiner 再学習 — GT crop ↔ proposal crop の分布ギャップを塞ぐ (事前登録, 2026-11-05)
+
+v106 で「GT-positive crop でしか学習していない refiner の平均確率は
+existence を識別できない」ことが確定した。本実験はその原因である
+**train/test 入力分布のミスマッチ**を直接塞ぐ、残る唯一の構造的機構。
+
+**設計 (固定)**: prod 検出器を学習 folds (0,1) の画像で推論
+(`conf>=0.08` = PREDICT_CONF_FLOOR、imgsz 1280、iou 0.55、
+agnostic_nms、retina_masks = 推論時と同一)。各提案 mask をそのファイルの
+**全 annotator レコードの GT** と IoU 照合 (採点と同じ pooled 基準):
+- IoU>=0.5 → 正例: crop = 提案 mask の square box (ctx 1.65、min 96、
+  refine_proposal と同一手順)、target = 最良一致 GT mask を同じ box で crop
+- IoU<0.5 → 負例: 同じ crop、target = 空マスク (refiner がジャンクを
+  抑制することを学習 = mean prob が真の存在信号になる可能性)
+
+**refiner 学習は prod プロトコルと同一**: EdgeAtt (MediSegEdgeAttUNet)、
+AdamW lr 2e-4 wd 1e-4、cosine、epochs 14、seed 3407、AMP、
+refiner_loss (0.35 BCE + 0.65 soft-dice + 0.15 edge-L1)、
+batch 候補 (8,6,4,2)、augment (rot90/flip/輝度)、
+valid = fold-2 GT crop (prod refiner と同じ選択基準 — paired 維持)。
+
+**開示 caveat**: prod 検出器は folds (0,1) を学習済み → 提案は
+in-sample で楽観バイアス (負例の割合が test 時より少ない)。それでも
+GT box crop → proposal mask crop の一次ギャップは縮む。
+
+**Arm (固定)**: 
+- `prop_matched`: prod detector + prop-matched refiner (refiner のみ差替)
+- `prop_rescue050`: 同 refiner + conf∈[0.08,0.26) の提案で refiner 平均
+  確率 >= 0.50 なら 0.2601 ブースト (v106 と同一式 — prop-matched で
+  識別力が改善したかの直接検証)
+
+**ゲート (固定)**: Δ@0.26 >= **+0.010** → fold0 honest 複製。
+fold2 単独では提出不変。想定 ~2h (提案生成 ~15分 + 学習 ~40分 + 評価3回)。
+manifest `artifacts/v110_propmatch_colab_manifest.json`。
+
+**v110 結果 (2026-11-06 完走)**: prod 0.4442468 paired。
+`prop_matched` 0.440713 (Δ@0.26 = **−0.0035**、0.15-0.32 全 conf 帯で
+prod 未回)、`prop_rescue050` 0.388774 (Δ = **−0.0555**、rescue 依然
+壊滅的)。prop_rescue050@0.32 = prop_matched@0.32 = 0.436327 で一致
+(rescue は conf<0.26 のみ作用するため高 conf で同一 — sanity 一致)。
+**判定: proposal-matched 学習は existence 識別を回復しなかった** —
+GT crop ↔ proposal crop の分布ギャップ説は rescue 失敗の主因では
+なかったことが確定。mean-prob を使う存在性選択は全経路で棄却済み
+(v106 → v110) であり、refiner 側の構造的機構はここで全閉鎖。
+manifest `v110_propmatch_colab_manifest.json`、提案統計
+`v110_proposals_train01.json`。
+
+### 2.89 v111 事前登録: test 画像疑似ラベル半教師 — 同一分布の最後の未学習データ源 (事前登録, 2026-11-05)
+
+fold 分割を汚さず半教師学習を正直に測れる唯一の未学習データ源は
+**コンペ test 画像 180 枚**である。folds(0,1) 学習の prod パイプライン
+(教師) で test 画像を疑似ラベル化し、folds(0,1)+疑似ラベルで再学習、
+fold-2 honest eval で効果を測る。fold-2 は疑似ラベル生成・学習・val の
+いずれにも非接触のため transductive 汚染はない。
+
+**既存の負の事前エビデンス (正直な開示、期待値は低め)**:
+
+- v48/v49 (§2.4): 外部 GONG 別日付画像の疑似ラベルは fold0 Δ-0.0061 /
+  fold1 Δ-0.0058 で不採用確定。ただし疑似ラベル源が別年代ドメインであり
+  「年代偏り仮説」の検証だった — test 画像は同一分布で状況が異なる
+- 他チーム kernel 分析 (§2.79 時点記録): self-training (conf>=0.75) が
+  0.417→0.393 に明確悪化。raw 検出器ラベル・refiner 不使用の単純方式
+本実験は両者と質的に異なる: (a) 疑似ラベル源 = test 画像そのもの
+(同一分布・提出対象に直結)、(b) 教師ラベル = refiner + disjoint
+ownership まで通した prod 最終出力 (raw 検出器 mask ではない)。
+
+**設計 (固定)**: prod 検出器 (`runs/yolo_fold_2/best.pt` = folds(0,1)
+学習 → test は out-of-sample) + fold-2 refiner で test 180 枚を推論。
+推論経路は採点と同一 (floor 0.08 → refine → conf>=0.26 & MIN_AREA
+保持 → ownership/disjoint)。disjoint mask を YOLO polygon (最大輪郭,
+CHAIN_APPROX_SIMPLE, 正規化) に変換し `yolo_datasets/v111_pseudo/` に
+保存 (画像単位で逐次書き込み + PSEUDOLABELS_COMPLETE マーカーで冪等)。
+学習データ = folds(0,1) 全 annotator ラベル (prod と同一) + test 疑似
+ラベル。val = fold-2 (grouped_folds.csv 凍結 SHA256 検証)。
+学習ハイパラは prod と完全一致 (70ep, imgsz 1280, AdamW, mask_ratio=2,
+cls=0.5, 同一 aug、seed 3407+fold)。batch は 4、L4 OOM 時のみ 2 へ
+1回 fallback (v108 と同一機構、manifest に batch_fallback を記録)。
+test 前処理は PREPROC_CACHE 優先・無ければ solar_three_channel q96 を
+inline 計算 (submission_reproduction.ipynb と同一式)。
+
+**Arm (固定)**: `pseudotest` 単発。prod baseline は同一セッションで
+paired 再測定 (frozen eval 経路無改変)。
+
+**ゲート (固定)**: Δ@0.26 >= **+0.010** → fold0 honest 複製へ
+(複製は folds(1,2) 学習 + 同一疑似ラベルセットで fold-0 eval)。
+fold2 単独では提出不変。**昇格には追加条件: コンペ規約で test 画像の
+半教師利用が許容されることの確認** — 本実験は測定であり、規約確認は
+採用ゲートの一部として固定する。
+想定 ~4h (疑似ラベル生成 ~30分 + 学習 ~2h + 評価 ~45分)。
+manifest `artifacts/v111_pseudo_colab_manifest.json`。
+
+**v111 結果 (2026-11-06 完走)**: 疑似ラベル = test 180枚 → **1,172
+個体** (6.5個体/枚、prod の val 密度 ~6.4 と一致、raw floor 提案
+2,518件)。学習 191.6分、batch4 fallback なし。prod 0.4442468 paired。
+
+`pseudotest` PQ@0.26 = **0.451248**、Δ = **+0.0070** → ゲート
++0.010 未達、verdict `reject_v111_fold2`。提出 pair 不変。
+ただし mask_ratio1 (+0.0065、fold-0 で −0.004 反転) を超える
+**キャンペーン最大の fold-2 正値**。
+
+探索的診断 (判定不使用): conf 曲線の最適が低 conf 側へ移動 —
+pseudotest は 0.20 で 0.451642 (paired Δ **+0.0144**)、0.15 でも
++0.0101。疑似ラベル学習が検出器の conf 校正を変えた兆候。
+単点 conf への post-hoc 採用はしない (事前登録の運用点は 0.26)
+が、v112 複製の裏付け情報として記録する。
+
+→ ユーザー判断で **v112 fold-0 honest 複製 (§2.90)** へ。
+manifest `v111_pseudo_colab_manifest.json`。
+
+### 2.90 v112 事前登録: pseudotest の fold-0 honest 複製 — v111 +0.0070 の検証 (事前登録, 2026-11-06)
+
+v111 (§2.89) は test 疑似ラベル半教師で fold-2 Δ=**+0.0070** を記録したが、
+ゲート +0.010 未達で公式棄却となった。しかし mask_ratio1 (+0.0065) を
+超えるキャンペーン最大の正値であり、ユーザー判断で **ゲート到達不要の
+探索的複製**を実施する (v108 と同じ複製プロトコル)。
+
+**設計 (固定)**: v111 の fold-0 ミラー。教師 = fold-0 prod
+(`runs/yolo_fold_0/best.pt` = folds(1,2) 学習 → test は out-of-sample)
++ fold-0 EdgeAtt refiner。test 180 枚を同一経路 (floor 0.08 → refine →
+conf>=0.26 & MIN_AREA → ownership/disjoint) で疑似ラベル化
+(`pseudotest_teacher_f0`)。学習 = folds(1,2) 実ラベル + 疑似ラベル、
+prod ハイパラ完全一致、batch4 (OOM のみ 2 へ 1回 fallback・記録)。
+eval = fold-0 honest (fold-0 は生成・学習・val 全て非接触)。
+
+**対照 (固定)**: prod fold-0 baseline = **0.44413694566994816** (v108 §2.86
+確定値) — 同一セッションでも paired 再測定する。
+
+**判定 (固定)**: Δ@0.26 >= **+0.003** → `cross_fold_verified`
+(v108 と同じ複製ゲート)。+0.003 未満・負 → `unverified_fold0` で
+v111 の正値は fold 依存の揺らぎと確定し疑似ラベル系を閉鎖。
+verified の場合のみ次の採用検討へ進み、**採用には MAGFiLO 規約で
+test 画像半教師利用の許容確認が必須** (§2.89 から継続の条件)。
+
+想定 ~4h (疑似ラベル ~30分 + 学習 ~2h + 評価 ~45分)。
+manifest `artifacts/v112_pseudo_f0_colab_manifest.json`。
+
+### 2.91 v113 条件付き事前登録: pseudo round-2 (実行は v112 verified のみ, 2026-11-06)
+
+v112 が `cross_fold_verified` となった場合のみ実行する条件付き設計:
+v111/v112 で学習した疑似ラベル込み検出器を**新しい教師**にして test
+を再疑似ラベル化 (round-2)、再学習して効果の継続・減衰を測る
+(NoisyStudent 型反復)。教師・データ・ゲートの詳細は v112 結果を見て
+から固定する — 本節は「実行資格は v112 verified のみ」という
+開始条件の固定であり、結果依存で設計を変えないよう arm 定義は
+v112 判定後に本ログへ追記する。v112 が unverified なら実行しない。
+
+**v112 結果 (2026-11-07 完走)**: prod_f0 0.4441369 paired (v108 確定値と
+一致)。`pseudotest_f0` PQ@0.26 = 0.440407、Δ = **−0.0037** →
+`unverified_fold0`。
+
+v111 の fold-2 +0.0070 は fold-0 で −0.0037 に反転し複製しなかった。
+mask_ratio1 (+0.0065 → fold-0 −0.0040) と同型で、**fold-2 の正信号が
+fold-0 で反転するのはこれで2度目** — 単一 fold の改善幅 ~±0.007 は
+評価ノイズ床 (§2.5) の範囲内であることが再確認された。
+疑似ラベル半教師方向はここで閉鎖。§2.91 の v113 は開始条件
+(v112 verified) を満たさず**実行しない**。提出 pair は不変
+(prod 57039986 + v96-full 57897560)。
