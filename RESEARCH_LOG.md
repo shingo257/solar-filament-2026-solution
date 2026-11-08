@@ -4713,3 +4713,103 @@ fold-0 で反転するのはこれで2度目** — 単一 fold の改善幅 ~±0
 疑似ラベル半教師方向はここで閉鎖。§2.91 の v113 は開始条件
 (v112 verified) を満たさず**実行しない**。提出 pair は不変
 (prod 57039986 + v96-full 57897560)。
+
+### 2.92 v114 事前登録: SAHI 型タイリング推論 — 小タイル拡大推論による解像度飢餓仮説の検証 (事前登録, 2026-11-07)
+
+画像は 2048×2048 だが prod 検出器は全画面 imgsz=1280 (原寸比 0.625×)
+でしか見ておらず、MIN_AREA=20px の小個体は 1280 換算で ~8px と解像度
+飢餓の可能性がある。v36/v101/v105 の imgsz sweep は全画面スケールのみを
+変えており、§2.21 の 2×2 タイル推論 (1152²/overlap 256 → imgsz 1280、
+原寸比 1.11× / prod 比 1.78×) は救出 TP が実在したものの tile-FP 氾濫で
+棄却された (`tile@0.26 = 0.4047`, `union@0.26 = 0.4116`)。本実験では
+**未試行の 1280 未満小タイルを imgsz=1280 へ拡大する超解像 SAHI 領域**を、
+Colab 凍結評価セルと mask-IoU>0.30 greedy 併合で検証する。
+
+**設計 (固定)**: prod fold-2 検出器をそのまま使い、推論のみをタイル化:
+- 画像を重複タイルに分割 (tile 640/overlap 128 → 4×4=16 枚、
+  tile 896/overlap 192 → 3×3=9 枚。端は画像端に吸着)
+- 各タイルを ndarray で imgsz=1280 推論 (`sahi640o128`: 原寸比 2.00× /
+  prod 1280 比 3.20×、`sahi896o192`: 原寸比 1.43× / prod 1280 比 2.29×)、
+  floor/iou/agnostic_nms/retina_masks は prod と同一
+- タイル局所 mask を bbox 短絡付き conf 降順 greedy mask-IoU > 0.30 で
+  重複除去し、生存提案のみ global 2048 canvas に配置
+- 残りは既存経路へそのまま (refine >=0.08、conf sweep、ownership/PQ 無改変)
+
+**Arm (固定)**: `sahi640o128`, `sahi896o192` (両方学習なし・推論のみ)。
+
+**caveat (開示)**: §2.21 と同様、細長いフィラメントのタイル境界切断と
+tile-FP 増加リスクがある — 部分検出の conf が全体検出を上回ると部分 mask が
+採用される危険。併合 IoU=0.30 greedy で吸収する設計だが、負方向なら
+切断・tile-FP 説と整合。
+
+**ゲート (固定)**: Δ@0.26 >= **+0.010** → fold0 honest 複製へ。
+fold2 単独では提出不変。想定 ~2h (16-9 tile ×235枚で推論が重い)。
+manifest `artifacts/v114_sahi_colab_manifest.json`。
+
+### 2.93 v115 事前登録: 異種検出器ファミリー (Mask R-CNN) — 単体性能 + cross-detector union (事前登録, 2026-11-07)
+
+全 ~60 arm は YOLO 系 + 独自 refiner の枠内だった。他チーム分析で
+「cross-detector true dedup」が lever と判明したが、それは**異種
+検出器の pool が前提** — YOLO 単系では原理的に再現不能だった。
+本実験は torchvision Mask R-CNN (ResNet50-FPN-v2, COCO pretrained)
+を導入し、2つの問いを分離する:
+
+- **問1 (単体)**: 異種検出器ファミリーは YOLO より素直に強いか
+- **問2 (union)**: YOLO ∪ MRCNN の dedup pool は受理パイプラインを
+  改善するか (他チームが +0.015 local を観測した機構の正直な試行)
+
+**設計 (固定)**:
+- `maskrcnn_resnet50_fpn_v2(weights="DEFAULT")`、box/mask head を前景 1 クラス
+  (背景込み `num_classes=2`, filament のみ) に差替 (`roi_heads.score_thresh=0.02`)。
+  入力 = prod と同じ前処理画像 (solar_three_channel
+  q96) を model 内部 transform で min_size=1280 に縮小 (prod imgsz と揃える)
+- 学習データ = folds(0,1) 全 annotator レコード (prod と同一規約)。
+  aug = hflip/vflip/rot90 のみ (2048² 正方形で box/mask が閉じる回転のみ)。
+  AdamW lr 1e-4 wd 1e-4、batch 2 (OOM のみ 1 へ 1回 fallback・記録)、
+  epochs 10、seed 3407+fold
+- eval = fold-2 honest。MRCNN 提案 (score>=0.02 まで保持、
+  refine 対象 >=0.08) を既存 refiner+ownership+PQ 経路へ流す
+  (提案の conf として MRCNN score を使用)
+
+**Arm (固定)**:
+- `mrcnn_raw`: MRCNN mask → ownership → PQ (refiner 不使用、detector 単体)
+- `mrcnn_ref`: MRCNN 提案 → refiner → ownership → PQ (refiner 効果の分離)
+- `union_yolo_mrcnn`: prod YOLO 提案 ∪ MRCNN 提案、conf 降順 greedy
+  mask-IoU>0.30 dedup → refiner → ownership → PQ
+  (**caveat**: 両 detector の score は未校正 — isotonic 無しの単純
+  conf 順位 pool という限定的試行。負でも「校正すれば」の逆推論はしない)
+
+**ゲート (固定)**: いずれかの arm で Δ@0.26 >= **+0.010** → fold0 honest
+複製へ (mrcnn は fold-0 用に folds(1,2) で再学習)。fold2 単独では
+提出不変。想定 ~4h (MRCNN 学習 ~2h + 推論/評価 ~1.5h)。
+manifest `artifacts/v115_mrcnn_colab_manifest.json`。
+
+**結果記録 (2026-11-08, fold-2 honest, 対照 prod@0.26 = 0.444247)**:
+
+| arm | PQ@0.26 | Δ | verdict |
+|---|---|---|---|
+| prod | 0.444247 | — | (基準) |
+| `mrcnn_raw` | 0.278306 | −0.1659 | reject_v115_fold2 |
+| `mrcnn_ref` | 0.299426 | −0.1448 | reject_v115_fold2 |
+| `union_yolo_mrcnn` | 0.347175 | −0.0971 | reject_v115_fold2 |
+
+- 学習: 758 record-level samples (folds(0,1) 全 annotator レコード)、
+  83.3 min、batch=2 (OOM fallback 無し)、固定 10ep last 重み (§2.93 開示の
+  probe 規約どおり)
+- `union` は tp 1945 / fn 840 (prod 1715/1070) で **recall 方向には効いた** が、
+  fp が 2745 (prod 750) に爆発し @0.26 では −0.097。全 conf 帯で prod 未達
+  (0.32 でも 0.364 < 0.4415)。未校正 score pool + MRCNN の大量低質提案が
+  主因と考えられるが、caveat 開示どおり逆推論はしない
+- MRCNN 単体は YOLO を大幅に下回る (0.278-0.299 vs 0.444)。10ep probe の
+  限界はあり得るが、昇格ゲートを理由に据えない — reject で確定
+
+**実装上の欠陥と修正 (開示)**: 初回実行で `CFG.YOLO_IMGSZ` 未定義により
+prod baseline が AttributeError (commit `35f39e77` で修正、CFG 消費属性を
+網羅する回帰テスト追加)。続く MRCNN 学習 batch 1 で
+`CUDA error: device-side assert` — GT box が排他座標 (`xs.max()+1`) で
+画像端個体が `x2=W` に触れ、roi_align 系カーネルの境界外サンプリングで
+assert した可能性が高い。torchvision `masks_to_boxes` と同じ inclusive
+座標 + 画像境界 clamp に修正 + CPU 側 target 検証 + failed_batch 診断を
+追加 (PR #630)。修正後は学習・評価が完走し上記結果が確定。いずれの
+欠陥も prod baseline/arm 定義/ゲートには影響せず、結果は修正後経路の
+正当な値である。
