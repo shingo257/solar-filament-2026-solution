@@ -1,5 +1,13 @@
 # 最終提出パッケージ — 作業メモ(2026-10-07)
 
+## 2026-11-09 更新
+
+- **Fig.3 (error_anatomy.png) 追加**: fold-2 OOF prod 実測の残存誤差2例
+  ((a) proposal-blind miss — conf0.02 でも候補無し、(b) near-miss IoU0.404)。
+  生成スクリプトは ER-FlowScan `scratch/make_qualitative_figures.py` (PR #645)、
+  原図は Drive `artifacts/qualitative/`。本文圧縮(weaknesses 列挙の圧縮・
+  fig:example 0.42lw)で **4p 維持を再確認**(latexmk ローカルビルド)。
+
 締切: **2026-11-15**(Googleフォーム経由で提出)。
 入賞発表 11-30 / IEEE BigData 12/14-17。
 
