@@ -4813,3 +4813,257 @@ assert した可能性が高い。torchvision `masks_to_boxes` と同じ inclusi
 追加 (PR #630)。修正後は学習・評価が完走し上記結果が確定。いずれの
 欠陥も prod baseline/arm 定義/ゲートには影響せず、結果は修正後経路の
 正当な値である。
+### 2.98 v120 事前登録: 検出器間コンセンサス・ゲート — union ではなく合意で提案を選ぶ (事前登録, 2026-11-09)
+
+**動機**: v115 `union_yolo_mrcnn` は FN −230 (1070→840) を救ったが
+FP が 750→2745 に氾濫して −0.097。逆方向 — **複数検出器の合意でのみ
+提案を放出** — は一度も試されていない。合意は相関のない FP を
+除外しつつ、独立系で検出される実物体は残すはず。
+
+**入力 (固定)**: fold-2 OOF 235 枚、detector 3 本 (いずれも
+folds(0,1) 学習で fold-2 honest):
+- `yolo`: prod yolo11m `runs/yolo_fold_2/weights/best.pt`
+  (manifest role `yolo` で binding 検証)
+- `crop`: v116 `runs/v116_croptrain/yolo_croptrain_fold2/weights/best.pt`
+  sha256 `c23b1bb79620c62fd85984d032310bae26c240fd1be0aaf7df364fbc560fbcda`
+  (trusted byte-pin — v116 manifest 記録値をここに事前固定)
+- `yolo26`: v117 `runs/v117_yolo26/yolo_yolo26m_fold2/weights/best.pt`
+  sha256 `0c8bb71f6ab4398aaea2b729992a3b88f3f4d707e0cbcbe35f1b82a2533db7a5`
+  (trusted byte-pin — v117 manifest 記録値をここに事前固定)
+
+**機構 (固定)**: 各 detector を conf floor 0.08・imgsz=1280・
+iou=0.55・agnostic_nms・retina_masks で推論 (prod 推論パラメータと
+同一)。全提案を mask-IoU>=0.5 の推移クラスタ (union-find、
+cross-detector edge のみ) にまとめ、arm ごとに放出:
+
+| arm | 放出ルール |
+|---|---|
+| `prod` | `yolo` 提案のみ conf>=0.26 (baseline sanity = 0.444238) |
+| `union3` | 全クラスタ、max-conf member の mask (union 参照) |
+| `union3_c26` | max member conf>=0.26 のクラスタ (v115 型 union) |
+| `cons2of3` | >=2 detector が支持 (floor 合意による低conf救済) |
+| `cons2of3_c26` | 支持 member の conf>=0.26 が >=2 detector (純粋合意) |
+| `cons3of3` | 3 detector 全員が支持 |
+
+放出後は prod と同一経路: edgeatt refiner (fold2_resume、manifest
+role `baseline`) → threshold sweep {0.35,0.40,0.45,0.50} → ownership
+drop_contained 0.90 → min_area 20 → pooled annotator-record 公式 PQ。
+`prod` arm は v76 系 baseline と byte 同一 semantics (sanity
+0.444238±0.001 を要求)。
+
+**ゲート (固定)**: いずれか arm で PQ(arm,0.45)−PQ(prod,0.45) >=
+**+0.010** → fold0 honest 複製へ (crop/yolo26 を folds(1,2) で
+再学習が必要、~8h)。fold2 単独では提出不変。
+
+**caveat (開示)**: (a) 3 detector は同ファミリー (YOLO 系 2 種 +
+crop 変種) で提案は強相関 — 相関 FP は合意をすり抜けるため期待値は
+低い (正直な見込み Δ~−0.01〜+0.005) (b) mrcnn は弱すぎるため
+member に入れない (c) cons2of3 は floor 0.08 の低conf合意救済であり
+「selector 不要の合意フィルタ」仮説の検証 (d) union3 は既知の壊滅を
+再確認する参照 arm。想定 ~2.5h (3 det 推論 ~30min + cluster ~10min +
+refine 6 arm ~1.5h)。成果物 Drive `solar_filament_v120/work/latest/`。
+
+**v120 結果 (2026-11-09 完走, `solar_filament_v120/work/latest/v120_summary.json`)**:
+
+prod sanity は v76 値と bit 一致 (0.444238, diff 0.0)。全 arm Δ@0.45:
+
+| arm | emitted/img | PQ@0.45 | Δ | 解釈 |
+|---|---|---|---|---|
+| prod | 7 | 0.444238 | — | sanity 一致 |
+| union3 | 13 | 0.380401 | −0.064 | floor 提案全放出 → 既知の壊滅を再確認 |
+| union3_c26 | 7 | 0.448831 | **+0.005** | 他 det singleton 追加も正効果 |
+| cons2of3 | 10 | 0.420487 | −0.024 | floor 合意救済は FP を拾いすぎ |
+| **cons2of3_c26** | 6 | **0.455788** | **+0.01155** | **gate +0.010 通過 → promote_candidate** |
+| cons3of3 | 8 | 0.444197 | −0.00004 | 全員一致は prod とほぼ同集合 |
+
+一貫した構造: prod singleton (1 det のみ検出) の大部分は FP で、
+≥2 det 合意フィルタが +0.0115。union3_c26 (+0.005) と両方向に整合
+— yolo 見逃し TP を他 det が拾い、yolo singleton FP を合意が落とす。
+閾値 sweep 全域 (0.35-0.50) で Δ~+0.011 と均一で単一点の揺らぎではない。
+ゲート Δ>=+0.010 通過 → §2.98 規定どおり fold0 honest 複製へ
+(crop/yolo26 を folds(1,2) で再学習 ~8h + fold0 eval)。fold2 単独では
+提出不変。caveat: ゲート差 +0.0016 の薄い margin — fold0 での再現が
+本当の判定。3 det は同系統 (YOLO 系) で FP 相関の懸念は残るが、
+emitted 7→6 で +0.0115 は FP 除去が実効したことを示唆。
+
+> ⚠️ **2026-11-10 追記 — 本表は漏洩の影響を受ける**: 後日発覚した v116
+> `build_crop_dataset` のバグ (`train_files` 全 file 使用) により `crop`
+> det は fold-2 GT を学習済みだった → 上記の fold-2 値 (特に +0.01155) は
+> 漏洩補助を含み **honest な証拠としては無効**。crop det の fold-2 での
+> 合意支持は記憶に依存するため真の consensus 効果は不明 — §2.99 の
+> fold-0 clean 複製 (修正版 v121a) が唯一の裁定者。詳細は §2.99 冒頭の
+> 漏洩開示を参照。
+
+### 2.99 v121 事前登録: cons2of3_c26 の fold-0 honest 複製 (事前登録, 2026-11-09)
+
+**動機**: v120 で `cons2of3_c26` (>=2 detector が conf>=0.26 で合意)
+が §2.98 ゲート +0.010 を +0.01155 で通過 → 規定どおり独立 fold で
+複製検証。fold-2 だけで判断しない。
+
+**Phase A 学習 (v116/v117 レシピ verbatim、fold のみ変更)**:
+- `crop_f0`: v116 croptrain (896² tile×9 crops・全 record・imgsz=896)
+  を folds(1,2) で学習 → `runs/v121_croptrain_f0/yolo_croptrain_fold0`
+- `yolo26_f0`: v117 yolo26m-seg (prod レシピ verbatim) を folds(1,2)
+  で学習 → `runs/v121_yolo26_f0/yolo_yolo26m_fold0`
+- prod yolo_fold_0・edgeatt refiner fold0_resume は既存 (v108 系)
+- 両ノートで prod fold-0 eval を paired sanity (v108 確定値
+  0.44413694566994816) として併記。想定 ~6h / ~3.5h (並列可)
+
+**Phase B 評価**: `run_fold_oof_eval_consensus.py --fold 0`、全 6 arm
+同一機構 (det-floor 0.08・consensus-iou 0.5・同一 refiner fold0・
+同一 ownership/PQ)。crop_f0/yolo26_f0 の byte binding は各学習
+manifest 記録の weights_sha256 (v121a: `datasets.croptrain`、
+v121b: `results.yolo26m`) を eval ノートが読み取り照合する
+(manifest=学習時記録の正本、§2.98 と同型の trusted-pin 経路)。
+
+**ゲート (固定、結果取得前)**: cons2of3_c26 Δ@0.45(vs fold-0 prod arm)
+>= **+0.005** → `cross_fold_verified` → 採用検討へ (all-data det 学習
+→ Kaggle 提出物として検証、最大で現行 1 枠と交換)。未満 →
+`unverified_fold0` で consensus 系閉鎖。prod arm sanity は
+0.444137 ±0.001 を要求。
+
+**caveat (開示)**: (a) fold-2 の +0.01155 は margin +0.0016 と薄い —
+fold-0 で半分でも再現しなければ noise 扱い (b) 採用に至っても
+submission 用に all-data 学習 3 det が必要 (~8h) + LB 検証で
+OOF→LB gap の確認が残る (c) 2 fold 平均効果が真値の推定になり、
+fold0 が負でも fold2+fold0 平均で判断しない — ゲートは fold0 単独。
+
+**⚠️ データ漏洩の発見と影響 (2026-11-10、結果確定前の開示)**:
+v116 `build_crop_dataset` が fold フィルタ済みの `fit_files` ではなく
+`train_files` (全 707 file) を回しており、crop train split に **eval fold
+自身の crop が混入** していた (実測: `v116_croptrain/labels/train` =
+全 707 file, 内 fold-2 = 235; `v121_croptrain_f0` も同型で fold-0 = 236 混入)。
+影響: (a) v116 の fold-2 "OOF" 値 (croptrain_full 0.441506・sahi 0.417951)
+は eval 対象を学習した重みで計測 → OOF として無効 (方向性は棄却のまま、
+漏洩有利でも prod 未満だったため定性結論は不変)。(b) **v120 `crop` det が
+fold-2 GT を記憶** → `cons2of3_c26` +0.01155 は漏洩補助を含み、honest な
+証拠としては無効 — fold-0 の clean 複製が唯一の裁定者になる。
+(c) v121a (実行中) も同型混入 → `fit_files` に修正し出力先を
+`v121_croptrain_f0_honest` に分離、汚染 run/dataset は監査用に温存。
+v121b yolo26 (`val0_train12`: 471 file = folds(1,2) のみ)・v117
+(`val2_train01`: 472 file)・prod det は標準経路で混入なしを実測確認。
+
+**fold-0 provenance (v121c 実行前に記録)**: reviewed manifest は
+`manifest["fold"] == fold` を要求し `checkpoints` role が fold 固有
+ckpt の sha を bind するため、fold-2 用 `v73_reviewed_provenance.json`
+(pin `2c954685...`) は fold-0 では使えない。v121c は以下の独立検証済み
+component pin から fold-0 manifest をセル内で決定論生成し、自己 sha を
+外部 pin で照合する:
+
+- `yolo` (runs/yolo_fold_0/weights/best.pt, 45,316,918 B):
+  `ab8810916e34a755cc0d7a705dbb7ade60338ae247f8baac02adfe64026c0d35`
+- `baseline` (artifacts/mediseg_edgeattnet_refiner_fold0_resume.pt,
+  564,101,827 B):
+  `caa8b27bbdaa888019a599d001b2d4dee844dbfee90186a18f8e0db95ce8b264`
+- `folds_sha256` = `febb3f67237a058fa8a71f188fac262035048b55d860c0e4509514877f6af67e` (全 fold 共通)
+- fold-0 manifest bytes (sort_keys・separators 最小化):
+  `{"checkpoints":{"baseline":"caa8b27b…","yolo":"ab881091…"},"fold":0,"folds_sha256":"febb3f67…","schema_version":1}`
+- **`V73_FOLD0_PROVENANCE_SHA256`** =
+  `da3d53abc94023f61998ace4b54db98cfa1792a6b8660820583ec957f26e6a53`
+
+両 ckpt は Drive `solar_filament_v30/` の既存 artifact で、v108 が
+fold-0 prod 確定値 0.44413694566994816 を bit 一致で再現した同一ファイル
+(v121a/v121b の prod sanity でも再確認済み)。環境変数名を
+`V73_PROVENANCE_SHA256` から分離し、fold-2 pin の誤用を防ぐ。
+
+**v123 補助実験 (投機的、2026-11-10 追加)**: v121c ゲート判定と並行して
+all-data detector trio の欠員 yolo26m-all を学習するノートブック
+(`solar_filament_v123_yolo26_all_colab.ipynb`、builder
+`scratch/build_v123_yolo26_all_colab.py`) を作成。trio の既存メンバは
+yolo11m-all=`v96_data_scaling/yolo_full_fold2` (`val2_train012`) と
+crop-all=`v116_croptrain` (全 707 file 学習済み=実質 all-data、test-time
+用途では漏洩問題なし — 上記開示参照)。v123 は `TRAIN_FOLDS=(0,1,2)`・
+`FOLD=0` (val/best-epoch 選択・prod sanity 専用) で `val0_train012`
+dataset を構築し `runs/v123_yolo26_all/yolo_yolo26m_all_fold0` に出力。
+fold-0 det eval は in-sample のため informational sanity のみで OOF/ゲート
+証拠には一切使用しない。ゲート未通過なら重みは不使用 (投機的計算)。
+
+**P0 監査追記 (2026-11-10、外部調査計画 P0 への対応)**: 全 detector の
+勾配学習側の fold 分離は実測で確認済み (crop honest 471/236・yolo26
+471・prod 命名規約 `yolo_fold_k`=fold k 以外で学習)。加えて
+**eval-fold-as-val 構造が prod・v121 系で一様** であることを確認:
+`build_v30_prize_colab_cells.py` の `build_fold_dataset` は
+val=eval fold・train=残り fold で dataset を作り、refiner も
+`train_refiner_fold.py` の契約「fold N を学習から完全除外し valid
+に使う」に従う。つまり prod yolo_fold_0・fold-0 refiner・v121a・
+v121b 全てが fold-0 を best-epoch/early-stop 選択に使っている。
+これは勾配漏洩 (v120 型) とは質的に異なる**選択バイアス**で、
+paired Δ (cons2of3_c26 vs prod) は両側が同じ曝露を持つため対称かつ
+公平。厳密版 (epoch 選択を学習 fold 内へ移す) は prod 側にも同じ
+変更を要求するため本複製では採用しない — 開示のみ行う。
+
+**v124a 準備 (2026-11-10)**: 片 fold 陽性では cross-fold verified と
+呼べないため、v121c ゲート通過時のみ投入する fold-2 側 clean 複製
+Phase A (`solar_filament_v124a_croptrain_f2_colab.ipynb`) を作成。
+FOLD=2・TRAIN_FOLDS=(0,1) で `fit_files`=472 file のみの honest
+crop dataset、`runs/v124_croptrain_f2_honest` 出力 (v116 汚染系と
+完全分離)。v124c fold-2 consensus eval はゲート判定後に生成する。
+
+**v124c 準備 (2026-11-10)**: 第二 fold 確認の eval ノートブック
+(`solar_filament_v124c_consensus_f2_colab.ipynb`) を作成。v120 builder の
+fold-2 複製で、crop det のみ `v124_croptrain_f2_honest` に差替え (他は
+yolo_fold_2・v117 yolo26・fold-2 refiner・v73 fold-2 provenance と同一
+byte)。trusted-pin は v124a/v117 学習 manifest から実行時読み取り。
+判定: `cons2of3_c26_delta_fold2 >= +0.005` → `second_fold_positive`、
+未満 → `second_fold_negative`。**v121c ゲート通過時のみ v124a 学習を
+起動し、完了後に本ノートを実行する**。片 fold 陽性のみでは提出差替えの
+根拠にしない。
+
+**v121c 結果 (2026-11-10 完走, fold-0 clean OOF)**: 事前登録ゲート
+`cons2of3_c26 Δ@0.45 >= +0.005` に対し **+0.002982** →
+**`unverified_fold0`、consensus 線は閉鎖**。prod sanity
+0.444134 (既知値 ±3e-06) で評価経路は正常。全 arm @0.45:
+
+| arm | PQ@0.45 | Δ | TP | FP | FN | SQ |
+|---|---|---|---|---|---|---|
+| prod | 0.444134 | — | 1711 | 762 | 1038 | 0.6778 |
+| cons2of3_c26 | 0.447116 | **+0.0030** | 1707 | 744 | 1042 | 0.6810 |
+| cons3of3 | 0.430407 | −0.0137 | 1865 | 1259 | 884 | 0.6777 |
+| union3_c26 | 0.436565 | −0.0076 | 1790 | 1025 | 959 | 0.6785 |
+| cons2of3 | 0.402940 | −0.0412 | 1873 | 1657 | 876 | 0.6754 |
+| union3 | 0.367296 | −0.0768 | 1847 | 2176 | 902 | 0.6733 |
+
+読み: 合意フィルタは設計通り FP −18 を削るが TP −4 を伴い、net は
++0.003 で閾値 6 割。汚染版 fold-2 の +0.01155 は大半が漏洩補助だった
+ことが確認された (v116 crop det が fold-2 GT を記憶→合意支持が
+honest でなかった)。**v124a (fold-2 複製) は事前登録条件により
+起動しない**。生存個体の SQ +0.0033 は P2 輪郭投票の軽い根拠として
+記録する。提出は prod + v96-full を維持。
+
+**v125 準備 (P2 輪郭投票、2026-11-10)**: 調査計画 P2 の開発側 eval
+ノートブック (`solar_filament_v125_vote_f0_colab.ipynb`) を作成。
+検出集合は prod (yolo_fold_0 conf>=0.26) で**完全固定**し、crop
+(v121a honest)・yolo26 (v121b) 提案を det-mask IoU>=0.5 で最良 leader
+1 つに対応付け、refined mask の等重み pixel 多数決 (>=0.5 固定) で
+輪郭のみ補完。新規個体は出さない。arm は `prod` (対照) と
+`vote_eq05` の 2 つのみ。判定: Δ@0.45 >= +0.005 → `vote_positive_dev`
+(確認 fold 検討へ)、未満 → `vote_negative` で P2 線も閉鎖。
+eval script は `scratch/run_fold_oof_eval_vote.py` を embed
+(consensus 版と同一 postprocess・同一採点経路)。fold-0 は v121c
+判定済みのため、陽性でも確認は別 fold (fold-2 = v124a 必要) が必須。
+
+**v125 結果 (P2 輪郭投票、fold-0、2026-11-11)**: 検出集合固定の
+cross-proposal 輪郭投票を実行 (41.7min)。prod sanity 0.444134
+(既知値 -3e-06、v121c と bit 一致)。leader 7.30/img、voter 割当
+2.39/leader、未割当 voter 2304。結果:
+
+| arm | PQ@0.45 | Δ | SQ@0.45 | TP | FP |
+|---|---|---|---|---|---|
+| prod | 0.444134 | — | 0.6778 | 1711 | 762 |
+| vote_eq05 | 0.445722 | **+0.001588** | 0.6781 | 1715 | 754 |
+
+全 threshold で微小正 (+0.0016〜+0.0028) だが内訳は RQ 微増のみ
+(TP+4・FP−8)、mask 変化 mean +0.64px で SQ は実質不変。判定
+`vote_eq05_delta_fold0 = +0.001588 < +0.005` → **vote_negative、
+P2 線も閉鎖**。輪郭改善の余地はあるが現行 voter では効果量不足。
+
+**v123 完了記録**: 全 70 epoch 学習終了・best.pt sha256 =
+`25002d23f7b915e8076ab7e2429d34f6b0c4c6aed72d01abfc3a9985a5938ca9`
+(直接実測 pin — notebook manifest の eval セル未了のため)。
+all-data モデルのため fold-0 成績は in-sample で証拠不使用、
+voter 候補としてのみ温存。
+
+**ここまでの結論**: consensus (+0.0030) も輪郭投票 (+0.0016) も
+fold-0 で事前登録 +0.005 未達。漏洩なしの改善手段は残っておらず、
+提出は **prod (57039986) + v96-full (57897560) で確定方向**。
+残作業はレポート・リポジトリ整合と 11/14 内部凍結。

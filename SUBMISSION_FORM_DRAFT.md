@@ -32,9 +32,13 @@
   `solar_filament_submission_reproduction.ipynb`・`report/main.pdf` が揃う。
   抽出側の追従ブランチは ER-FlowScan の `solar-solution-v4`
   (sync commit = main@837eccc3)。以降の更新は standalone main へ直接同期済み
-  (最新 = v99-v115 全実験キャンペーン §2.75-§2.93 全記録・
+  (最新 = v99-v125 全実験キャンペーン §2.75-§2.99 全記録・
   v109 再測定修正値・v112 fold-0 複製判定・v96-full byte-identical
-  再現証跡・conf032 成果物・v115 MRCNN 結果記録を含む)。
+  再現証跡・conf032 成果物・v115 MRCNN 結果記録・
+  **v116/v120 漏洩発見と撤回・v121 honest 再実行 (cons2of3_c26
+  +0.002982 < +0.005 → unverified_fold0)・v125 輪郭投票
+  (+0.001588 < +0.005 → vote_negative) まで含む**)。
+  ER-FlowScan 側最終 sync = `devin/solar-v120-consensus` @ 9f86af71。
 - ~~B. モノレポを公開~~: 不採用 (他モジュールを晒すため)。
 - ~~weights dataset `shingo257/solar-filament-2026-weights` の public 化は
   要件再確認まで保留 (2026-10-19 ユーザー決定)。~~ **要件確定済み
@@ -90,7 +94,10 @@
    §2.57 に記録 — report 本文は確定済み
 4. Kaggle 最終選択が prod + v96-full になっている (§2.72: dedup030 は
    局所 +0.0075 だが LB 0.39 で可視改善なし、§2.75: 独立 fold でも
-   再現せず採用見送り、探索結果は RESEARCH_LOG と v97b/c/d manifest に記録済み)
+   再現せず採用見送り、探索結果は RESEARCH_LOG と v97b/c/d manifest に記録済み。
+   **2026-11-11 確定: v120 consensus 系は fold-0 clean 複製で事前登録
+   ゲート未達 (+0.0030 < +0.005)、v125 輪郭投票も未達 (+0.0016) のため
+   最終ペアは prod `57039986` + v96-full `57897560` で確定**)
 4b. **repo が選択した両提出を再現できる** (747960): prod と prod_v96full の
    両バリアントが repo `weights/` だけで解決できること
 5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
