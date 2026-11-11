@@ -1,5 +1,14 @@
 # Google Form 提出ドラフト (2026-11-15 締切)
 
+> ⚠️ **2026-11-11 重要訂正**: Kaggle Submissions 実画面は
+> **「最終リーダーボードに最大 1 件選択」** と表示 (本ドラフトの旧記述
+> 「2件選ぶ」と食い違い)。Kaggle 締切 11/15 15:00 JST、
+> Form 締切 11/15 23:59 CDT は別枠。**1枠の場合の選択**:
+> **v96-full `57897560` を第一候補** (学習量比較 +0.0099・提出 CSV
+> バイト一致再現の証跡あり、§2.77)、prod `57039986` は予備。
+> 最終的な匿名環境での再現確認が取れなければ prod を選ぶ。
+> 11/14 JST 内部凍結時に選択画面と Overview/Form を再確認する。
+
 競技 overview の必須項目は「4ページ技術報告書 (Overleaf テンプレ・単一PDF)」と
 「公開 Git リポジトリ URL」の2点。Form 本体は Kaggle overview の
 "submit through this google form" リンクから。記入ミスで委員会が
@@ -68,7 +77,8 @@
   2026-10-26 にローカル clone で E2E 検証済み (5 重み全て repo 解決・
   fold CSV sha256 `24367120…` 一致)。残るのは public 化後の
   匿名 clone + `git lfs pull` 再確認のみ
-- [ ] prod + v96-full を Kaggle UI で最終選択 (代替: plain_mhsa_f2、LB 0.39)
+- [ ] Kaggle UI で最終選択 — **実画面は最大 1 件表示 (2026-11-11 確認)**:
+  第一候補 v96-full `57897560`、予備 prod `57039986` (冒頭訂正参照)
 - [x] 再現 notebook に `prod_v96full` バリアントを追加 (検出器のみ
   `yolo_full_fold2_best.pt`、欠落時は fold 重みへフォールバックせず停止)
 - [x] `yolo_full_fold2_best.pt` (sha256 `f54c812d…`、45MB) を standalone repo
