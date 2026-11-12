@@ -5192,3 +5192,14 @@ bootstrap 用に独立クラスタ **58 個**を確保 (locked_eval は 148
 sha `a56372ea…` (4 件)。bootstrap 用 5 日ブロック独立クラスタ
 58 個を確認。両 fold に跨る same-instant ペア (8 組) は dev 内に
 限定・全 arm 同一条件で公平性保持。学習比較は締切後研究枠。
+
+
+**spine aux 実装スケルトン (2026-11-13)**: 事前登録の target 経路を
+`solar_filament/pipeline/spine_aux.py` に実装 — polyline の半セル
+超標本ラスタライズ (P3 grid、Chebyshev dilate)、affine/flip 変換、
+padding・欠損 spine 除外 mask、正負別平均 BCE、幾何変換一致検証
+(`spine_in_mask_fraction` + 積分画像による厳密 any-pixel cellize)。
+17 CPU テスト全緑。**実データ整合を検証**: 200 注釈で spine-in-mask
+率 100.0% (P3 grid・dilate1) — 学習前チェック要件を充足。
+残る実装: ultralytics 側の aux head 接続と Colab builder (学習比較は
+締切後研究枠)。
