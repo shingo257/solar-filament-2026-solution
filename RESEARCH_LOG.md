@@ -5067,3 +5067,48 @@ voter 候補としてのみ温存。
 fold-0 で事前登録 +0.005 未達。漏洩なしの改善手段は残っておらず、
 提出は **prod (57039986) + v96-full (57897560) で確定方向**。
 残作業はレポート・リポジトリ整合と 11/14 内部凍結。
+
+**v124a 実走記録 (2026-11-11)**: 事前登録では v121c ゲート通過時のみ
+起動予定だった fold-2 honest crop 学習が実走・完了した
+(`runs/v124_croptrain_f2_honest/yolo_croptrain_fold2`、全 70 epoch、
+39,140s)。contract: FOLD=2・TRAIN_FOLDS=(0,1)、train 6,822 samples
+(folds0,1 のみ)・val 2,115 (fold-2)、`weights_sha256` =
+`3ded53395aa938d9346a37bcdf6528a7d1489c8e36f870f18e78de064fd1dfae`
+(manifest `artifacts/v124a_croptrain_f2_colab_manifest.json` 記録)。
+ゲート流れ外の実行のため、v124c eval を走らせる場合の結果は
+**exploratory 扱い** — fold-0 で線は閉鎖済みであり、提出差替の
+根拠にはしない。clean な fold-2 crop det として証跡上の価値のみ。
+
+**v124c 結果 (fold-2 clean consensus eval、2026-11-12)**: フロー外実行
+(v121c 未達のまま実走した v124a det を使用) のため exploratory 扱いだが、
+**clean な fold-2 測定値として記録**。prod sanity 0.444238 = v76 値と
+diff 0.0 (bit 一致)。dets: yolo `40ec31fd…`・crop `3ded5339…` (honest)・
+yolo26 `0c8bb71f…` (v117)。結果 @0.45:
+
+| arm | PQ | Δ | TP | FP | FN |
+|---|---|---|---|---|---|
+| prod | 0.444238 | — | 1715 | 750 | 1070 |
+| union3 | 0.379050 | −0.0652 | 1868 | 2022 | 917 |
+| union3_c26 | 0.443577 | −0.0007 | 1785 | 908 | 1000 |
+| cons2of3 | 0.415057 | −0.0292 | 1899 | 1522 | 886 |
+| **cons2of3_c26** | **0.452803** | **+0.008565** | 1700 | **631** | 1085 |
+| cons3of3 | 0.438206 | −0.0060 | 1863 | 1128 | 922 |
+
+**2-fold honest 証拠の確定**: fold-0 +0.002982・fold-2 +0.008565、
+両 fold で正・平均 +0.0058。汚染版 v120 (+0.01155) の大半は漏洩
+ではなく実効果 (FP 削減方向・fold-2 では −119)。逐次ゲート上は
+fold-0 で線は閉鎖済みだが、証拠としては「検出器合意による FP
+削減は 2 fold で再現する正の効果、ただし効果量は fold 間で
+不均一 (3x差)」が正直な記述。
+
+**v126 exploratory 提出ノートブック (2026-11-12)**: 2-fold honest
+証拠 (f0 +0.002982・f2 +0.008565、両方正) に基づく exploratory
+consensus 提出経路 `solar_filament_v126_consensus_submission_colab.ipynb`
+を作成。detector は v122 と同一の計測済み構成 (yolo_fold_2 +
+v116 crop + v117 yolo26 + all-data refiner、test disjoint で正当)。
+all-data trio (yolo_full + v116 + v123) は consensus 集合として
+未計測のため不採用。ガードは v122 の `cross_fold_verified` とは
+別物 — 両 fold summary の存在と両方正 Δ を実行時検証。
+**選択ルールを事前申告で固定**: public > 0.39 (v96-full 現行値)
+なら最終選択差替、以下なら v96-full 維持 — public LB への
+単発比較であり、複数 arm 当てはめではない。
