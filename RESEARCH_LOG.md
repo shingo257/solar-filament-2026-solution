@@ -5130,3 +5130,27 @@ all-data trio (yolo_full + v116 + v123) は consensus 集合として
 限界以下か、consensus FP 削減が test では既に prod が達成済みの
 領域を削った可能性。いずれにせよ exploratory 測定として記録、
 consensus 線はここで完全に閉鎖。
+
+
+**実験0 監査メモ — split 実体照合と時間近接の再集計 (2026-11-12)**:
+新実験計画 (spine 補助教師) の事前監査として、実消費 split の実体と
+時間近接を確認。2 系統の grouped_folds.csv が文書上既に同定済み
+(`docs/V73_PROVENANCE.md`): Drive `artifacts/grouped_folds.csv`
+(sha `febb3f67…`、707 obs・labeler_count 列あり) が v73 系統の全
+評価キャンペーンで消費された split で、provenance manifest
+`2c954685` もこれを pin。Kaggle データセット同梱の凍結コピー
+(sha `24367120…`、file_name/fold のみ) は再現 notebook の fold
+解決先で、同一 707 名・fold 数 236/236/235 だが 489 件の割当が
+異なる (permutation ではない)。test 推論は fold 非依存のため提出
+再現性への影響はなく、OOF 解釈も全キャンペーンが febb3f67 で
+一貫しているため比較の公平性は保たれる。
+**実消費 split `febb3f67` の時間近接を新規集計** (ファイル名の
+観測時刻・別 fold に近傍を持つ観測を1回ずつ計数): ±1h で 16 件、
+±24h で 179 件 (fold別 65/60/54)、±5d で 570 件。registry 版
+`24367120` の集計値 10/183/579 と同程度だが同一ではない。
+±1h 内に別 fold 近傍を持つ 16 件は近重複漏洩の候補 (同一
+フィラメント判定は未実施) — fold 境界は時間的に非独立であり、
+「clean held-out」評価の強さには上限がある。将来の split 設計では
+時間バッファ付き分割を検討する (spine 実験計画の時系列確認分割と
+整合)。本監査は既存スコアの無効化を意味しない — 全 arm が同一
+split で公平だが、独立データでの確認が残る論点として記録する。
