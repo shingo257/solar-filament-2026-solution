@@ -1,0 +1,5 @@
+file_name,time_block_role,fold,exclusion_reason
+20161229133734Ch.jpeg,development,0,within_5d_of_locked_eval
+20161231133734Ch.jpeg,development,1,within_5d_of_locked_eval
+20170102024454Uh.jpeg,locked_evaluation,1,within_5d_of_development
+20170103030554Uh.jpeg,locked_evaluation,1,within_5d_of_development

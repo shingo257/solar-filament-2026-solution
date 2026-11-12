@@ -5181,3 +5181,14 @@ bootstrap 用に独立クラスタ **58 個**を確保 (locked_eval は 148
 (全件 even・finite・完全 in-bounds)、対象層 GT <=1024px2 の
 3476 件も全件 spine あり — aux 教師の欠損マスクは設計上必要だが
 実データでは全注釈が利用可能。
+
+
+**spine 補助教師 A/B 事前登録 (2026-11-13)**: 実験計画の分割・
+条件・ゲートを結果閲覧前に `SPINE_AUX_TEACHER_PREREG_2026-11-13.md`
+として固定。台帳 `output/s0/time_block_assignment.csv` から
+パイロット (fit=dev∩folds{0,1} 365・eval=dev∩fold2 180) と
+時系列確認 (fit=dev 545・eval=locked 160) を定義。±5d 境界除外は
+機械算出・pin 済み: `output/s0/spine_aux_prereg_exclusions_2026-11-13.csv`
+sha `a56372ea…` (4 件)。bootstrap 用 5 日ブロック独立クラスタ
+58 個を確認。両 fold に跨る same-instant ペア (8 組) は dev 内に
+限定・全 arm 同一条件で公平性保持。学習比較は締切後研究枠。
