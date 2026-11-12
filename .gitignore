@@ -65,3 +65,4 @@ scratch/_survey*/
 
 # §2.66 annotator 数別限界価値の集計 (コミット済み error_decomp CSV から数秒で再生成)
 output/annotator_count_marginal.json
+report/main.log
