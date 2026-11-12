@@ -5154,3 +5154,11 @@ consensus 線はここで完全に閉鎖。
 時間バッファ付き分割を検討する (spine 実験計画の時系列確認分割と
 整合)。本監査は既存スコアの無効化を意味しない — 全 arm が同一
 split で公平だが、独立データでの確認が残る論点として記録する。
+
+
+**匿名再現チェック (2026-11-12)**: 新計画の「認証なしで重みロード
+〜推論まで通るか」要件を検証。`git clone --depth 1` (匿名) +
+`git lfs pull` で 6 重み 442MiB を取得し、全 6 件の sha256 が
+`weights/weights_manifest.json` の pin とバイト一致
+(yolo_fold2 `40ec31fd…` = prod、yolo_full_fold2 `f54c812d…` =
+v96-full を含む)。公開 repo 単独で最終候補の両重みを再現可能。
