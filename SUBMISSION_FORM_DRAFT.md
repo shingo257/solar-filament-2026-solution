@@ -1,12 +1,12 @@
 # Google Form 提出ドラフト (2026-11-15 締切)
 
-> ⚠️ **2026-11-11 重要訂正**: Kaggle Submissions 実画面は
-> **「最終リーダーボードに最大 1 件選択」** と表示 (本ドラフトの旧記述
-> 「2件選ぶ」と食い違い)。Kaggle 締切 11/15 15:00 JST、
-> Form 締切 11/15 23:59 CDT は別枠。**1枠の場合の選択**:
-> **v96-full `57897560` を第一候補** (学習量比較 +0.0099・提出 CSV
-> バイト一致再現の証跡あり、§2.77)、prod `57039986` は予備。
-> 最終的な匿名環境での再現確認が取れなければ prod を選ぶ。
+> ⚠️ **2026-11-12 最終確定**: Kaggle Submissions 実画面は
+> **「最終リーダーボードに最大 1 件選択」** と表示。Kaggle 締切
+> 11/15 15:00 JST、Form 締切 11/15 23:59 CDT は別枠。
+> exploratory consensus 提出 (v126, ref `58264513`) は public **0.39**
+> で v96-full と同点 — 事前申告ルール (>0.39 → 差替) により
+> **最終選択は v96-full `57897560` で確定** (学習量比較 +0.0099・
+> 提出 CSV バイト一致再現の証跡あり、§2.77)。prod `57039986` は予備。
 > 11/14 JST 内部凍結時に選択画面と Overview/Form を再確認する。
 
 競技 overview の必須項目は「4ページ技術報告書 (Overleaf テンプレ・単一PDF)」と
@@ -27,7 +27,7 @@
 | Team members | Shingo Hara (単独) |
 | Technical report (PDF) | `report/main.pdf` — **4ページ全体** (本文 + acknowledgments + references を含む; Overleaf テンプレ準拠) |
 | Code repository URL | `https://github.com/shingo257/solar-filament-2026-solution` — **public 済み・匿名 clone/LFS 検証済み** |
-| (あれば) Final submissions | Kaggle ref `57039986` (prod) + `57897560` (v96-full 全データ学習、ゲート +0.0099 通過)。代替候補: `57072525` (plain_mhsa_f2 アーキテクチャ hedge)。`57933888` (prod_dedup030) は v99 で fold0/1 再現せず (Δ −0.0038/−0.0019、§2.75) のため候補から除外 |
+| (あれば) Final submissions | **v96-full `57897560`** (全データ学習、ゲート +0.0099 通過) — 最大1件選択のためこれを選択。予備: prod `57039986`。除外: exploratory consensus `58264513` (public 0.39 同点、事前申告ルールで不採用)、`57072525` (hedge)、`57933888` (dedup030、v99 fold0/1 未再現、§2.75) |
 | (あれば) Public score | 0.39 (上記4提出とも; conf032 A/B `57843737` も 0.39、§2.57/§2.72) |
 | (あれば) Method/efficiency | detect-then-refine 2 構成。主催者 rubric は品質目視 + feasibility (理解可能な実装を高評価、topic 724503 追記) — 単純で再現可能な構成をそのまま記述 |
 
@@ -77,8 +77,9 @@
   2026-10-26 にローカル clone で E2E 検証済み (5 重み全て repo 解決・
   fold CSV sha256 `24367120…` 一致)。残るのは public 化後の
   匿名 clone + `git lfs pull` 再確認のみ
-- [ ] Kaggle UI で最終選択 — **実画面は最大 1 件表示 (2026-11-11 確認)**:
-  第一候補 v96-full `57897560`、予備 prod `57039986` (冒頭訂正参照)
+- [ ] Kaggle UI で最終選択 — **最大 1 件: v96-full `57897560` で確定**
+  (v126 consensus `58264513` public 0.39 同点 → 事前申告ルールで
+  差替なし、2026-11-12 確定。予備 prod `57039986`)
 - [x] 再現 notebook に `prod_v96full` バリアントを追加 (検出器のみ
   `yolo_full_fold2_best.pt`、欠落時は fold 重みへフォールバックせず停止)
 - [x] `yolo_full_fold2_best.pt` (sha256 `f54c812d…`、45MB) を standalone repo
@@ -102,14 +103,14 @@
    まで反映済み**。本文+ack+refs でちょうど4ページに圧縮済み
    (PR #584・standalone `d3bcc2ed`)。conf032 A/B (public 0.39) は
    §2.57 に記録 — report 本文は確定済み
-4. Kaggle 最終選択が prod + v96-full になっている (§2.72: dedup030 は
-   局所 +0.0075 だが LB 0.39 で可視改善なし、§2.75: 独立 fold でも
-   再現せず採用見送り、探索結果は RESEARCH_LOG と v97b/c/d manifest に記録済み。
-   **2026-11-11 確定: v120 consensus 系は fold-0 clean 複製で事前登録
-   ゲート未達 (+0.0030 < +0.005)、v125 輪郭投票も未達 (+0.0016) のため
-   最終ペアは prod `57039986` + v96-full `57897560` で確定**)
-4b. **repo が選択した両提出を再現できる** (747960): prod と prod_v96full の
+4. Kaggle 最終選択が **v96-full `57897560` 単独** になっている
+   (選択枠は最大1件、2026-11-11 実画面確認。§2.72: dedup030 不採用、
+   §2.99: consensus fold-0 +0.0030 ゲート未達、v125 vote +0.0016、
+   **2026-11-12 確定: exploratory v126 `58264513` public 0.39 同点 →
+   事前申告ルールで差替なし、v96-full 確定**。予備 prod `57039986`)
+4b. **repo が選択提出を再現できる** (747960): prod と prod_v96full の
    両バリアントが repo `weights/` だけで解決できること
+   (v96-full = yolo_full_fold2 差替のみ、byte-identical 実証済み)
 5. **Form の PDF アップロードは一発で確定させる** — topic 749524 の
    主催者回答: 再送信はファイル差替ではなく**追加**になり、
    旧ファイルは消せない。委員会は「最後の提出」を見ると明言。

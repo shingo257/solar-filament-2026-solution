@@ -5112,3 +5112,21 @@ all-data trio (yolo_full + v116 + v123) は consensus 集合として
 **選択ルールを事前申告で固定**: public > 0.39 (v96-full 現行値)
 なら最終選択差替、以下なら v96-full 維持 — public LB への
 単発比較であり、複数 arm 当てはめではない。
+
+**v126 CSV 生成完了 (2026-11-12)**: consensus 推論完走、
+`artifacts/consensus_v126/submission_consensus.csv` 生成。
+180 test 画像・1,123 row・dup filament_id = 0・emitted 6.51/img
+(prod ~7 → 合意フィルタで減少、OOF と整合)。2.42s/img。
+**sha256 = `1f34e43ca9468c644b3f8d236021fc26f4a35183109a258ff5aa458a0e5c66fe`**
+(提出物 pin — Kaggle 側 ref が確定したら対応付けて記録する)。
+残るは Kaggle アップロード → public score → 事前申告ルール適用のみ。
+
+**v126 public 結果 (2026-11-12)**: Kaggle submission `58264513`
+(`submission_consensus.csv`、sha `1f34e43c…`、説明に exploratory と
+明記) は **public 0.39** — 現行候補 v96-full `57897560` と同点。
+**事前申告ルール (>0.39 → 差替) により選択は v96-full 維持で確定**。
+2-fold honest 陽性 (f0 +0.0030・f2 +0.0086) は public では可視差
+なし — OOF の +0.0058 平均は sparse test annotation 下では検出
+限界以下か、consensus FP 削減が test では既に prod が達成済みの
+領域を削った可能性。いずれにせよ exploratory 測定として記録、
+consensus 線はここで完全に閉鎖。
