@@ -5203,3 +5203,15 @@ padding・欠損 spine 除外 mask、正負別平均 BCE、幾何変換一致検
 率 100.0% (P3 grid・dilate1) — 学習前チェック要件を充足。
 残る実装: ultralytics 側の aux head 接続と Colab builder (学習比較は
 締切後研究枠)。
+
+
+**spine aux ultralytics 統合設計 (2026-11-13)**: 疑似クラス方式を実装・
+実検証。spine polyline を予約クラス cls=1 の擬似 instance として seg
+label に混入 (data yaml nc=2) → mosaic concat・RandomPerspective の
+`apply_segments` affine・flip が mask と**同一 math**で変換 → Format
+直前の `SplitSpineSegments` で cls=1 行を除去・`spine_segments_px` に
+退避 (model は nc=1 のまま)。8.4.120 実ソースで確認: verify_image_label
+は `max_cls < num_cls` assert → nc=2 で受理 (cls=[0,1]・seg 2 件保持)、
+実 RandomPerspective が疑似 instance に同一 affine を適用する実測済み。
+残: Colab builder で dataset yaml 生成・nc=1 強制 trainer・P3 hook
+aux head・loss 結線 (学習比較は締切後)。
