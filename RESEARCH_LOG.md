@@ -5162,3 +5162,22 @@ split で公平だが、独立データでの確認が残る論点として記�
 `weights/weights_manifest.json` の pin とバイト一致
 (yolo_fold2 `40ec31fd…` = prod、yolo_full_fold2 `f54c812d…` =
 v96-full を含む)。公開 repo 単独で最終候補の両重みを再現可能。
+
+
+**実験0 監査・続報 (2026-11-13)**: ±1h 近接 16 件の内訳を確定 —
+**8 ペア、全て同一時刻 (±0-1min)・異なる GONG サイト接尾辞**
+(B/C/L/M/T/U) の同時撮影。同一太陽・同一瞬間の準同一画像が
+fold 0/1/2 を跨いでおり、近重複漏洩の実在候補 (~1.1% of obs)。
+全 arm 同一 split なので比較公平性は保持されるが、held-out 評価の
+厳密さの上限として開示。時系列確認側については
+`output/s0/time_block_assignment.csv` が計画の候補台帳と
+完全一致: development 547 obs (2011-2016) / locked_evaluation
+160 obs (2017-2022) で、境界は 2016-12-31 → 2017-01-02 とほぼ
+クリーン (±5d 内の交差は lock 側 2 obs のみ)。5 日ブロック
+bootstrap 用に独立クラスタ **58 個**を確保 (locked_eval は 148
+観測日)。**dev/lock 境界を跨ぐ ±1h 同時ペアは 0 件** —
+時間分割は fold 分割より厳密にクリーン。spine 実現性も確認:
+`annotation_spine_audit.csv` 8199 注釈の spine 有効率 100%
+(全件 even・finite・完全 in-bounds)、対象層 GT <=1024px2 の
+3476 件も全件 spine あり — aux 教師の欠損マスクは設計上必要だが
+実データでは全注釈が利用可能。
