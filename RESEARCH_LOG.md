@@ -5224,3 +5224,15 @@ Compose (mosaic→perspective→mixup→flip) に通し、SplitSpineSegments
 側には cls=0 のみ残ることを検証。cls の (N,1) 形状保持を修正済み。
 spine 系テスト計 29 件全緑。残は Colab builder (yaml 生成・nc=1
 trainer・P3 hook・loss 結線) のみ。
+
+
+**v127 spine A/B builder (2026-11-14)**: 事前登録済みパイロット
+notebook `solar_filament_v127_spine_ab_colab.ipynb` を生成。fit=dev
+∩folds{0,1} 365 obs (pinned 除外適用) / eval=dev∩fold2 180 obs、
+locked_evaluation 160 obs は完全隔離。eval harness に `--prod-from`
+(prod arm の提案元 detector 名) と `--eval-files` (oof subset) を
+追加 — 既定値で v120/v124c 動作不変、生成 notebook も再生成済み。
+arm A=対照 / arm B=aux (P3 proto 入力へ 1x1 conv head・正負別 BCE・
+AUX_WEIGHT=0.5 fit-only 固定)。両 arm prod recipe verbatim 70ep
+last.pt、builder 契約テスト 8 件追加。**残る人間確認: notebook を
+Colab で実行するのは締切後研究枠**。

@@ -199,6 +199,15 @@ def main() -> int:
     parser.add_argument("--consensus-iou", type=float, default=0.5,
                         help="cross-detector cluster の mask-IoU 閾値")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--prod-from", type=str, default="yolo",
+                        help="prod arm の提案を供給する detector 名 "
+                             "(default 'yolo' = manifest binding 必須)。"
+                             "別名にすると `yolo` detector は任意になり、"
+                             "指定 detector は --trusted-sha256 で受理する")
+    parser.add_argument("--eval-files", type=Path, default=None,
+                        help="1 行 1 file_name の評価対象リスト。"
+                             "指定時は oof_files をこの集合に制限 "
+                             "(subset eval 用。全名が fold 対象に存在すること)")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     trusted = set(args.trusted_sha256)
@@ -222,8 +231,12 @@ def main() -> int:
                 or name in {n for n, _ in detectors}):
             raise ValueError(f"--detector name=path が不正: {spec}")
         detectors.append((name, Path(path)))
-    if "yolo" not in {n for n, _ in detectors}:
+    det_names = {n for n, _ in detectors}
+    if args.prod_from == "yolo" and "yolo" not in det_names:
         raise ValueError("--detector yolo=... は必須 (prod arm/binding の基準)")
+    if args.prod_from not in det_names:
+        raise ValueError(
+            f"--prod-from {args.prod_from} に対応する --detector が無い")
 
     folds_sha256 = hashlib.sha256(args.folds_csv.read_bytes()).hexdigest()
     with open(args.train_json, encoding="utf-8") as handle:
@@ -248,7 +261,7 @@ def main() -> int:
                 f"in --trusted-sha256: {digest[:16]}")
         detector_shas[name] = digest
         print(f"detector {name}: sha256={digest[:16]}", flush=True)
-    yolo_sha256 = detector_shas["yolo"]
+    yolo_sha256 = detector_shas.get("yolo")
     checked_arms = {}
     for name, path in arms:
         checkpoint = torch.load(path, map_location="cpu", weights_only=True)
@@ -260,6 +273,15 @@ def main() -> int:
     # All fold/split and legacy byte bindings pass before any CUDA/model work.
     oof_files = [n for n in sorted(file_to_ids)
                  if fold_of_file.get(n) == args.fold]
+    if args.eval_files is not None:
+        allow = {ln.strip() for ln in args.eval_files.read_text().splitlines()
+                 if ln.strip()}
+        missing = sorted(allow - set(oof_files))
+        if missing:
+            raise ValueError(
+                f"--eval-files の {len(missing)} 件が fold-{args.fold} 対象に無い: "
+                f"{missing[:5]}")
+        oof_files = [n for n in oof_files if n in allow]
     if args.limit:
         oof_files = oof_files[:args.limit]
     print({"fold": args.fold, "oof_files": len(oof_files),
@@ -361,7 +383,7 @@ def main() -> int:
     for name in oof_files:
         props = props_by_file[name]
         emitted_by_file["prod"][name] = [
-            m for d, m, s in props if d == "yolo" and s >= args.conf]
+            m for d, m, s in props if d == args.prod_from and s >= args.conf]
         clusters = consensus_clusters(props, args.consensus_iou)
         cluster_diag["clusters_per_image"].append(len(clusters))
         for mem in clusters:
@@ -390,13 +412,16 @@ def main() -> int:
     report = {"fold": args.fold, "folds_sha256": folds_sha256,
               "provenance_manifest_sha256": args.provenance_sha256,
               "detector_sha256": detector_shas,
+              "prod_from": args.prod_from,
               "yolo_sha256": yolo_sha256,
               "conf": args.conf, "det_floor": args.det_floor,
               "consensus_iou": args.consensus_iou, "min_area": MIN_AREA,
               "drop_threshold": DROP_THRESHOLD, "thresholds": thresholds,
               "emitted_per_arm": {a: int(np.mean([len(v[n]) for n in oof_files]))
                                 for a, v in emitted_by_file.items()},
-              "oof_files": len(oof_files), "arms": {}}
+              "oof_files": len(oof_files),
+              "eval_files_path": str(args.eval_files) if args.eval_files else None,
+              "arms": {}}
     for arm_name, arm in refiners.items():
         for prop_arm in ARM_NAMES:
             meters = {t: PanopticQuality() for t in thresholds}
