@@ -5215,3 +5215,12 @@ label に混入 (data yaml nc=2) → mosaic concat・RandomPerspective の
 実 RandomPerspective が疑似 instance に同一 affine を適用する実測済み。
 残: Colab builder で dataset yaml 生成・nc=1 強制 trainer・P3 hook
 aux head・loss 結線 (学習比較は締切後)。
+
+
+**spine pipeline 実スモーク (2026-11-14)**: 合成 seg データセット
+(cls=0 polygon + cls=1 spine、nc=2) を実 YOLODataset の augment
+Compose (mosaic→perspective→mixup→flip) に通し、SplitSpineSegments
+を Format 直前に挿入 — 疑似 instance が全変換を通過し、detection
+側には cls=0 のみ残ることを検証。cls の (N,1) 形状保持を修正済み。
+spine 系テスト計 29 件全緑。残は Colab builder (yaml 生成・nc=1
+trainer・P3 hook・loss 結線) のみ。

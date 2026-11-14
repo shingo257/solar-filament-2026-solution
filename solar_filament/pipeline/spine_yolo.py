@@ -83,8 +83,8 @@ class SplitSpineSegments:
         if instances is None or cls is None:
             labels["spine_segments_px"] = []
             return labels
-        cls = np.asarray(cls).reshape(-1)
-        is_spine = cls == self.spine_cls
+        cls = np.asarray(cls)
+        is_spine = cls.reshape(-1) == self.spine_cls
         segs = np.asarray(instances.segments)
         labels["spine_segments_px"] = [
             segs[i] for i in np.flatnonzero(is_spine)
