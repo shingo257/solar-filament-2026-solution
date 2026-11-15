@@ -12,6 +12,7 @@
   3. LB `0.37 → 0.39` の帰属交絡を解消 (`0.37` は初期 fold0 検出器、fold2 単一検出器は plain-MHSA / edge-MHSA いずれでも `0.39`)。
   4. Table 1 を `707` 枚 3-fold CV セクションと後半の subset held-out (`n=471` / `n=235`) セクションに明確分離。
   5. 最終提出の両方が `refiner_all_data.pt` (`MediSegEdgeAttUNet`) を固定使用している旨、Spine-Aux が fold2 単一 fold の探索的検証である旨、LB 2 桁丸め、77% MAGFiLO 重複 (`Sp-77%` 導入理由)、GPU 計測条件差 (A100 vs T4) を明記。
+  6. **第 2 パス外部精査すべて反映済み**: (a) `Spine-Aux` の寄与分解を明記 (`Small-TAL` + 1対1 `maj3` 合意が 2-fold `+0.0081`・fold2 `+0.0126` = `0.4442→0.4568` の大半を担い、`Spine-Aux` は単独では `0.4505→0.4480` と低下・3検出器合意では探索的 `+0.0012` のみで、LB `0.39→0.40` は 2 桁表示の丸め境界通過の可能性)、(b) FN の 2 つの異なる分母 (`conf 0.26` のアノテータ別 `691/1,064` と低信頼度スイープのユニーク未検出インスタンス `543/953`) を明示、(c) 未定義記号 `(ks > PQ·R/2)` 除去・`"proving"` → `"suggesting"` 弱め (`Cellpose -0.021` / `44%` / `Hard misses` は削除せず維持)、(d) Fig. 1 の refiner 表記を `Crop U-Net boundary refiner (320px, EG-MHSA)` に統一、Ref `[5]` の `ultralytics` 重複解消、p.4 の `4 Acknowledgment` 分断解消 (Table 2 + Fig. 4 左段・謝辞右段一体配置)。
 - **v140 (2-Fold 471観測 H-Flip TTA 検証)**: 70ep 完走モデル同士の Fold-2 で `58363293` (`0.45803`) が全反転 TTA 候補を上回ったため `HOLD` (`58363293` + `57897560` で最終ロック)。
 
 ## 2026-11-09 更新
