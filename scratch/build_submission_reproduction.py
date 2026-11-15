@@ -17,8 +17,20 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 MODULE = HERE.parent
 MASTER = MODULE / "solar_filament_master_pipeline_colab.ipynb"
+CONSENSUS_PATH = MODULE / "solar_filament" / "pipeline" / "consensus_fusion.py"
 OUTPUT = MODULE / "solar_filament_submission_reproduction.ipynb"
 KAGGLE_OUTPUT = MODULE / "output" / "kaggle_kernel" / OUTPUT.name
+
+
+def _strip_package_imports(code_txt: str) -> str:
+    kept = []
+    for ln in code_txt.splitlines():
+        if ln.startswith(("from solar_filament.", "import solar_filament.")):
+            continue
+        if ln.strip() == "from __future__ import annotations":
+            continue
+        kept.append(ln)
+    return "\n".join(kept)
 
 
 def md(source: str) -> dict:
@@ -65,14 +77,28 @@ refiner 学習 → test 推論 → `submission.csv` 生成まで一通り通り�
 
 ## 選択した2つの提出の再現
 
-最終選択は `prod`(上記構成)と `prod_v96full`(検出器だけを全データ学習の
-`yolo_full_fold2_best.pt` に差し替えた構成。refiner・後処理は prod と同一。
-RESEARCH_LOG §2.67/2.68 のデータ量スケーリング・ゲート通過、public 0.39)。
-`prod` は本 notebook をそのまま実行すれば再現できる。
-`prod_v96full` は setup セルの `CFG.SUBMISSION_VARIANT` を `"prod_v96full"`
-に変更して再実行する(repo `weights/yolo_full_fold2_best.pt` を使用、
-出力は `submission_prod_v96full.csv`)。
+最終選択は以下の 2 提出 (いずれも全重みを repo `weights/` に Git LFS で同梱):
 
+1. **第1提出 `cons2of3_sptal_maj3` (Public LB `0.40`、Kaggle ref `58363293`)**:
+   3 本の独立全データ検出器 (`yolo_full_fold2_best.pt` [YOLO11m-seg] +
+   `yolo26m_all_fold0_best.pt` [YOLO26m-seg] +
+   `yolo_spine_small_tal_all_fold2_best.pt` [YOLO11m-seg + Spine-Aux P3 + Small-TAL])
+   の提案を 1対1 二部マッチング (`IoU >= 0.45`) で対応付け、`conf >= 0.26` で
+   2 票以上一致したクラスタに対して EdgeAttNet 全データ refiner (`refiner_all_data.pt`)
+   後の 3 票ピクセル多数決 (`majority_3plus`) と `prod` 同一の面積昇順 ownership を適用
+   (Fold-2 OOF `PQ = 0.4580, +0.0138`, `pq_sparse_r077 = 0.4028`、471枚 2-Fold
+   `Small-TAL` 3検出器 OOF `+0.0081, P(>0)=1.000`、事前ゲート通過で Public LB `0.40` 到達)。
+   setup セルの `CFG.SUBMISSION_VARIANT` を `"cons2of3_sptal_maj3"` に変更する
+   (または環境変数 `SOLAR_SUBMISSION_VARIANT=cons2of3_sptal_maj3`) と再現でき、
+   `submission_cons2of3_sptal_maj3.csv` を出力する。
+2. **第2提出 `prod_v96full` (Public LB `0.39`、Kaggle ref `57897560`)**:
+   単一検出器アンカー (`yolo_full_fold2_best.pt` + 同一 refiner・後処理、
+   RESEARCH_LOG §2.67/2.68 データ量スケーリング・ゲート通過)。
+   `CFG.SUBMISSION_VARIANT = "prod_v96full"` で再現する
+   (出力は `submission_prod_v96full.csv`)。
+
+旧基準の `prod` (fold2 単一検出器、Kaggle ref `57039986`、Public LB `0.39`) は
+本 notebook を既定のまま実行すれば再現できる。
 旧第2候補の `plain_mhsa_f2`(refiner を ablation の plain-MHSA fold2 重みに
 差し替えた構成)も `CFG.SUBMISSION_VARIANT = "plain_mhsa_f2"` で引き続き再現できる
 (重み `refiner_plain_mhsa_fold2_s8407.pt`、出力 `submission_plain_mhsa_f2.csv`)。
@@ -112,10 +138,11 @@ cal > 0.2221 で受理 → refine → ownership (prod と同一)。
 
 SETUP_CELL = """\
 # [1/6] 環境検出・依存関係・設定
-%pip install -q "ultralytics>=8.3,<9" pycocotools
+%pip install -q "ultralytics==8.4.120" pycocotools scipy
 
 import json, math, os, random, shutil, time
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -180,7 +207,10 @@ class CFG:
     # "prod_dedup030": 候補 conf floor 0.02 + isotonic cal 受理 + dedup0.30
     #   (v97 探索 §2.72 — fold2 で +0.0075、第2検出器不要と判明)
     # "prod_v96full": prod の検出器を全データ学習 yolo_full_fold2_best.pt に
-    #   差し替え (第2提出、§2.67/2.68)。refiner・後処理は prod と同一
+    #   差し替え (第2提出アンカー、§2.67/2.68)。refiner・後処理は prod と同一
+    # "cons2of3_sptal_maj3": 第1提出 (Public LB 0.40, ref 58363293) —
+    #   yolo_full_fold2_best.pt + yolo26m_all_fold0_best.pt +
+    #   yolo_spine_small_tal_all_fold2_best.pt の 1対1 2-of-3@0.26 + majority_3plus
     SUBMISSION_VARIANT = "prod"
     SUBMISSION_CONF = float(os.environ.get("SOLAR_SUBMISSION_CONF", "0.26"))
     REFINER_THRESHOLD = 0.45
@@ -193,9 +223,13 @@ class CFG:
     DEDUP030_IOU = 0.30        # dedup mask-IoU 閾値 (探索プラトー中央)
     DEDUP030_LAM = 0.22210895069309958  # 0.5 * prod_pq@0.26 (v97 lam)
 
+if os.environ.get("SOLAR_SUBMISSION_VARIANT"):
+    CFG.SUBMISSION_VARIANT = os.environ["SOLAR_SUBMISSION_VARIANT"]
+
 if CFG.SUBMISSION_VARIANT not in ("prod", "plain_mhsa_f2",
                                   "prod_v94", "probe_refprop",
-                                  "prod_dedup030", "prod_v96full"):
+                                  "prod_dedup030", "prod_v96full",
+                                  "cons2of3_sptal_maj3"):
     raise ValueError(f"Unknown submission variant: {CFG.SUBMISSION_VARIANT}")
 
 # prod_dedup030: fold2 YOLO候補で fit したグローバル isotonic (conf→E[hit-IoU])
@@ -419,11 +453,20 @@ refiner_label, refiner_path = (
     ("refiner_plain_mhsa_f2", plain_ckpt)
     if CFG.SUBMISSION_VARIANT == "plain_mhsa_f2"
     else ("refiner_all_data", ALLDATA_CKPT))
-yolo_label = "yolo_full_fold2" if CFG.SUBMISSION_VARIANT == "prod_v96full" else "yolo_fold2"
-for label, path in [
-    (yolo_label, detector_ckpt),
-    (refiner_label, refiner_path),
-]:
+if CFG.SUBMISSION_VARIANT == "cons2of3_sptal_maj3":
+    ckpt_records = [
+        ("yolo_full_fold2", detector_ckpt),
+        ("yolo26m_all_fold0", yolo26_ckpt),
+        ("yolo_spine_small_tal_all_fold2", sptal_ckpt),
+        (refiner_label, refiner_path),
+    ]
+else:
+    yolo_label = "yolo_full_fold2" if CFG.SUBMISSION_VARIANT == "prod_v96full" else "yolo_fold2"
+    ckpt_records = [
+        (yolo_label, detector_ckpt),
+        (refiner_label, refiner_path),
+    ]
+for label, path in ckpt_records:
     if path and Path(path).exists():
         digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
         print(f"SHA256 {label}: {digest}")
@@ -498,6 +541,15 @@ for name in tqdm(train_files, desc="前処理画像をローカルへ"):
             print(f"fold {fold}: 添付済み重みを使用 {pretrained}")
             return checkpoint_path
 """)
+    old_fold_loop9 = "for fold in (0, 1, 2):\n    train_refiner_fold(fold)"
+    assert old_fold_loop9 in src9, "cell9 fold loop anchor mismatch"
+    src9 = src9.replace(old_fold_loop9, """if (CFG.ARTIFACT_ROOT / "mediseg_edgeattnet_refiner_all_data_resume.pt").exists() or (
+    resolve_pretrained(["*refiner*all*data*.pt", "*edgeattnet*all*.pt"]) is not None
+):
+    print("all-data refiner 重みが利用可能なため fold 0-2 refiner の再学習をスキップします")
+else:
+    for fold in (0, 1, 2):
+        train_refiner_fold(fold)""")
     cells[9] = code(src9)
 
     # 5b. all-data refiner セル(cell 10): ckpt存在チェック前に添付重み解決を挿入
@@ -512,6 +564,7 @@ else:
 
     # 6. submission セル(cell 12): 出力先を WORK_ROOT ベースにし、
     #    test画像のコピー経路も prepare_preprocessed 経由に(Kaggle で PREPROC_CACHE=None)
+    cons_src = _strip_package_imports(CONSENSUS_PATH.read_text(encoding="utf-8"))
     src12 = "".join(cells[12]["source"])
     anchor12 = 'OUTPUT_PATH = Path("/content/submission.csv")'
     assert anchor12 in src12, "cell12 output anchor mismatch"
@@ -521,8 +574,9 @@ else:
 OUTPUT_PATH = (WORK_ROOT / f"submission{_conf_tag}.csv"
                if CFG.SUBMISSION_VARIANT == "prod"
                else WORK_ROOT / f"submission_{CFG.SUBMISSION_VARIANT}{_conf_tag}.csv")''')
-    # 検出器を提出バリアントに応じて解決(prod_v96full=全データ学習 YOLO、
-    # それ以外=fold2 YOLO)。欠落時は fold 重みへフォールバックせず停止する
+    # 検出器を提出バリアントに応じて解決(cons2of3_sptal_maj3=3本全データ検出器、
+    # prod_v96full=全データ学習 YOLO、それ以外=fold2 YOLO)。
+    # 欠落時は fold 重みへフォールバックせず停止する
     old_yolo = "yolo_model = YOLO(str(yolo_weight_paths[CFG.SINGLE_FOLD]))"
     assert src12.count(old_yolo) == 1, "cell12 yolo anchor mismatch"
     src12 = src12.replace(old_yolo, """if CFG.SUBMISSION_VARIANT == "prod_v96full":
@@ -531,10 +585,24 @@ OUTPUT_PATH = (WORK_ROOT / f"submission{_conf_tag}.csv"
         raise FileNotFoundError(
             "prod_v96full の検出器重み yolo_full_fold2_best.pt が見つかりません。"
             "repo weights/、重み dataset、または Drive artifacts に配置してください")
+elif CFG.SUBMISSION_VARIANT == "cons2of3_sptal_maj3":
+    detector_ckpt = resolve_pretrained(["yolo_full_fold2_best.pt"])
+    yolo26_ckpt = resolve_pretrained(["yolo26m_all_fold0_best.pt"])
+    sptal_ckpt = resolve_pretrained(["yolo_spine_small_tal_all_fold2_best.pt"])
+    if detector_ckpt is None or yolo26_ckpt is None or sptal_ckpt is None:
+        raise FileNotFoundError(
+            "cons2of3_sptal_maj3 の 3 検出器重み (yolo_full_fold2_best.pt, "
+            "yolo26m_all_fold0_best.pt, yolo_spine_small_tal_all_fold2_best.pt) "
+            "が揃っていません。repo weights/、重み dataset、または Drive artifacts に配置してください")
 else:
     detector_ckpt = yolo_weight_paths[CFG.SINGLE_FOLD]
 print(f"detector: {detector_ckpt}")
-yolo_model = YOLO(str(detector_ckpt))""")
+yolo_model = YOLO(str(detector_ckpt))
+if CFG.SUBMISSION_VARIANT == "cons2of3_sptal_maj3":
+    print(f"detector[yolo26]: {yolo26_ckpt}")
+    print(f"detector[sptal_best]: {sptal_ckpt}")
+    yolo26_model = YOLO(str(yolo26_ckpt))
+    sptal_model = YOLO(str(sptal_ckpt))""")
     # refiner を提出バリアントに応じて解決(prod=all-data EdgeAtt、
     # plain_mhsa_f2=添付 dataset/Drive の ablation plain-MHSA fold2 重み)
     old_refiner = """refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
@@ -551,7 +619,8 @@ refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
     refiner = MediSegPlainMHSAUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(plain_ckpt, map_location="cuda", weights_only=False)
 elif CFG.SUBMISSION_VARIANT in ("prod", "prod_v94", "probe_refprop",
-                                "prod_dedup030", "prod_v96full"):
+                                "prod_dedup030", "prod_v96full",
+                                "cons2of3_sptal_maj3"):
     refiner = MediSegEdgeAttUNet(3, 1, False).cuda().eval()
     refiner_ckpt = torch.load(ALLDATA_CKPT, map_location="cuda", weights_only=False)
 else:
@@ -613,7 +682,7 @@ def single_fold_proposals(image_path):
                (f"submission_master_pipeline_{CFG.SUBMISSION_VARIANT}{_conf_tag}.csv"
                 if CFG.SUBMISSION_VARIANT != "prod"
                 else f"submission_master_pipeline{_conf_tag}.csv"))''')
-    # 計算効率(ルーブリック明記項目): 画像あたり推論wall-clockを計測して記録
+    # 1対1 3検出器融合 (cons2of3_sptal_maj3) ヘルパと推論分岐を挿入
     old_loop = """for file_name in tqdm(test_files, desc="test推論"):
     image_path = CFG.PREPROC_DIR / file_name
     image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
@@ -622,28 +691,81 @@ def single_fold_proposals(image_path):
     refined = [refine_proposal(image, m) for _, m in proposals]
     final_masks = apply_ownership(refined, scores)"""
     assert old_loop in src12, "cell12 inference loop anchor mismatch"
-    src12 = src12.replace(old_loop, """inference_start = time.time()
+    src12 = src12.replace(old_loop, cons_src + """
+
+@torch.no_grad()
+def refine_batch_proposals(image_bgr, masks):
+    if not masks:
+        return []
+    boxes = [mask_square_box(m) for m in masks]
+    crops = np.stack([
+        cv2.resize(image_bgr[y0:y1, x0:x1], (CFG.CROP_SIZE, CFG.CROP_SIZE),
+                   interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1)
+        for x0, y0, x1, y1 in boxes
+    ], axis=0)
+    tensor = torch.from_numpy(crops).float().cuda() / 255.0
+    outs = []
+    for idx_b in range(0, len(tensor), 32):
+        outs.append(torch.sigmoid(refiner(tensor[idx_b:idx_b + 32])).squeeze(1).cpu().numpy())
+    probs = np.concatenate(outs, axis=0)
+    refined_out = []
+    for m, (x0, y0, x1, y1), pr in zip(masks, boxes, probs):
+        pb = cv2.resize(pr, (x1 - x0, y1 - y0), interpolation=cv2.INTER_LINEAR) >= CFG.REFINER_THRESHOLD
+        fm = np.zeros_like(m, dtype=bool)
+        fm[y0:y1, x0:x1] = pb
+        refined_out.append(fm & m)
+    return refined_out
+
+inference_start = time.time()
 for file_name in tqdm(test_files, desc="test推論"):
     image_path = CFG.PREPROC_DIR / file_name
     image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-    proposals = single_fold_proposals(image_path)
-    scores = np.array([c for c, _ in proposals], dtype=np.float32)
-    refined = [refine_proposal(image, m) for _, m in proposals]
-    final_masks = apply_ownership(refined, scores)""")
-
-    # emission を提出バリアントに応じて分岐 (v94=ownership撤廃、
-    # probe_refprop=refined+proposal 2仮説、既定は従来 ownership)
-    old_emit = "    final_masks = apply_ownership(refined, scores)"
-    assert src12.count(old_emit) == 1, "cell12 emission anchor mismatch"
-    src12 = src12.replace(old_emit, """    if CFG.SUBMISSION_VARIANT == "prod_v94":
-        # v94: ownership 撤廃 — refined mask をそのまま emit (§2.60/2.61)
-        final_masks = [m for m in refined if m.any()]
-    elif CFG.SUBMISSION_VARIANT == "probe_refprop":
-        # 採点機構 probe: refined + proposal の 2 仮説 emit (探索用)
-        final_masks = ([m for m in refined if m.any()]
-                       + [m for _, m in proposals if m.any()])
+    if CFG.SUBMISSION_VARIANT == "cons2of3_sptal_maj3":
+        props = []
+        s_by_det = {}
+        for det_name, det_model in (("prod", yolo_model),
+                                    ("sptal_best", sptal_model),
+                                    ("yolo26", yolo26_model)):
+            res_d = det_model.predict(str(image_path), imgsz=CFG.YOLO_IMGSZ,
+                                      conf=0.08, iou=CFG.PREDICT_IOU,
+                                      agnostic_nms=True, retina_masks=True,
+                                      verbose=False)[0]
+            ms_d = result_masks(res_d)
+            cf_d = (res_d.boxes.conf.detach().cpu().numpy().astype(np.float32)
+                    if res_d.boxes is not None else np.zeros(0, dtype=np.float32))
+            vi_d = [i for i, m_d in enumerate(ms_d) if float(m_d.sum()) >= float(CFG.MIN_AREA)]
+            vms_d = [ms_d[i] for i in vi_d]
+            vcf_d = cf_d[vi_d] if vi_d else np.zeros(0, dtype=np.float32)
+            rms_d = refine_batch_proposals(image, vms_d)
+            raw_rles_d = [mask_utils.encode(np.asfortranarray(m_d.astype(np.uint8))) for m_d in vms_d]
+            ref_rles_d = [mask_utils.encode(np.asfortranarray(m_d.astype(np.uint8))) for m_d in rms_d]
+            s_by_det[det_name] = [rle_to_crop_spec(r) for r in ref_rles_d]
+            for idx_p in range(len(vcf_d)):
+                props.append(DetectorProposal(det_name, float(vcf_d[idx_p]), raw_rles_d[idx_p], idx_p))
+        proposals = props
+        clusters = match_detector_proposals_1to1(props, iou_threshold=0.45)
+        chosen_specs = []
+        for cl in clusters:
+            if cl.count_above(CFG.SUBMISSION_CONF) >= 2:
+                sp = fuse_refined_crop_specs(cl, s_by_det, mode="majority_3plus")
+                if sp[5] >= float(CFG.MIN_AREA):
+                    chosen_specs.append(sp)
+        final_rles = fast_apply_own_specs(
+            chosen_specs, thr=CFG.DROP_THRESHOLD, min_area=CFG.MIN_AREA)
+        final_masks = [mask_utils.decode(r).astype(bool) for r in final_rles]
     else:
-        final_masks = apply_ownership(refined, scores)""")
+        proposals = single_fold_proposals(image_path)
+        scores = np.array([c for c, _ in proposals], dtype=np.float32)
+        refined = [refine_proposal(image, m) for _, m in proposals]
+        if CFG.SUBMISSION_VARIANT == "prod_v94":
+            # v94: ownership 撤廃 — refined mask をそのまま emit (§2.60/2.61)
+            final_masks = [m for m in refined if m.any()]
+        elif CFG.SUBMISSION_VARIANT == "probe_refprop":
+            # 採点機構 probe: refined + proposal の 2 仮説 emit (探索用)
+            final_masks = ([m for m in refined if m.any()]
+                           + [m for _, m in proposals if m.any()])
+        else:
+            final_masks = apply_ownership(refined, scores)""")
 
     # 最終 print の直前に計算効率サマリを挿入
     old_tail = """print({"rows": len(submission), "images_with_predictions":
@@ -662,8 +784,8 @@ print({"rows": len(submission), "images_with_predictions":
     cells[12] = code(src12)
 
     # 6b. 出力監査セル(cell 14): disjoint 性 assert は ownership を通す
-    # variant (prod / plain_mhsa_f2) のみに限定。prod_v94 / probe_refprop は
-    # mask 重複を意図的に許容するため、重複画素数を計数して報告に留める。
+    # variant (prod / plain_mhsa_f2 / prod_dedup030 / prod_v96full / cons2of3_sptal_maj3) に適用。
+    # prod_v94 / probe_refprop は mask 重複を意図的に許容するため、重複画素数を計数して報告に留める。
     src14 = "".join(cells[14]["source"])
     old_occ = "occupancy = {}"
     assert src14.count(old_occ) == 1, "cell14 occupancy anchor mismatch"
@@ -673,7 +795,7 @@ print({"rows": len(submission), "images_with_predictions":
     assert old_overlap in src14, "cell14 overlap anchor mismatch"
     src14 = src14.replace(old_overlap, """    overlap_n = int(np.logical_and(occ, decoded.astype(bool)).sum())
     if CFG.SUBMISSION_VARIANT in ("prod", "plain_mhsa_f2", "prod_dedup030",
-                                  "prod_v96full"):
+                                  "prod_v96full", "cons2of3_sptal_maj3"):
         assert overlap_n == 0, f"重複: {image_id}"
     overlap_pixels += overlap_n
     occ |= decoded.astype(bool)""")

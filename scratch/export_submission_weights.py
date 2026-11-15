@@ -55,6 +55,12 @@ EXPORTS = [
     # prod_v96full (第2提出): 全データ学習 YOLO (RESEARCH_LOG §2.68)
     ("yolo_full_fold2_best.pt",
      RUNS / "v96_data_scaling/yolo_full_fold2/weights/best.pt", None),
+    # cons2of3_sptal_maj3 (第1提出 LB 0.40, ref 58363293):
+    # YOLO26m 全データ + Spine-Aux(0.5)+Small-TAL(4.0) 全データ
+    ("yolo26m_all_fold0_best.pt",
+     RUNS / "v123_yolo26_all/yolo_yolo26m_all_fold0/weights/best.pt", None),
+    ("yolo_spine_small_tal_all_fold2_best.pt",
+     RUNS / "v134_spine_small_tal/yolo_spine_small_tal_all_fold2/weights/best.pt", None),
 ]
 
 # frozen grouped_folds.csv (registry copy, notebook が sha256 検証するもの)
@@ -151,8 +157,8 @@ def main() -> int:
         "weights": rows,
     }
     (args.out / "weights_manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8")
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8", newline="\n")
     print(f"manifest -> {args.out/'weights_manifest.json'}")
     return 0
 

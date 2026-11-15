@@ -1,5 +1,12 @@
 # 最終提出パッケージ — 作業メモ(2026-10-07)
 
+## 2026-11-15 最終更新 (Public LB 0.40 到達)
+
+- **3 検出器 1対1 二部合意 + 3票ピクセル多数決 (`cons2of3_sptal_maj3`, ref `58363293`) で Public LB `0.40` 突破**:
+  `YOLO11m-seg` + `YOLO26m-seg` + `YOLO11m-seg (Spine-Aux 0.5 + Small-TAL 4.0)` の全データ 70ep 3 検出器
+  および `refiner_all_data.pt` により Fold-2 honest OOF `0.4580 (+0.0138, FP -15.7%)`・Public LB **`0.40`** を達成。
+  Fig. 1–3 を維持したまま Abstract / §2.2 / §2.4 / Table 1 / Submission evidence / §3.3 を更新し **厳密 4p 維持を確認**。
+
 ## 2026-11-09 更新
 
 - **Fig.3 (error_anatomy.png) 追加**: fold-2 OOF prod 実測の残存誤差2例

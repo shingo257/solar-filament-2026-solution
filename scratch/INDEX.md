@@ -184,6 +184,15 @@ RESEARCH_LOG §2.x の数値を生成した解析スクリプト（実験系以�
 - `build_v91_semsweep_cells.py`
 - `build_v92_cellpose_flow.py`
 - `build_v92_cellpose_flow_cells.py`
+- `build_v127_spine_ab_colab.py`
+- `build_v128_hysteresis_split_colab.py`
+- `build_v129_spine_refiner_colab.py`
+- `build_v130_small_tal_colab.py`
+- `build_v131_sibling_shield_colab.py`
+- `build_v132_consensus_fusion_colab.py`
+- `build_v133_small_tal_folds_colab.py`
+- `build_v134_spine_small_tal_combo_colab.py`
+- `build_v135_pilot_4way_audit_colab.py`
 - `diagnose_v80_scorer.py`
 - `run_v38_v39_raw_pq.py`
 - `run_v82_aggregate.py`

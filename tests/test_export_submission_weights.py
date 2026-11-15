@@ -95,3 +95,17 @@ def test_verify_rejects_missing_file(tmp_path, source_ckpt):
     src, _ = source_ckpt
     assert mod.verify_one(tmp_path, "absent.pt", src,
                           "best_model").startswith("MISSING")
+
+
+def test_exports_table_covers_all_reproducible_submission_variants():
+    exported_names = {name for name, _, _ in mod.EXPORTS}
+    assert {
+        "yolo_fold0_best.pt",
+        "yolo_fold1_best.pt",
+        "yolo_fold2_best.pt",
+        "refiner_all_data.pt",
+        "refiner_plain_mhsa_fold2_s8407.pt",
+        "yolo_full_fold2_best.pt",
+        "yolo26m_all_fold0_best.pt",
+        "yolo_spine_small_tal_all_fold2_best.pt",
+    } <= exported_names

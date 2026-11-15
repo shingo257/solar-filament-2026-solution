@@ -86,7 +86,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 
 | 項目 | 値 |
 |---|---:|
-| 確認できた自己ベスト Public | 0.39（V52、2026-08-30、EdgeAttNet refiner採用） |
+| 確認できた自己ベスト Public | **`0.40`**（2026-11-15、`cons2of3_sptal_maj3` = Kaggle ref `58363293`、全データ 3 検出器 `YOLO11m-seg` + `YOLO26m-seg` + `YOLO11m-seg [Spine-Aux 0.5 + Small-TAL 4.0]` の 1対1 `2-of-3 @ 0.26` + `majority_3plus`） / 単体アンカー `0.39`（V52 `57039986` / v96-full `57897560`） |
 | V35（YOLOアンサンブル + 標準refiner） | 0.37（2026-08-16） |
 | 全fold OOF ベースライン（生 YOLO, conf 0.26） | PQ 0.3937 |
 | + refiner `shrink@0.45` + 排他化（全fold, リークなし） | PQ 0.4426（標準refiner） |
@@ -96,7 +96,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | Public LB の採点対象 | **testの約50%（≈90枚）**（LBページ明記、2026-10-09確認）。2桁表示では0.01未満の差を識別できないため提出間比較はOOFのみ |
 | 作者調査の参照例（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr` の公開記述。分割・来歴は独立未確認）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
 | **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）、Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却 + v69タイル推論 + v70深層verifier、作者記録）のため確定 |
-| **最終2枠（2026-11-03 更新）** | **prod + prod_v96full**（検出器のみ全データ学習 YOLO に差し替え、データ量スケーリング・ゲート通過、Public 0.39、RESEARCH_LOG §2.67/2.68）。dedup030 は独立 fold で再現せず不採用（§2.75）。plain_mhsa_f2 は代替候補として再現経路を維持 |
+| **最終2枠（2026-11-15 確定）** | **第1選択 `cons2of3_sptal_maj3`（ref `58363293`, Public `0.40`） + 第2選択 `prod_v96full`（ref `57897560`, Public `0.39`、単一検出器アンカー）**。いずれも `solar_filament_submission_reproduction.ipynb` + 同梱 `weights/`（Git LFS 8 重み）のみでクリーン再現可能 |
 
 ### 最終提出の再現（最短経路）
 

@@ -5236,3 +5236,31 @@ arm A=対照 / arm B=aux (P3 proto 入力へ 1x1 conv head・正負別 BCE・
 AUX_WEIGHT=0.5 fit-only 固定)。両 arm prod recipe verbatim 70ep
 last.pt、builder 契約テスト 8 件追加。**残る人間確認: notebook を
 Colab で実行するのは締切後研究枠**。
+
+
+**v133–v137 検出器フロンティア突破 & 最終提出 Public LB 0.40 到達 (2026-11-14〜11-15)**:
+後処理空間の閉鎖を受け、ボトルネックであった検出器側の小フィラメント正例割当・細長構造教師・
+直交アーキテクチャ間 1対1 合意に集中:
+1. **Small-TAL (`v133`, `solar_filament/pipeline/small_tal_yolo.py`)**:
+   `TaskAlignedAssigner` の正例整合スコアへ面積逆平方根ブースト (上限 `4.0x`) を導入。
+   471 観測 2-Fold (Fold-0 + Fold-2) honest OOF で単体 `+0.0046` PQ、さらに
+   `prod + yolo26 + Small-TAL` の 1対1 二部マッチング (`IoU >= 0.45`, `2-of-3 @ 0.26`) +
+   3票ピクセル多数決 (`majority_3plus`, `solar_filament/pipeline/consensus_fusion.py`) で
+   **`PQ = 0.45238 (+0.00810)`**、`pq_sparse_r077 = 0.39731 (+0.00788)`、2,000 回クラスタ
+   bootstrap **`P(Δ > 0) = 1.0000`** を達成。All-Data 版 `58361573` (`1,130` rows, sha256 `be520dc2…`)
+   は Public LB `0.39` (`pq_sparse_r077 < 0.400` 予測と整合)。
+2. **Spine-Aux (0.5) + Small-TAL (4.0) 統合 (`v134b` Fold-2 / `v134c` All-Data)**:
+   `SplitSpineSegments` 擬似クラス変換不変ラスタライズによる P3 補助ヘッド (`aux_weight=0.5`) と
+   `Small-TAL (4.0)` を同時有効化。Fold-2 honest OOF (`n=235`) にて `prod + yolo26 + v134b`
+   (`2-of-3 @ 0.26` + `majority_3plus`) が **`PQ = 0.45803 (+0.01380)`**、`TP = 1730 (+15)`、
+   `FP = 632 (-118, -15.7%)`、**`pq_sparse_r077 = 0.40282 (+0.01323)`** (`P(Δ > 0) = 1.0000`) に到達し、
+   初めて 77% 疎注釈シミュレーションで `0.400` 境界を突破。
+3. **All-Data 最終提出 `58363293` (`cons2of3_sptal_maj3`) → Public LB `0.40` 達成**:
+   全 707 観測 70 epoch 完走の 3 検出器 (`yolo_full_fold2_best.pt` sha `f54c812d…` +
+   `yolo26m_all_fold0_best.pt` sha `25002d23…` + `yolo_spine_small_tal_all_fold2_best.pt` sha `f6623992…`)
+   + `refiner_all_data.pt` (sha `e9f0e8dd…`) から `submission_v137_cons2of3_sptal_prod_z_c26_maj3.csv`
+   (`1,136` rows, `178/180` non-empty images, `overlap_pixels = 0`, sha256 `9e22940183ebf88f7bbcde577593b0c6bc95c73e793f789b576092b1cc492184`)
+   を生成・提出し、Kaggle Submission **`58363293` で Public LB `0.40`** を記録 (事前申告 `> 0.39`
+   ゲート通過により第1最終選択に昇格、第2最終選択は単一検出器アンカー `prod_v96full` = `57897560`, LB `0.39`)。
+   全 8 重みを standalone 公開 repo `weights/` (Git LFS) + `weights_manifest.json` に格納し、
+   `solar_filament_submission_reproduction.ipynb` (`SUBMISSION_VARIANT = "cons2of3_sptal_maj3"`) で完全再現可能とした。

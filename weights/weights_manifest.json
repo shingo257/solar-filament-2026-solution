@@ -49,6 +49,22 @@
       "source_sha256": "f54c812d7406dafad82f02b6d320b634ccf0efb21f2f78c9d1be44fa41895afa",
       "size_bytes": 45317878,
       "sha256": "f54c812d7406dafad82f02b6d320b634ccf0efb21f2f78c9d1be44fa41895afa"
+    },
+    {
+      "copied": true,
+      "file_name": "yolo26m_all_fold0_best.pt",
+      "source_path": "G:\\マイドライブ\\solar_filament_v30\\runs\\v123_yolo26_all\\yolo_yolo26m_all_fold0\\weights\\best.pt",
+      "source_sha256": "25002d23f7b915e8076ab7e2429d34f6b0c4c6aed72d01abfc3a9985a5938ca9",
+      "size_bytes": 54637681,
+      "sha256": "25002d23f7b915e8076ab7e2429d34f6b0c4c6aed72d01abfc3a9985a5938ca9"
+    },
+    {
+      "copied": true,
+      "file_name": "yolo_spine_small_tal_all_fold2_best.pt",
+      "source_path": "G:\\マイドライブ\\solar_filament_v30\\runs\\v134_spine_small_tal\\yolo_spine_small_tal_all_fold2\\weights\\best.pt",
+      "source_sha256": "f6623992b998ded0a460d5e61b5d60e7a7723bad9814b10c02cd99e4b958d00d",
+      "size_bytes": 45320172,
+      "sha256": "f6623992b998ded0a460d5e61b5d60e7a7723bad9814b10c02cd99e4b958d00d"
     }
   ]
 }

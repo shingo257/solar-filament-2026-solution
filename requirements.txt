@@ -11,7 +11,9 @@
 #   ローカル診断 (2026-08-15, Windows CPU):      torch 2.11.0+cpu, numpy 2.4.2, scipy 1.17.0
 #   V30 本体 (2026-08-14, Colab):                 unknown — pip freeze を保存していなかった
 #
-# ★ 作者が本番提出CSV(LB 0.39)の生成環境として記録した freeze:
+# ★ 最終選択提出 CSV (cons2of3_sptal_maj3, ref 58363293, LB 0.40) の生成環境:
+#   Colab A100 (torch 2.14.1+cu130, ultralytics 8.4.120, Python 3.12)
+# ★ 単一検出器アンカー提出 CSV (prod / prod_v96full, LB 0.39) の生成環境 freeze:
 #   `pip-freeze-prod-2026-10-11.txt` (Windows CPU, torch 2.11.0+cpu,
 #   ultralytics 8.4.120, numpy 2.4.2, pandas 3.0.0, opencv 4.13.0.92,
 #   scikit-learn 1.8.0, pycocotools 2.0.11, Python 3.12.10)
@@ -35,8 +37,8 @@ albumentations>=1.3.0
 einops>=0.6.0
 
 # --- V30以降のinstanceパイプラインで追加 ---
-# ultralytics: YOLO11m-seg による個体検出。初回の weight 取得に Internet が要る
-ultralytics>=8.3.0
+# ultralytics: YOLO11m-seg / YOLO26m-seg による個体検出 (YOLO26m-seg 読込に >=8.4.120 必須)
+ultralytics>=8.4.120
 # pycocotools: 公式 compressed RLE の encode/decode と RLE 同士の高速 IoU。
 #              評価指標 (src/metrics_official.py) と提出生成の両方で必須
 pycocotools>=2.0.7

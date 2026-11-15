@@ -7,7 +7,6 @@ from types import SimpleNamespace
 
 import pytest
 
-
 MODULE = Path(__file__).resolve().parents[1]
 
 
@@ -139,3 +138,84 @@ def test_notebook_contains_plain_model_definition():
         defined.update(node.name for node in ast.parse(source).body
                        if isinstance(node, ast.ClassDef))
     assert {"MediSegPlainMHSAUNet", "PlainMHSA", "MediSegEdgeAttUNet"} <= defined
+
+
+def _detector_mapping(variant, mapping):
+    dispatch = _variant_if("detector_ckpt =")
+    patterns_seen = []
+
+    def resolve(patterns):
+        patterns_seen.extend(patterns)
+        for p in patterns:
+            if p in mapping:
+                return mapping[p]
+        return None
+
+    scope = {"CFG": SimpleNamespace(SUBMISSION_VARIANT=variant, SINGLE_FOLD=2),
+             "resolve_pretrained": resolve,
+             "yolo_weight_paths": {2: Path("yolo_fold_2/best.pt")}}
+    tree = ast.fix_missing_locations(ast.Module(body=[dispatch], type_ignores=[]))
+    exec(compile(tree, "generated-detector-dispatch", "exec"), scope)
+    return scope, patterns_seen
+
+
+def test_sptal_trio_detector_resolves_all_three_all_data_weights():
+    mapping = {
+        "yolo_full_fold2_best.pt": Path("weights/yolo_full_fold2_best.pt"),
+        "yolo26m_all_fold0_best.pt": Path("weights/yolo26m_all_fold0_best.pt"),
+        "yolo_spine_small_tal_all_fold2_best.pt": Path("weights/yolo_spine_small_tal_all_fold2_best.pt"),
+    }
+    scope, patterns = _detector_mapping("cons2of3_sptal_maj3", mapping)
+    assert scope["detector_ckpt"] == mapping["yolo_full_fold2_best.pt"]
+    assert scope["yolo26_ckpt"] == mapping["yolo26m_all_fold0_best.pt"]
+    assert scope["sptal_ckpt"] == mapping["yolo_spine_small_tal_all_fold2_best.pt"]
+    assert patterns == [
+        "yolo_full_fold2_best.pt",
+        "yolo26m_all_fold0_best.pt",
+        "yolo_spine_small_tal_all_fold2_best.pt",
+    ]
+
+
+@pytest.mark.parametrize(
+    "missing_key",
+    [
+        "yolo_full_fold2_best.pt",
+        "yolo26m_all_fold0_best.pt",
+        "yolo_spine_small_tal_all_fold2_best.pt",
+    ],
+)
+def test_missing_any_sptal_trio_weight_never_falls_back_to_fold2(missing_key):
+    mapping = {
+        "yolo_full_fold2_best.pt": Path("weights/yolo_full_fold2_best.pt"),
+        "yolo26m_all_fold0_best.pt": Path("weights/yolo26m_all_fold0_best.pt"),
+        "yolo_spine_small_tal_all_fold2_best.pt": Path("weights/yolo_spine_small_tal_all_fold2_best.pt"),
+    }
+    mapping.pop(missing_key)
+    with pytest.raises(FileNotFoundError):
+        _detector_mapping("cons2of3_sptal_maj3", mapping)
+
+
+def test_sptal_trio_dispatch_uses_prod_all_data_refiner():
+    kind, loaded, patterns = _dispatch("cons2of3_sptal_maj3", None)
+    assert kind == "edge"
+    assert loaded == [Path("all-data.pt")]
+    assert not patterns
+
+
+def test_sptal_trio_is_disjoint_audited_and_embeds_1to1_consensus_helpers():
+    nb = _notebook()
+    setup = "".join(nb["cells"][2]["source"])
+    cell12 = "".join(nb["cells"][12]["source"])
+    audit = "".join(nb["cells"][14]["source"])
+    assert '"cons2of3_sptal_maj3"' in setup
+    assert '"cons2of3_sptal_maj3"' in audit.split("assert overlap_n == 0")[0]
+    parsed12 = ast.parse(cell12)
+    classes12 = {n.name for n in parsed12.body if isinstance(n, ast.ClassDef)}
+    funcs12 = {n.name for n in parsed12.body if isinstance(n, ast.FunctionDef)}
+    assert {"DetectorProposal", "MatchedCluster"} <= classes12
+    assert {
+        "match_detector_proposals_1to1",
+        "fuse_refined_crop_specs",
+        "fast_apply_own_specs",
+        "refine_batch_proposals",
+    } <= funcs12
