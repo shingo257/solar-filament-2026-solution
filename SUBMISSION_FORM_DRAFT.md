@@ -18,8 +18,10 @@
 | 設問(想定) | 回答 |
 |---|---|
 | Name | Shingo Hara |
+| Affiliation / Organization | `ER SYSTEMS,Ltd.` (report と完全一致) |
 | Email | shingo257@gmail.com (report と一致) |
-| Kaggle team name / account | Team Name: **`ER SYSTEMS,Ltd.`** (Leaderboard 表示名と完全一致) / Kaggle username: **`shingo257`** |
+| Kaggle team name | **`ERS`** (Leaderboard 表示名と完全一致) |
+| Kaggle username / account | `shingo257` |
 | Team members | Shingo Hara (単独) |
 | Technical report (PDF) | `report/main.pdf` — **厳密 4ページ全体** (本文 + Section 4 Acknowledgment 原文 + References を含む; Overleaf テンプレ準拠) |
 | Code repository URL | `https://github.com/shingo257/solar-filament-2026-solution` — **public 済み・匿名 clone + `git lfs pull` 全 8 重み SHA256 一致検証済み** |
