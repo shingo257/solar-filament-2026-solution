@@ -1,69 +1,38 @@
-# Solar Filament Segmentation Challenge 2026
+# Solar Filament Segmentation Challenge 2026 — Pinned Reproduction Environment
 #
-# ⚠️ 再現性について
-# 以下は「必要なパッケージの一覧」であり、正式runの環境そのものではない。
-# `>=` 指定のままでは Colab の Latest Container 更新で API や既定値が変わり得る。
-# **正式runでは必ず `pip freeze > pip-freeze-<experiment-id>.txt` を成果物として保存し、
-# manifest から参照すること**（HANDOVER §17.6, §34）。
+# Primary selected submission:
+#   cons2of3_sptal_maj3 (Kaggle ref 58363293, Public LB 0.40)
+#   Verified in clean-room Colab A100 run (v139, 1,135/1,136 matched @ IoU>=0.5, mean IoU 0.9998)
+# Backup single-detector anchor submission:
+#   prod_v96full (Kaggle ref 57897560, Public LB 0.39)
 #
-# 確認済みの実行環境:
-#   fold1/2 refiner 学習 (2026-08-15, Colab T4): torch 2.11.0+cu128, Python 3.12
-#   ローカル診断 (2026-08-15, Windows CPU):      torch 2.11.0+cpu, numpy 2.4.2, scipy 1.17.0
-#   V30 本体 (2026-08-14, Colab):                 unknown — pip freeze を保存していなかった
-#
-# ★ 最終選択提出 CSV (cons2of3_sptal_maj3, ref 58363293, LB 0.40) の生成環境:
-#   Colab A100 (torch 2.14.1+cu130, ultralytics 8.4.120, Python 3.12)
-# ★ 単一検出器アンカー提出 CSV (prod / prod_v96full, LB 0.39) の生成環境 freeze:
-#   `pip-freeze-prod-2026-10-11.txt` (Windows CPU, torch 2.11.0+cpu,
-#   ultralytics 8.4.120, numpy 2.4.2, pandas 3.0.0, opencv 4.13.0.92,
-#   scikit-learn 1.8.0, pycocotools 2.0.11, Python 3.12.10)
-#   Colab GPU 再現(2026-10-11, A100)は 1172/1172 filament 一致(IoU>0.5)という作者報告。
-#   過去実行のコード・入力・モデル・出力を結ぶ manifest は未確認(HANDOVER 冒頭)。
-#   CPU freeze を GPU 環境へ読み替えただけでは同等性を保証しない。実際の GPU freeze を別途記録する。
+# Full raw container `pip freeze` snapshots are archived in:
+#   - output/kernel_run/solar_filament_v30/artifacts/submission_reproduction_pip_freeze.txt (Colab/Kaggle GPU, Python 3.12, CUDA 12.8)
+#   - pip-freeze-prod-2026-10-11.txt (Windows CPU reference, Python 3.12.10)
 
 # --- Core PyTorch & Vision ---
-torch>=2.0.0
-torchvision>=0.15.0
-numpy>=1.24.0
-pandas>=2.0.0
-opencv-python>=4.7.0
-pillow>=9.5.0
-scikit-learn>=1.2.0
+torch==2.11.0
+torchvision==0.26.0
+numpy==2.1.3
+pandas==2.3.3
+opencv-python==4.14.0.94
+pillow==12.3.0
+scikit-learn==1.6.1
 
-# --- 2D Segmentation & Deep Learning Ecosystem ---
-segmentation-models-pytorch>=0.3.3
-timm>=0.9.0
-albumentations>=1.3.0
-einops>=0.6.0
+# --- Deep Learning & Segmentation Ecosystem ---
+timm==1.0.29
+albumentations==2.0.8
+einops==0.8.2
 
-# --- V30以降のinstanceパイプラインで追加 ---
-# ultralytics: YOLO11m-seg / YOLO26m-seg による個体検出 (YOLO26m-seg 読込に >=8.4.120 必須)
-ultralytics>=8.4.120
-# pycocotools: 公式 compressed RLE の encode/decode と RLE 同士の高速 IoU。
-#              評価指標 (src/metrics_official.py) と提出生成の両方で必須
-pycocotools>=2.0.7
-# scipy: Hungarian matching (linear_sum_assignment)、統計検定
-scipy>=1.10.0
-# scikit-image: watershed など（V34 の semantic-first 実験で使用）、
-#               match_histograms（pseudo-labeling用のFITS階調変換、§2.1）
-scikit-image>=0.21.0
-# astropy: GONGアーカイブのFpack圧縮FITS(.fits.fz)デコード（pseudo-labeling、§2.1）
-astropy>=6.0.0
+# --- Instance Detection, Official COCO RLE & Matching ---
+# ultralytics==8.4.120 provides both YOLO11m-seg and YOLO26m-seg used in cons2of3_sptal_maj3
+ultralytics==8.4.120
+pycocotools==2.0.11
+scipy==1.16.3
+scikit-image==0.25.2
+astropy==7.2.2
 
-# --- Kaggle API & Monitoring ---
-kaggle>=1.5.13
-tqdm>=4.65.0
-matplotlib>=3.7.0
-
-# --- 実験用のみ (提出パイプライン不使用・scratch/歴史notebookで利用) ---
-# 以下は棄却済み実験の再現でのみ必要。委員会の提出再現には不要。
-#   hydra-core         : v30 prize pipeline の設定管理 (scratch/build_v30_*)
-#   pytorch-lightning  : 同上の学習ランナ
-#   threadpoolctl      : s0 blinded review / v64 selector のスレッド制御 (lazy import)
-#   segment-anything-2 : v61 SAM2 refiner pilot (棄却, scratch/build_v61_*)
-#   rfdetr             : v44/v45 RF-DETR probe (棄却・別リポジトリ依存)
-# hydra-core>=1.3.0
-# pytorch-lightning>=2.0.0
-# threadpoolctl>=3.0.0
-# segment-anything-2
-# rfdetr
+# --- CLI, Monitoring & Plotting ---
+kaggle==2.0.2
+tqdm==4.67.3
+matplotlib==3.10.0

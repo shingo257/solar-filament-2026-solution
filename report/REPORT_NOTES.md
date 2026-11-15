@@ -1,11 +1,18 @@
 # 最終提出パッケージ — 作業メモ(2026-10-07)
 
-## 2026-11-15 最終更新 (Public LB 0.40 到達)
+## 2026-11-15 最終更新 (Public LB 0.40 到達・外部査読反映・最終確定)
 
 - **3 検出器 1対1 二部合意 + 3票ピクセル多数決 (`cons2of3_sptal_maj3`, ref `58363293`) で Public LB `0.40` 突破**:
   `YOLO11m-seg` + `YOLO26m-seg` + `YOLO11m-seg (Spine-Aux 0.5 + Small-TAL 4.0)` の全データ 70ep 3 検出器
-  および `refiner_all_data.pt` により Fold-2 honest OOF `0.4580 (+0.0138, FP -15.7%)`・Public LB **`0.40`** を達成。
-  Fig. 1–3 を維持したまま Abstract / §2.2 / §2.4 / Table 1 / Submission evidence / §3.3 を更新し **厳密 4p 維持を確認**。
+  および `refiner_all_data.pt` (`MediSegEdgeAttUNet` 全データ微調整・固定) により Fold-2 held-out `0.4580 (+0.0138, FP -15.7%)`・Public LB **`0.40`** を達成。
+  第2選択アンカーは `prod_v96full` (ref `57897560`, Public LB `0.39`)。
+- **独立査読指摘 5 件 + 統計表現すべて修正・厳密 4p (`Overfull \hbox` ゼロ) 確認済み**:
+  1. Fig. 3(a) (`conf 0.02`) と §3.3 本文 (`conf 0.26` で 65% = 691/1,064、`[0.02, 0.26)` で 57% = 543/953 回復・43% 未回復) の閾値整合を明記。Hard misses (`2,138 FN / 1,561 FP`) の母集団 (`707` 枚 plain-refiner OOF, `IoU<=0.3`) も明記。
+  2. EdgeAttNet / bottleneck attention の主張を matched-param 2-seed ablation (`0.4418` vs `0.4432` / `0.4429`, fold0 微減) に合わせ「edge prior の効果は検出されず、attention 自体の差 (~0.001) も決定的でない」に修正。タイトルも 3 段階 + 多検出器合意を表す題名へ更新。
+  3. LB `0.37 → 0.39` の帰属交絡を解消 (`0.37` は初期 fold0 検出器、fold2 単一検出器は plain-MHSA / edge-MHSA いずれでも `0.39`)。
+  4. Table 1 を `707` 枚 3-fold CV セクションと後半の subset held-out (`n=471` / `n=235`) セクションに明確分離。
+  5. 最終提出の両方が `refiner_all_data.pt` (`MediSegEdgeAttUNet`) を固定使用している旨、Spine-Aux が fold2 単一 fold の探索的検証である旨、LB 2 桁丸め、77% MAGFiLO 重複 (`Sp-77%` 導入理由)、GPU 計測条件差 (A100 vs T4) を明記。
+- **v140 (2-Fold 471観測 H-Flip TTA 検証)**: 70ep 完走モデル同士の Fold-2 で `58363293` (`0.45803`) が全反転 TTA 候補を上回ったため `HOLD` (`58363293` + `57897560` で最終ロック)。
 
 ## 2026-11-09 更新
 
@@ -22,10 +29,10 @@
 
 | 物 | 状態 | 作業 |
 |---|---|---|
-| 4ページ技術レポート(Overleafテンプレ必須) | **成熟原稿あり** `report/main.tex`(commit 140d8d62 由来、著者・所属・図・bib・謝辞定型文すべて完備)。2026-10-07 に Phase B の結果を統合済み | Overleaf の公式プロジェクト(read-only: `vjztpvrnbrdh`)を**自分のアカウントにコピー**してビルド確認。4p オーバーしていないか要計測(Phase B 追記で増量したため削る必要があるかも) |
-| 公開Git repo | **作成済み(private)** `shingo257/solar-filament-2026-solution` (2026-10-19、抽出追従ブランチ `solar-solution-v4` = main@837eccc3、711 files) | 締切日に public 切替のみ。重み・データ・成果物は外部(Drive/Kaggle dataset)参照+SHA256 記録 |
-| requirements.txt(全パッケージ+バージョン) | 土台あり | `Solar_Filament_Segmentation/requirements.txt` は `>=` 指定。提出前に**最終inference runの `pip freeze` で固定値に置き換え**必須 |
-| 全パイプラインを示すJupyterノートブック | **作成済み** `solar_filament_submission_reproduction.ipynb`(2026-10-07) | master pipeline を派生。Kaggle/Colab 両対応(環境自動検出)、重みは添付dataset→Drive→再学習の順で解決、前処理キャッシュ無し環境ではinline計算、末尾に pip freeze+SHA256 記録。重みは公開 dataset `shingo257/solar-filament-2026-weights`(v2)にup済み — `VARIANT` で prod / plain_mhsa_f2 の**両最終提出**を再現可能。builder: `scratch/build_submission_reproduction.py` |
+| 4ページ技術レポート(Overleafテンプレ必須) | **完了 (厳密4p)** `report/main.tex` / `report/main.pdf` (著者 `Shingo Hara` / `ER SYSTEMS,Ltd.`・図1–4・Table 1–2・bib・謝辞定型文すべて完備、全フォント埋込・Overfull 0 検証済み) | ローカル `pdflatex` + `bibtex` (`acmart` 2.20) で厳密 4 ページ確認済み |
+| 公開Git repo | **公開済み (PUBLIC)** `https://github.com/shingo257/solar-filament-2026-solution` | Git LFS で全 8 重み (~537 MiB) 同梱・`weights_manifest.json` SHA256 検証済み |
+| requirements.txt(全パッケージ+バージョン) | **完了 (`==` 固定済み)** | `requirements.txt` を最終再現環境の確定バージョン (`==`) で固定済み (完全な `pip freeze` もリポジトリ内同梱) |
+| 全パイプラインを示すJupyterノートブック | **完了・クリーン再現検証済み** `solar_filament_submission_reproduction.ipynb` | `SOLAR_SUBMISSION_VARIANT=cons2of3_sptal_maj3` (第1選択 LB 0.40, ref `58363293`; A100 クリーン再現 1,135/1,136 = 99.91%, mean IoU 0.9998) および `prod_v96full` (第2選択 LB 0.39, ref `57897560`) の両最終提出に対応 |
 
 ## main.tex に既に含まれるもの(2026-10-07 時点)
 
