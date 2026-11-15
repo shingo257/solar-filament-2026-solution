@@ -109,7 +109,7 @@
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.33\linewidth]{figures/qualitative_comparison.png}
+    \includegraphics[width=0.54\linewidth]{figures/qualitative_comparison.png}
     \caption{Ground truth vs.\ raw detector vs.\ plain vs.\ edge-attention refiner, fold-0 OOF. \textbf{(a)}: three filaments where edge attention recovers more true extent than plain (IoU $0.36{\rightarrow}0.59$, $0.43{\rightarrow}0.62$, $0.39{\rightarrow}0.56$). \textbf{(b)}: the detector merges two ground-truth instances into one candidate and misses a third; refiners inherit this failure. Single-seed run; the ablation did not reproduce (a).}
     \label{fig:example}
 \end{figure*}
@@ -126,7 +126,7 @@
     \]
     A prediction with IoU just under 0.5 scores zero \emph{and} incurs a false-positive/false-negative penalty, so near-miss boundary quality dominates the score far more than raw detection recall. Matching is done per (annotator, image) pair and micro-averaged, not averaged per-image.
 
-    Because annotators disagree, we measured a reference-annotation agreement baseline: scoring one expert's annotations as the ``prediction'' against every other expert on the same image, under the identical official rule, gives PQ$=0.3398$ (multi-annotator images only, $n{=}296$; an earlier version trivially included self-matches, inflating it to $0.76$ --- corrected). Not a hard ceiling (ours scores above it); it is a benchmark for labeling-task reproducibility.
+    Because annotators disagree, we measured a reference-\hspace{0pt}annotation agreement baseline: scoring one expert's annotations as the ``prediction'' against every other expert on the same image, under the identical official rule, gives PQ$=0.3398$ (multi-annotator images only, $n{=}296$; an earlier version trivially included self-matches, inflating it to $0.76$ --- corrected). Not a hard ceiling (ours scores above it); it is a benchmark for labeling-task reproducibility.
 
     All model-selection decisions use the leak-free 3-fold cross-\hspace{0pt}validation of Section~\ref{sec:cv}. To avoid a failure mode we caught twice --- a change that improves one fold but does not replicate --- we additionally compute an observation-cluster bootstrap~\cite{efron1993bootstrap} (2000 resamples, PQ as ratio-of-sums) and accept a change only when (a)~its sign agrees across all evaluated folds and (b)~its pooled 95\% CI excludes zero ((a) alone is weak: $2\times 0.5^3 = \allowbreak 0.25$ under a symmetric null). Pooled intervals are reported for accepted changes; rejected changes are summarized in Section~\ref{sec:strengths}. We apply no multiple-comparisons correction across the ${\sim}$dozen ideas evaluated on the same 707 OOF images, so nominal intervals are optimistic; we flag this rather than adjust post hoc.
 
@@ -175,7 +175,36 @@
 
     \textbf{Weaknesses.} Hard misses (2{,}138 FN, 1{,}561 FP) dominate single-detector output; Figure~\ref{fig:example}(b) shows an instance-separation failure boundary refinement cannot fix. Fold-2 error decomposition (Figure~\ref{fig:anatomy}) attributes ${\sim}65\%$ of FNs to cases with no proposal at $0.26$ (median ${\sim}715$\,px, mostly single-annotator objects), yet ${\sim}57\%$ have an IoU~$>0.5$ candidate below it. Over two dozen mechanisms failed the frozen-point gate ($\Delta\mathrm{PQ}<+0.005$) or fold replication across six families: \emph{training tricks} (EMA, multi-channel refiner, copy-paste, dense oversampling, DT loss); \emph{extra proposal sources} (sub-threshold rescue; RF-DETR union, $-0.028$; semantic U-Net union, $-0.031$; $2{\times}2$ tiling, $-0.033$); \emph{label structure} (soft/union labels); \emph{auxiliary signals} (temporal neighbors, magnetograms); \emph{verifiers} (CNN verifier AUC $0.64<$ conf $0.80$); and \emph{SimCLR pretraining} ($-0.004$). A Cellpose-style flow separator ($-0.021$) and a weak/strong consensus-class head also lost. Expert pairs agree at matched IoU $0.634$ ($56\%$ cross-annotator recall; ${\sim}44\%$ single-annotator calls), yet under per-(annotator, image) scoring ($ks>\mathrm{PQ}\cdot R/2$) human-level detection would reach PQ ${\approx}0.53$--$0.55$, so the binding limit is detector ranking rather than label ceiling.
 
-    A terminal 3-fold audit ($0.446\pm0.001$) showed ${\sim}24\%$ of emitted instances have negative marginal value, yet a 19-feature emission gate lost $0.008$--$0.029$ per fold, and overlapping-mask probes ($+0.013$/$+0.06$ locally) were rejected at ingestion because the host scores only strictly disjoint sets --- closing the post-processing space. An initial consensus run (YOLO11m, $3{\times}3$ crop-tile, YOLO26m) had to retract its $+0.0116$ fold-2 reading after catching eval-fold leakage in the crop detector; rebuilt leak-free, it gave $+0.0030$ (fold~0) and $+0.0086$ (fold~2), scoring $0.39$ publicly. Replacing transitive clustering and the weak crop detector with 1-to-1 bipartite matching, \texttt{majority\_3plus} crop voting, \emph{Small-TAL} ($+0.0081$ 2-fold PQ, $n{=}471$, 95\% CI $[0.0030,0.0130]$, $P(\Delta{>}0){=}0.9995$), and training-only \emph{Spine-Aux} ($\lambda_{\text{aux}}{=}0.5$, 100\% valid spines across all 8{,}199 annotations) raised fold-2 OOF to $0.4580$ ($\Delta{=}{+}0.0138$, FP $-15.7\%$, $+15$ TP; $77\%$-GT-subsampled sparse-label proxy $0.4028$ vs.\ $0.3896$) and cleared our predeclared $>0.39$ gate on Public LB ($\mathbf{0.40}$). \textbf{Future work:} multi-seed temporal-block validation and joint detector--refiner training.
+    A terminal 3-fold audit ($0.446\pm0.001$) showed ${\sim}24\%$ of emitted instances have negative marginal value, yet a 19-feature emission gate lost $0.008$--$0.029$ per fold, and overlapping-mask probes ($+0.013$/$+0.06$ locally) were rejected at ingestion because the host scores only strictly disjoint sets --- closing the post-processing space. An initial consensus run (YOLO11m, $3{\times}3$ crop-tile, YOLO26m) had to retract its $+0.0116$ fold-2 reading after catching eval-fold leakage in the crop detector; rebuilt leak-free, it gave $+0.0030$ (fold~0) and $+0.0086$ (fold~2), scoring $0.39$ publicly. Replacing transitive clustering and the weak crop detector with 1-to-1 bipartite matching, \texttt{majority\_3plus} crop voting, \emph{Small-TAL} ($+0.0081$ 2-fold PQ, $n{=}471$, 95\% CI $[0.0030,0.0130]$, $P(\Delta{>}0){=}0.9995$), and training-only \emph{Spine-Aux} ($\lambda_{\text{aux}}{=}0.5$, 100\% valid spines across all 8{,}199 annotations) raised fold-2 OOF to $0.4580$ (Table~\ref{tab:breakthrough}, Figure~\ref{fig:breakthrough}; $\Delta{=}{+}0.0138$, FP $-15.7\%$, $+15$ TP; $77\%$-GT-subsampled sparse-label proxy $0.4028$ vs.\ $0.3896$) and cleared our predeclared $>0.39$ gate on Public LB ($\mathbf{0.40}$). \textbf{Future work:} multi-seed temporal-block validation and joint detector--refiner training.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabularx}{\linewidth}{@{}X r r r r@{}}
+\toprule
+Fold-2 OOF arm ($n{=}235$, conf $0.26$) & PQ & TP / FP & Sp-77\% & LB \\
+\midrule
+\texttt{YOLO11m-seg} (\texttt{prod}) & $0.4442$ & $1715 / 750$ & $0.3896$ & $0.39$ \\
+\texttt{YOLO26m-seg} (low-FP partner) & $0.4435$ & $1622 / 585$ & $0.3918$ & --- \\
+\texttt{YOLO11m} + \emph{Small-TAL} & $0.4505$ & $1735 / 736$ & $0.3950$ & $0.39$ \\
+\texttt{YOLO11m} + \emph{Spine} + \emph{Small-TAL} & $0.4480$ & $1734 / 746$ & $0.3927$ & --- \\
+Transitive 3-det.\ (CropTile, leak-free) & $0.4528$ & --- & --- & $0.39$ \\
+1-to-1 $2\text{-of-}3$ + \texttt{best\_member} (\emph{Small-TAL}) & $0.4545$ & $1718 / 650$ & $0.3997$ & --- \\
+1-to-1 $2\text{-of-}3$ + \texttt{maj3} (\emph{Small-TAL})$^{\ast}$ & $0.4568$ & $1723 / 641$ & $0.4017$ & $0.39$ \\
+\textbf{1-to-1 $2\text{-of-}3$ + \texttt{maj3} (\emph{Spine+Small-TAL})} & $\mathbf{0.4580}$ & $\mathbf{1730 / 632}$ & $\mathbf{0.4028}$ & $\mathbf{0.40}$ \\
+\bottomrule
+\end{tabularx}
+\caption{Step-by-step Fold-2 honest OOF breakdown of the $0.39{\rightarrow}0.40$ breakthrough (Sp-77\%: $77\%$-subsampled-GT sparse-label proxy PQ; LB: corresponding full-data submission). $^{\ast}$2-fold ($n{=}471$) PQ $0.4524$, Sp-77\% $0.3973{<}0.400$.}
+\label{tab:breakthrough}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.96\linewidth]{figures/consensus_breakthrough.png}
+    \caption{Fold-2 OOF comparison: single \texttt{prod} (LB $0.39$) vs.\ 3-detector 1-to-1 \texttt{cons2of3\_sptal\_maj3} (LB $\mathbf{0.40}$). \textbf{(a)}~Small filament missed by \texttt{prod} recovered via \texttt{YOLO26} + \emph{Spine+Small-TAL} agreement (IoU $0{\rightarrow}0.84$). \textbf{(b)}~Unannotated solo FP ($1{,}436$\,px) suppressed while preserving the adjacent filament (IoU $0.79$).}
+    \label{fig:breakthrough}
+\end{figure}
 
 % ==================================== %
 %            ACKNOWLEDGMENT            %
