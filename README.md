@@ -5,7 +5,7 @@ Filaments** への取り組み。GONG の H-Alpha 全面画像（2048×2048）�
 **個体単位（instance）** で切り出して提出する。
 
 > ### Final Submission & Reproducibility Quickstart (Team `ERS`, Public LB `0.40`)
-> - **Final Selected Submission**: Kaggle ref **`58363293`** (`cons2of3_sptal_maj3` — full-data `YOLO11m-seg` + `YOLO26m-seg` + `YOLO11m-seg [Spine-Aux 0.5 + Small-TAL 4.0]`, 1-to-1 `2-of-3 @ 0.26` bipartite consensus + `majority_3plus` refined-crop voting, **Public LB `0.40`**; backup single-detector anchor ref **`57897560`**, `prod_v96full`, Public LB `0.39`).
+> - **Final Selected Submission (`1/1`)**: Kaggle ref **`58363293`** (`submission_v137_cons2of3_sptal_prod_z_c26_maj3.csv`, variant `cons2of3_sptal_maj3` — full-data `YOLO11m-seg` + `YOLO26m-seg` + `YOLO11m-seg [Spine-Aux 0.5 + Small-TAL 4.0]`, 1-to-1 `2-of-3 @ 0.26` bipartite consensus + `majority_3plus` refined-crop voting, **Public LB `0.40`**, upgrading our prior single-detector anchor ref `57897560`, `prod_v96full`, Public LB `0.39`).
 > - **4-Page Technical Report**: [`report/main.pdf`](report/main.pdf) (source: [`report/main.tex`](report/main.tex), strictly 4 pages total including verbatim Section 4 Acknowledgment and References).
 > - **Model Checkpoints (Git LFS, SHA-256 verified)**: All 8 `.pt` weights (~537 MiB) are stored in [`weights/`](weights/) with exact hashes in [`weights/weights_manifest.json`](weights/weights_manifest.json), plus both split files [`data/grouped_folds_train.csv`](data/grouped_folds_train.csv) (`febb3f67…`) and [`data/grouped_folds.csv`](data/grouped_folds.csv) (`24367120…`).
 > - **End-to-End Reproduction**: Clone with `git lfs pull` and run [`solar_filament_submission_reproduction.ipynb`](solar_filament_submission_reproduction.ipynb) with `SOLAR_SUBMISSION_VARIANT=cons2of3_sptal_maj3` (or run the clean-room Colab wrapper [`solar_filament_v139_sptal_clean_repro_colab.ipynb`](solar_filament_v139_sptal_clean_repro_colab.ipynb); verified on A100 at `1,135/1,136 = 99.91%` matched instances, mean IoU `0.9998` vs. ref `58363293`).
@@ -98,7 +98,7 @@ PQ = Σ IoU(TP pairs) / (|TP| + 0.5|FP| + 0.5|FN|),   TP ⟺ IoU > 0.5
 | Public LB の採点対象 | **testの約50%（≈90枚）**（LBページ明記、2026-10-09確認）。2桁表示では0.01未満の差を識別できないため提出間比較はOOFのみ |
 | 作者調査の参照例（2026-10-09） | Public 0.40 / OOF 0.4597（`tushhaaarrrr` の公開記述。分割・来歴は独立未確認）。調査と次の優先順位は `WINNING_STRATEGY_2026-08-29.md` §6.23 |
 | **最終提出構成（2026-10-11 確定）** | **prod = V52 レプリカ（fold-2 YOLO + all-data EdgeAttNet refiner）、Public 0.39**。定量レバー全滅（v54-v68 全15機構棄却 + A1 scorer LB反転 + v82/v67棄却 + v69タイル推論 + v70深層verifier、作者記録）のため確定 |
-| **最終2枠（2026-11-15 確定）** | **第1選択 `cons2of3_sptal_maj3`（ref `58363293`, Public `0.40`） + 第2選択 `prod_v96full`（ref `57897560`, Public `0.39`、単一検出器アンカー）**。いずれも `solar_filament_submission_reproduction.ipynb` + 同梱 `weights/`（Git LFS 8 重み）のみでクリーン再現可能 |
+| **最終選択（2026-11-15 確定・`1/1` 枠）** | **最終選択 `cons2of3_sptal_maj3`（`submission_v137_cons2of3_sptal_prod_z_c26_maj3.csv`, ref `58363293`, Public `0.40`）**（比較用単一検出器アンカー: `prod_v96full`, ref `57897560`, Public `0.39`）。いずれも `solar_filament_submission_reproduction.ipynb` + 同梱 `weights/`（Git LFS 8 重み）のみでクリーン再現可能 |
 
 ### 最終提出の再現（最短経路）
 
