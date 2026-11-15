@@ -3,7 +3,7 @@
 > ⚠️ **2026-11-15 最終確定 (`0.40` 突破・差替ゲート成立)**:
 > - **Kaggle Submissions 実画面**: **「最終リーダーボードに最大 1 件選択 (select up to 1 submission for final leaderboard)」** と表示 (2026-11-11 実画面確認)。
 > - **締切**: **Kaggle 最終提出・チェック選択締切 = 本日 `2026-11-15 15:00:00 JST` (`06:00 UTC`)** / **Google Form 締切 = `2026-11-15 23:59 CDT` (`11/16 14:59 JST`)** — 事故防止のため **両方とも本日 `15:00 JST` 前に完了** させる。
-> - **最終選択 (最大 1 件枠)**: **`58363293` (`cons2of3_sptal_maj3` / `submission_v137_cons2of3_sptal_prod_z_c26_maj3.csv`, Public LB `0.40`)** で確定！事前申告ルール (`public > 0.39 → v96-full から差替`) を Fold-2 honest OOF `0.45803 (+0.01380)`・2-Fold Small-TAL OOF `0.45238 (+0.00810, P>0=1.000)`・Public LB **`0.40`** で正式通過。(※万一 UI 側で 2 件選択可能な場合のみ、第 2 枠に単一検出器アンカー **`57897560` (`prod_v96full`, Public LB `0.39`)** を追加選択する。)
+> - **最終選択 (最大 1 件枠)**: **`58363293` (`cons2of3_sptal_maj3` / `submission_v137_cons2of3_sptal_prod_z_c26_maj3.csv`, Public LB `0.40`)** で確定！事前申告ルール (`public > 0.39 → v96-full から差替`) を Fold-2 honest OOF `0.45803 (+0.01380)`・2-Fold Small-TAL OOF `0.45238 (+0.00810, 95% CI [0.0030, 0.0130], P>0=0.9995)`・Public LB **`0.40`** で正式通過。(※万一 UI 側で 2 件選択可能な場合のみ、第 2 枠に単一検出器アンカー **`57897560` (`prod_v96full`, Public LB `0.39`)** を追加選択する。)
 
 競技 overview の必須項目は「4ページ技術報告書 (Overleaf テンプレ・単一PDF)」と
 「公開 Git リポジトリ URL」の2点。Form 本体は Kaggle overview の
@@ -58,8 +58,8 @@
   - `yolo_spine_small_tal_all_fold2_best.pt` (`f6623992…`)
 - [ ] **Kaggle UI (`Submissions` タブ) で `58363293` (`cons2of3_sptal_maj3`, Public LB `0.40`) に最終選択チェックを入れる** (最大 1 件枠のためこれ 1 件を選択。万一 2 件枠なら `58363293` + `57897560` を選択)
 - [x] 再現 notebook (`solar_filament_submission_reproduction.ipynb`) に `cons2of3_sptal_maj3` / `prod_v96full` バリアント追加済み (欠落時はフォールバックせず停止、`refiner_all_data.pt` 同梱時は fold 0–2 refiner 再学習を自動スキップして約 5 分で完走)
-- [x] GPU クリーン再現ラッパ `solar_filament_v139_sptal_clean_repro_colab.ipynb` 整備・単体テスト通過済み
-- [x] `report/main.tex` → `report/main.pdf` を 3 図 (`Figure 1–3`) + `0.40` 突破結果に更新して再ビルド (**厳密 4 ページ目視確認済み**)
+- [x] GPU クリーン再現ラッパ `solar_filament_v139_sptal_clean_repro_colab.ipynb` Colab A100 実実行完了 (`1,135/1,136 = 99.91%` 個体一致、平均 IoU `0.9998`、中央値 IoU `1.000`)
+- [x] `report/main.tex` → `report/main.pdf` を 4 図 (`Figure 1–4`) + `Table 1–2` + `0.40` 突破結果に更新して再ビルド (**厳密 4 ページ・Overfull 0 件・目視確認済み**)
 
 ## 提出前の最終確認リスト
 

@@ -4,19 +4,21 @@ Kaggle / IEEE Big Data Cup 2026 **Challenge 02: Pixel-Precise Segmentation of So
 Filaments** への取り組み。GONG の H-Alpha 全面画像（2048×2048）から、太陽フィラメントを
 **個体単位（instance）** で切り出して提出する。
 
+> ### Final Submission & Reproducibility Quickstart (Team `ERS`, Public LB `0.40`)
+> - **Final Selected Submission**: Kaggle ref **`58363293`** (`cons2of3_sptal_maj3` — full-data `YOLO11m-seg` + `YOLO26m-seg` + `YOLO11m-seg [Spine-Aux 0.5 + Small-TAL 4.0]`, 1-to-1 `2-of-3 @ 0.26` bipartite consensus + `majority_3plus` refined-crop voting, **Public LB `0.40`**; backup single-detector anchor ref **`57897560`**, `prod_v96full`, Public LB `0.39`).
+> - **4-Page Technical Report**: [`report/main.pdf`](report/main.pdf) (source: [`report/main.tex`](report/main.tex), strictly 4 pages total including verbatim Section 4 Acknowledgment and References).
+> - **Model Checkpoints (Git LFS, SHA-256 verified)**: All 8 `.pt` weights (~537 MiB) are stored in [`weights/`](weights/) with exact hashes in [`weights/weights_manifest.json`](weights/weights_manifest.json), plus both split files [`data/grouped_folds_train.csv`](data/grouped_folds_train.csv) (`febb3f67…`) and [`data/grouped_folds.csv`](data/grouped_folds.csv) (`24367120…`).
+> - **End-to-End Reproduction**: Clone with `git lfs pull` and run [`solar_filament_submission_reproduction.ipynb`](solar_filament_submission_reproduction.ipynb) with `SOLAR_SUBMISSION_VARIANT=cons2of3_sptal_maj3` (or run the clean-room Colab wrapper [`solar_filament_v139_sptal_clean_repro_colab.ipynb`](solar_filament_v139_sptal_clean_repro_colab.ipynb); verified on A100 at `1,135/1,136 = 99.91%` matched instances, mean IoU `0.9998` vs. ref `58363293`).
+
 - コンペ: <https://www.kaggle.com/competitions/filament-segmentation-2026>
 - データ: MAGFiLO（Manually Annotated GONG Filaments from H-Alpha Observations）
 - Historical mixed-source fingerprints: [inactive 25-path index](docs/history/mixed-source-20260828/README.md) (no research acceptance)
 - 締切: 2026-11-15
 - 優勝を狙うための実験計画: [`WINNING_STRATEGY_2026-08-29.md`](docs/history/WINNING_STRATEGY_2026-08-29.md)
   （トップ層手法・外部文献・公式ルールの調査に基づく優先順位付き計画）
-- 4ページ技術報告書（Overleaf/ACM形式）: [`report/main.tex`](report/main.tex)
-  （公式Overleafテンプレート準拠、著者情報記入済み、**4回の外部査読を反映**、
-  tectonicでローカルコンパイル済み・成功、[`report/main.pdf`](report/main.pdf)、
-  **本文が実際に4ページへ収まり**page5はAcknowledgment/Referencesのみ。
-  `report/`・`output/v51-v53`・関連notebookはcommit済み。提出前の残作業:
-  requirements.txtは`>=`指定のまま（正式runの`pip freeze`が必要）。査読対応の詳細は
-  `WINNING_STRATEGY_2026-08-29.md` §6.6-§6.7 参照）
+- 4ページ技術報告書（Overleaf/ACM形式）: [`report/main.tex`](report/main.tex) / [`report/main.pdf`](report/main.pdf)
+  （公式Overleafテンプレート準拠、著者・所属記入済み、Section 4 Acknowledgment・References を含め**厳密4ページ全体**に収容、
+  `0.40` 突破の Fold-2 / 2-Fold OOF 内訳 `Table 2`・定性比較 `Figure 1–4` 反映済み）
 - パイプライン全体を示す単一notebook: [`solar_filament_master_pipeline_colab.ipynb`](solar_filament_master_pipeline_colab.ipynb)
   （前処理→YOLO 3-fold学習→EdgeAttNet refiner学習→V52提出物生成→RLE検証、
   ビルダーは`scratch/build_master_pipeline_notebook.py`）
