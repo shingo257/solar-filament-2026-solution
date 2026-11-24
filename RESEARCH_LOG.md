@@ -5243,3 +5243,51 @@ aux head・loss 結線 (学習比較は締切後)。
    ゲート通過により第1最終選択に昇格、バックアップ単一検出器アンカー `prod_v96full` = `57897560`, LB `0.39`)。
    全 8 重みを standalone 公開 repo `weights/` (Git LFS) + `weights_manifest.json` に格納し、
    `solar_filament_submission_reproduction.ipynb` (`SOLAR_SUBMISSION_VARIANT=cons2of3_sptal_maj3`) でクリーン再現検証完了 (A100 新規 clone 実行で `1,135/1,136 = 99.91%` 個体一致、平均 IoU `0.9998`)。
+
+
+
+**締切後研究キャンペーン全記録 (v127–v143) と最終結果 (2026-11-15〜11-22)**:
+提出凍結後の研究枠として実施した全実験と、クリーンアップ後の最終順位を正直に記録する。
+
+1. **v127 spine A/B (事前登録線)**: 厳密な 2-arm 設計ではなく v135 4-way
+   pilot audit の一 arm として実走 (探索的逸脱として記録)。dev∩fold2
+   eval (180 obs, conf 0.26, native pooled) で spine_aux vs arm_a:
+   **ΔPQ +0.01108 (best) / +0.01284 (last)**、CI95 [+0.0016/+0.0038,
+   +0.020/+0.022]、P(Δ>0)=0.991/0.9985、FP −8.4%/−1.1% (ガード充足)。
+   ただし事前登録の機構指標 (対象層提案 recall ≥+2pt) は manifest
+   未出力で厳密検証不能、主指標 conf 0.45 も未評価、時系列確認 split
+   は未実施 — ΔPQ の陽性は確実だが事前登録の全条件を満たした訳では
+   ない点を明記する。
+2. **v128 hysteresis/merge-split**: 3-fold 全 arm が prod 未満 → 閉鎖。
+3. **v129 spine-guided refiner**: aux Δ−0.0013 (p=0.21) / bal Δ−0.0003
+   (p=0.43) → 陰性、refiner への spine 導入は効果なし。
+4. **v130 small-TAL pilot**: +0.0141 (P=0.9975) だが FP +7.2% で
+   ゲート不通過 → honest fold 複製 (v133) で f0 −0.0019 / f2 +0.0062
+   と不安定。単体採用は見送り (fusion 部材としては有効)。
+5. **v131 sibling-shield pilot**: +0.0084 (p=0.943)。
+6. **v136 strong fusion (2-fold honest 471 obs)**:
+   cons2of3_trio_b_c26_maj3 **+0.00810** CI95 [+0.0030,+0.0130]。
+7. **v141 3-fold 707 audit (論文級再評価)**: pooled OOF
+   `cons2of3_sptal_maj3` = **0.45195** (prod 0.44310 比 +0.00885)。
+   maj3 多数決の寄与 +0.00255 (P=1.0)、spine の合意内周辺寄与
+   +0.0009 (p=0.70、主要因は検出器の直交性)。60 分/24h 近接観測を
+   除いた leak-free 感度評価でも +0.008 維持。time-block
+   (467 train/240 holdout) と leave-sites-out (437/220+検疫50)
+   の OOD 分割も構築済み。
+8. **v143 human-vs-model benchmark**: 複数アノテータ head-to-head
+   (296 obs) で **モデル 0.4510 vs 人間 peer 0.3399**、1名 leave-out
+   でもモデル 0.4428 vs 人間 0.3334 — **モデルはアノテータ間一致を
+   +0.11 上回る**。外部チーム (Zhu) のアノテータ一致 0.340 観測と
+   独立に一致し、残誤差の多くが注釈者間の主観差であることを示す。
+9. **最終結果**: リーダーボード 2 回のクリーンアップ (~109 チーム
+   除去、データ漏洩で元 4 位チームも失格) 後、**ERS は 150 位
+   /1,458 チーム (score 0.40、上位 ~10%)**。最終選択 `58363293`
+   (cons2of3_sptal_maj3) は public/private 双方で最良の提出だった。
+   審査対象は top-20 報告書のみ — 我々は圏外のため順位 150 は
+   ほぼ確定 (主催者は小変動の可能性を留保)。private testset は
+   クリーンアップ完了後にラベル付き公開予定。
+10. **提出手続き**: Google Form は延長締切前に閉鎖 (複数チーム同様
+    の障害)、主催者案内のメール経路 (ahmadzadeh@umsl.edu、11/17
+    7:00 CT 締切) を案内済み。top-20 圏外のため form 未受理でも
+    最終評価への影響はなし。公開 repo・レポート・clean repro
+    証跡は全て揃っている。
