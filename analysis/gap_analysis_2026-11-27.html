@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERS ギャップ分析 — Solar Filament Segmentation 2026</title>
+<style>
+  :root {
+    --ink: #1a2233;
+    --muted: #5a6478;
+    --accent: #b3541e;
+    --good: #1e7d4f;
+    --bad: #b3352e;
+    --warn: #a86f00;
+    --card: #ffffff;
+    --bg: #f4f5f7;
+    --line: #dde1e8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 16px 80px;
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    line-height: 1.65; font-size: 15px;
+  }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: 0.01em; }
+  h2 {
+    font-size: 19px; margin: 40px 0 12px; padding-left: 10px;
+    border-left: 5px solid var(--accent);
+  }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 22px; margin: 14px 0;
+    box-shadow: 0 1px 3px rgba(20,30,50,0.05);
+  }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef1f6; font-weight: 600; white-space: nowrap; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hi { background: #fdf3e7; }
+  .us { background: #eaf3ee; font-weight: 600; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px; vertical-align: middle; margin-left: 6px;
+  }
+  .tag.crit { background: #fbe3e1; color: var(--bad); }
+  .tag.maj  { background: #fdf0dc; color: var(--warn); }
+  .tag.min  { background: #e8eef7; color: #34619e; }
+  .tag.good { background: #e2f2e9; color: var(--good); }
+  .bar-wrap { margin: 6px 0 14px; }
+  .bar-label { font-size: 12.5px; color: var(--muted); margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .bar-track { height: 20px; background: #e7eaf0; border-radius: 5px; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px 0 0 5px; }
+  .bar-fill.us  { background: #3d8d64; }
+  .bar-fill.top { background: #c97b2f; }
+  .bar-fill.oracle { background: #8a63c9; }
+  .gap-card { border-left: 5px solid var(--bad); }
+  .gap-card.minor { border-left-color: #34619e; }
+  .big { font-size: 21px; font-weight: 700; }
+  .center { text-align: center; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 48px; border-top: 1px solid var(--line); padding-top: 12px; }
+  code { background: #eef1f6; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .quote { border-left: 3px solid var(--line); padding-left: 12px; color: var(--muted); font-size: 13.5px; margin: 10px 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>何が足りなかったか — ERS ギャップ分析</h1>
+<div class="sub">Solar Filament Segmentation Challenge 2026 · 最終 private 0.37(~156位/1,458) · 分析日 2026-11-27 · 公開済み上位解法との定量比較に基づく</div>
+
+<!-- ============ エグゼクティブサマリ ============ -->
+<h2>0. エグゼクティブサマリ</h2>
+<div class="card">
+  <p class="big" style="margin:4px 0 10px">敗因は検出器ではなく<span style="color:var(--bad)">「選択」</span> — しかも我々はその事実を<span style="color:var(--bad)">測らないまま</span>終わった。</p>
+  <ul>
+    <li>マスク品質(SQ)は上位陣と<b>互角</b>(0.681 vs 0.683-0.688)。差のほぼ全ては認識品質 <b>RQ</b>(0.672 vs Guillaume 0.708) = どの候補を残し/落とすかの判断精度</li>
+    <li>全上位チームが到達した結論: 候補プールは注釈フィラメントの <b>~90% を既に含有</b>し、oracle 選択で 0.56-0.62 に達する。実用スコアとの差 0.1 近くは全て「選択層」にある</li>
+    <li>我々は <b>oracle 選択実験を一度も行わず</b>、最終週を検出器側の改良(天井 +0.002〜0.006)に費やした。選択層の改善余地(+0.1)に気づくための唯一の実験を欠いていた</li>
+    <li>それでも private 0.37 は公開手法の中央的水準 — 検出器多様性合意の洞察自体は正しく、誠実な検証基盤(漏洩摘発・clean repro 99.91%)は上位陣に見劣りしない</li>
+  </ul>
+</div>
+
+<!-- ============ 得点分解 ============ -->
+<h2>1. 得点分解 — SQ は互角、RQ で完敗</h2>
+<div class="card">
+  <table>
+    <tr><th>チーム</th><th class="num">SQ(マスク品質)</th><th class="num">RQ(認識品質)</th><th class="num">OOF/val PQ</th><th class="num">private</th></tr>
+    <tr class="us"><td>ERS(cons2of3_sptal_maj3)</td><td class="num">0.681</td><td class="num">0.672</td><td class="num">0.4520</td><td class="num">0.37</td></tr>
+    <tr class="hi"><td>Guillaume(top-tier)</td><td class="num">0.683</td><td class="num"><b>0.708</b></td><td class="num">0.4801</td><td class="num">0.39</td></tr>
+    <tr><td>MXlop(12位)</td><td class="num">0.688</td><td class="num">0.680</td><td class="num">0.4683</td><td class="num">0.39</td></tr>
+    <tr><td>DeeperNet</td><td class="num">—</td><td class="num">—</td><td class="num">0.476</td><td class="num">0.38</td></tr>
+    <tr><td>Zhu / Kawamata / taitran</td><td class="num">~0.68</td><td class="num">—</td><td class="num">0.445-0.457</td><td class="num">0.37</td></tr>
+  </table>
+  <p><b>読み方:</b> SQ(一致したマスクの IoU 平均)は全チーム 0.68 前後で横並び — 輪郭を<b>描く</b>技術は差がない。RQ(TP/(TP+½FP+½FN)、存在判断の精度)で最大 0.036 差。PQ は SQ×RQ の積なので、RQ の差がそのまま最終差になる。<b>輪郭ではなく「存在するかどうかの判断」で負けた。</b></p>
+
+  <h3>候補プールの天井 vs 実用スコア(全チームが同じ壁に直面)</h3>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>oracle 選択の天井(候補プールの潜在力)</span><span>0.56〜0.62</span></div>
+    <div class="bar-track"><div class="bar-fill oracle" style="width:97%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>Guillaume 最終(学習済み採点+厳密選択)</span><span>0.480</span></div>
+    <div class="bar-track"><div class="bar-fill top" style="width:77%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>ERS 最終(ルールベース合意選択)</span><span>0.452</span></div>
+    <div class="bar-track"><div class="bar-fill us" style="width:73%"></div></div>
+  </div>
+  <p style="font-size:13px;color:var(--muted)">oracle 0.56-0.62 の引用: Guillaume 0.58-0.62 · taitran501 0.585-0.610 · Zhu 0.56 · Kawamata +0.033 headroom — 4チーム独立に一致。</p>
+</div>
+
+<!-- ============ 6つのギャップ ============ -->
+<h2>2. 6つのギャップ(推定影響度順)</h2>
+
+<div class="card gap-card">
+  <h3 style="margin-top:0">Gap 1 — 学習型「候補採点器」が存在しなかった<span class="tag crit">決定的</span></h3>
+  <table>
+    <tr><th></th><th>上位陣</th><th>ERS</th></tr>
+    <tr><td>候補の採点</td><td>LightGBM / CNN judges / PQ½-verifier で<b>候補ごとの PQ 寄与を回帰予測</b>(Guillaume: 相関 0.780)</td><td>固定 conf ≥ 0.26 + 2-of-3 合意ルール。候補の「品質」をデータから一切学習していない</td></tr>
+    <tr><td>理論的裏付け</td><td>「候補は期待 matched-IoU が PQ/2 を超える時だけ得」— τ≈PQ/2 を<b>metric の式から導出</b></td><td>閾値はグリッド探索でのみ決定</td></tr>
+    <tr><td>特徴量</td><td>幾何・強度・soft-mask 統計・画像文脈・モデル間一致・view 安定性</td><td>detector の conf のみ</td></tr>
+  </table>
+  <p>定量証拠: Guillaume の ablation で採点器+厳密選択の導入が <b>+0.005</b>(0.4693→0.4739)、さらに特徴量強化で +0.002。oracle との差を考えると真のポテンシャルは +0.01〜+0.10 規模。<b>我々の全改善(spine+small-TAL+consensus)の合計 +0.009 を、この1要素で上回れた可能性がある。</b></p>
+</div>
+
+<div class="card gap-card">
+  <h3 style="margin-top:0">Gap 2 — oracle 選択実験を一度も測らなかった<span class="tag crit">戦略的敗因</span></h3>
+  <p>コンペ全体を通じて最も重要な1行の計測 — <i>「自分の候補プールから全知選択したら PQ はいくつか」</i> — を我々は一度も行わなかった。</p>
+  <ul>
+    <li>もし v120 時点(11/9)で測っていれば: union3 arm(emitted 13/img)の oracle 天井が 0.55+ と分かり、<b>「検出器改良は天井が低く選択学習こそ本線」と最終週の全リソース配分が変わっていた</b></li>
+    <li>実際にやったこと: v120-125 で consensus 後処理の精緻化(全滅)→ v130-137 で検出器改良(天井 +0.002-0.006)に終始</li>
+    <li>上位4チームは全員この測定を行い、その結果に従ってパイプライン全体を「選択中心」に設計した。測定が設計を駆動した好例</li>
+  </ul>
+  <p style="color:var(--muted);font-size:13.5px">教訓: <b>改善余地の大きさを測ってから改善先を選ぶ</b>。「どこにギャップがあるか」は直感ではなく oracle/ablation で先に定量すべきだった — 我々の prereg 文化(事前登録・ゲート)は正しかったが、登録する<b>問いの選択</b>を間違えた。</p>
+</div>
+
+<div class="card gap-card">
+  <h3 style="margin-top:0">Gap 3 — 解像度と薄い構造の扱い<span class="tag maj">大</span></h3>
+  <table>
+    <tr><th></th><th>上位陣</th><th>ERS</th></tr>
+    <tr><td>推論解像度</td><td>native 2048px / native タイル / 768px 全解像度 crop</td><td>imgsz=1280 で推論(2048 の 1.6× 縮小)</td></tr>
+    <tr><td>根拠</td><td>フィラメント中央値幅 11.1px、barb 4-7px — 1.6× 縮小で IoU 0.5 の崖を割る</td><td>prod レシピの継承</td></tr>
+  </table>
+  <p>反証ではなく傍証: 同じ YOLO 系でも Artem は 2048+1280 マルチスケール+WBF で fold-0 val 0.462(private 0.38)に到達 — <b>YOLO であっても適切な解像度なら 0.38 層に届いた</b>。我々の v116 crop tile 線は native 解像度を狙った正しい方向だったが、漏洩バグで失格となり修正版が最終提出に間に合わなかった(最終 trio は prod/yolo26/sptal で crop det 非含有)。</p>
+</div>
+
+<div class="card gap-card">
+  <h3 style="margin-top:0">Gap 4 — 厳密な非重複選択(整数計画/木DP)<span class="tag maj">大</span></h3>
+  <ul>
+    <li>上位陣: 候補集合から <b>Σ(q−τ) を最大化する非重複部分集合を厳密に</b>解く(小さな整数計画 / exact Tree-DP)。「1本丸ごと A」vs「2片 B+C」の選択で、貪欲法は A を取るが厳密解は B+C が得なら両方取る</li>
+    <li>ERS: 貪欲な占有ベースの重複解消(pixel-disjoint は達成、ただし最適性は非保証)。merge/split 後処理は v128 で検証し陰性で閉鎖 — だが厳密選択は別物であり、こちらは未検証のまま</li>
+  </ul>
+</div>
+
+<div class="card gap-card minor">
+  <h3 style="margin-top:0">Gap 5 — 多 view TTA 合意の欠如<span class="tag min">中</span></h3>
+  <ul>
+    <li>上位陣: 1モデルあたり 8-16 view(flip+回転)を推論し view 間で合意。候補の「view 安定性」自体が採点特徴量にもなる</li>
+    <li>ERS: 単 view × 3 アーキテクチャ。多様性はモデル族間に依存し、view 軸の多様性は未使用(v140 で hflip stream を検証したが最終提出には未採用)</li>
+  </ul>
+</div>
+
+<div class="card gap-card minor">
+  <h3 style="margin-top:0">Gap 6 — アノテータ target 設計<span class="tag min">中</span></h3>
+  <ul>
+    <li>上位陣: soft consensus target(画素ごとに「アノテータの何割が描いたか」)でモデルに不確実性を学ばせる(Zhu/Organokov)、または epoch ごとに1アノテータをサンプルし個人の輪郭を学ばせる(Artem)</li>
+    <li>ERS: 主に hard target。soft_w50 変体は僅かに良好(0.45213 vs 0.45195)だったが差を検証せず maj3 を採用 — 少数点以下の差を追う余裕がなかった</li>
+  </ul>
+</div>
+
+<!-- ============ 正しかった判断 ============ -->
+<h2>3. 正しかった判断(失敗だけではない)</h2>
+<div class="card">
+  <table>
+    <tr><th>判断</th><th>検証</th></tr>
+    <tr><td>多様性合意の洞察<span class="tag good">正</span></td><td>2×2 要因分解で spine が合意内で +0.001-0.002 の多様性寄与を持つことを確認。合意 maj3 vote 自体は +0.00255(p=1.0)で確実に有効</td></tr>
+    <tr><td>漏洩の自己摘発と撤回<span class="tag good">正</span></td><td>v116 の fold 漏洩を自ら発見し証拠を無効化。結果として元4位を含む漏洩チームは失格 — 誠実な検証文化が最終順位を守った</td></tr>
+    <tr><td>clean repro 99.91% 検証<span class="tag good">正</span></td><td>審査要件を自力で先取り。公開 repo 単独で最終提出を再現可能</td></tr>
+    <tr><td>人間ベンチマーク 0.3399 の計測<span class="tag good">正</span></td><td>12位チームの独立計測と小数4桁で一致。「モデルは人間の相互一致を +0.11 上回る」は論文級の知見</td></tr>
+    <tr><td>merge/split・時間 transfer の早期閉鎖<span class="tag good">正</span></td><td>v125/v128 の陰性判断は上位チームの独立な陰性報告と完全一致 — 無駄な投資を正しく止めた</td></tr>
+  </table>
+</div>
+
+<!-- ============ 時間配分 ============ -->
+<h2>4. 時間配分の反省 — どこでリソースを失ったか</h2>
+<div class="card">
+  <table>
+    <tr><th>期間</th><th>投下先</th><th>収益</th><th>代替できたこと</th></tr>
+    <tr><td>締切前最終週(v120-125)</td><td>consensus 後処理の精緻化 5 線</td><td><b>全滅</b>(全ゲート不通過/漏洩撤回)</td><td rowspan="3">oracle 選択測定(1日) → 判明した選択ボトルネックに全振り: 候補プール拡大(union 系)+ LightGBM 採点器 + 厳密選択。Guillaume の ablation ではこの3点で +0.011 の実績</td></tr>
+    <tr><td>延長期間(v130-137)</td><td>検出器改良(small-TAL/spine/fusion)</td><td>+0.009(0.443→0.452)ただし天井低</td></tr>
+    <tr><td>全期間</td><td>選択層の学習</td><td><b>0 時間 — 未着手</b></td></tr>
+  </table>
+  <p style="font-size:13.5px;color:var(--muted)">注: 検出器改良の +0.009 は無駄ではない(private 0.37 層を維持した)が、同じ週を選択学習に投じていれば上位層(0.39+)に届いた可能性が高い — oracle 0.56 に対し採点器相関 0.78 で 0.48 まで行けることが Guillaume により実証済み。</p>
+</div>
+
+<!-- ============ 反実仮想 ============ -->
+<h2>5. 反実仮想 — v120 時点で勝ち筋に乗るには</h2>
+<div class="card">
+  <ol>
+    <li><b>Day 1</b>: union3 候補プール(emitted 13/img)の oracle 選択 PQ を測定 → 0.55+ を確認し「選択が本線」を確定</li>
+    <li><b>Day 2-3</b>: 候補プール拡大(多 conf・多 view・多モデルの union、FP コスト無視 — 選択器が処理する)</li>
+    <li><b>Day 3-5</b>: 候補ごとの特徴量(幾何/強度/soft統計/モデル間一致/view 安定性)+ LightGBM で対アノテータ IoU 回帰。cross-fit で fold 厳密化</li>
+    <li><b>Day 5-6</b>: τ≈PQ/2 の理論導出 + 非重複厳密選択(連結成分ごとの小整数計画)</li>
+    <li><b>Day 6-7</b>: 全解像度 U-Net で境界 2px 再描画(我々の refiner は既に crop 再描画を持っていた — 方向転換は容易だった)</li>
+  </ol>
+  <p>既存資産の再解釈: spine 教師・small-TAL・consensus は<b>候補プールの多様性を上げる部品</b>としては正しい投資だった — ただしそれらを「最終出力のフィルタ」として使ったのが誤りで、「選択器への入力特徴」として使うべきだった。</p>
+</div>
+
+<!-- ============ 次回への教訓 ============ -->
+<h2>6. 次のコンペへの教訓</h2>
+<div class="card">
+  <ul>
+    <li><b>最初に oracle を測れ</b>: パイプライン各段の「全知天井」を週1で測り、最大ギャップの段にだけ投資する。改善は天井の大きい順にやる</li>
+    <li><b>metric の式を読め</b>: PQ/2 採用条件のように、最適解の構造は metric の代数から直接導けることが多い。上位陣は全員ここから設計していた</li>
+    <li><b>生成と選択を分けよ</b>: 生成は recall 最大化(FP 無視)、選択は学習で。両者を1つの閾値で兼ねる設計は両方を劣化させる — 我々の conf 0.26 まさにそれ</li>
+    <li><b>preprocess/解像度は physics から決めよ</b>: 11px 幅の構造に 1.6× 縮小は metric の崖と衝突する。対象の物理スケール ÷ IoU 閾値で必要解像度は計算できる</li>
+    <li><b>誠実な検証基盤は守り続けよ</b>: 今回の唯一無二の成果は、漏洩摘発・prereg・clean repro・人間ベンチマークという検証文化 — これは勝ったチームの多くより強かった資産</li>
+  </ul>
+</div>
+
+<div class="foot">
+  出典: 各チーム公開 writeup(Guillaume 0.4801 · MXlop 12位 · DeeperNet · Artem · Kawamata · Zhu · Alok · taitran501)および v120-v143 自社実験記録(RESEARCH_LOG.md)。<br>
+  ERS 最終: private 0.37(~156位/1,458)· public 0.40 · 選択提出 58363293(cons2of3_sptal_maj3)· OOF 0.45195。<br>
+  生成: 2026-11-27 · ER SYSTEMS, Ltd.
+</div>
+
+</main>
+</body>
+</html>
