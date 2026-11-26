@@ -5362,3 +5362,61 @@ standalone ΔPQ — spine のみ +0.0024 (p=0.68)、small_TAL のみ
 報告 "83 teams strictly higher, 118 tied at 0.37" が本走査と
 完全一致し検証済み。公開解法の private 最高は 0.38 — 我々の
 0.37 は公開手法の最前線から 0.01-0.02 差に位置する。
+
+
+
+**公開解法の全体系調査 (2026-11-27)**: private スコア順に整理。
+カッコ内は (OOF / public / private):
+
+【top-20 private 相当 (0.39+)】
+- **Guillaume (0.4801/0.42/0.39)**: Mask2Former Swin-S 2 系統
+  (gray / limb 補正+CLAHE 3ch) ×5 fold ×16 view 合意 → LightGBM
+  が候補の対アノテータ IoU を予測 (相関 0.780) → **exact integer
+  program で重複禁止の最大スコア集合を選択** (τ=0.25≒PQ/2 の理論
+  値通り) → U-Net 2 枚で境界を 2px 以内に再描画。oracle 上限
+  0.58-0.62 に対し実用 0.48 — 選択ギャップ最大の明示。種子ノイズ
+  ±0.0005 を 10 seed 平均で制御する厳密さ。
+- **MXlop (0.4683/0.41/0.39, 12 位)**: 画素非重複 panoptic
+  cascade、Tree-DP による厳密最適化、190 モデル。人間一致
+  0.3399 を独立計測。
+- **Spaghetto99 (private 0.40, top-5)**: RF-DETR-seg-large 系
+  (Mask2Former より 2-4 倍効率的と主張)、詳細未公開。
+
+【private 0.38】
+- **DeeperNet (0.476/0.41/0.38)**: nnU-Net ResEnc-L + Mask DINO
+  Swin-L 候補 → **PQ/2 verifier** (候補の PQ 分子寄与が PQ/2 を
+  超える時のみ採用) + IoU 0.5 境界を押し越す残差 refiner。
+  単体 Mask2Former が全パイプラインに 1/5 コストで同等と正直な
+  記録 (private では単体 0.39 > 複合 0.38)。
+- **Artem (—/0.40/0.38)**: YOLO26s detector + box-prompted U-Net
+  (SAM 的)。2.5h/RTX4070・5s/枚・800 行の高効率解。学習プロンプト
+  に OOF box を使う分布一致が鍵。
+
+【private 0.37 (我々の層)】
+- Kawamata (0.457/0.40/0.37): M2F+2U-Net 加重平均 → 分類器
+  keep/drop + 閾値回帰。headroom +0.033。
+- Zhu (0.4541/0.40/0.37): 15 U-Net mask+spine 2head、spine 結合、
+  5 CNN judges+GBM。oracle 0.56 vs 0.448。
+- Alok (0.468/0.40/0.37): 3 U-Net + アノテータ数推定 tree + 再描画。
+- taitran501 (0.4454/0.39/0.37, 114 位): YOLO bank+LightGBM。
+- **ERS (0.4520/0.40/0.37)**: YOLO cons2of3+maj3 (本コンペ)。
+
+【横断的結論 — 5+ チームの独立収束】
+1. **選択が唯一のボトルネック**: oracle 0.56-0.62 vs 実用 0.45-0.48
+   (Guillaume/Zhu/taitran/Kawamata/DeeperNet 全員同じ壁)。候補プール
+   は注釈フィラメントの ~90% を既に含有。
+2. **人間一致 0.34-0.35**: 5 チーム独立計測で一致、学習不能な残差。
+3. **public LB は無意味化**: 上位 public 0.55-0.62 のチームは
+   private ≤0.38 に下落 (Harshit 0.62→0.38 等) — public 過学習/
+   漏洩悪用で、誠実チームの public-private 差は 0.02-0.03 のみ。
+4. **勝ち筋の収束**: native 解像度 + 多 view 合意 + PQ/2 理論に
+   基づく候補採点 + 厳密な非重複選択 + 全解像度での境界再描画 +
+   月/日グループ fold + 種子ノイズ制御。
+5. **陰性の一致**: 時間近接フレーム利用・回転 transfer・メタデータ
+   条件付け・形状事前・merge/split 後処理 (我々の v125/v128 閉鎖と
+   完全一致)・スタッキング — 全チームが独立に否定。
+6. **アーキテクチャ**: Mask2Former(Swin) 系が最強単体、U-Net アン
+   サンブルは僅差、YOLO 系 (我々・Artem・taitran) は効率的だが
+   精度で 0.01-0.02 劣後。我々との決定的差は **候補採点器の欠如**
+   (固定 conf+合意ルール vs 学習済み PQ 寄与予測) と **境界再描画
+   stage** にあった。
