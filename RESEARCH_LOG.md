@@ -5494,3 +5494,14 @@ pure consensus を超えられない (train 内 best 0.4457/0.4476 vs pure
 (ERS 対象外)、リーダーボードのクリーンアップは 11/23-24 時点でも継続中
 (複数の上位チームが public LB から一時消失との報告あり)。private
 testset のラベル付き公開は未実施 — 引き続き待ち。
+
+
+
+**外部証拠の追補: Robina Mirbahar 解法 (2026-11-20 公開) が特徴基盤仮説を裏強**:
+3-head topology U-Net の確率マップ (P_fg/P_spine/P_sep 合成 P_eff) 上に
+7 レベル superlevel component tree を構築し、LightGBM 期待 PQ 採点 +
+厳密 Tree-DP で選択 — OOF 0.4837。スカラー閾値 baseline 0.2038 から
++0.1214 の改善のほぼ全てが選択層。決定的な相違は、採点対象が detector
+インスタンス (我々) ではなく**確率マップの成分木ノード**である点:
+候補の「質量・レベル間安定性」が直接特徴になる。我々の反実仮想実験の
+結論 (特徴基盤の欠如が本質) と独立に一致する。
