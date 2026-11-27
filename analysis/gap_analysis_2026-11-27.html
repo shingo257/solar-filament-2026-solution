@@ -238,6 +238,7 @@
     <li><b>singleton(1 detector のみ)の 42.6% は正当な TP</b> — consensus ルールが捨てている TP 層は実在し、そこにこそ選択学習の価値があるはずだったが、今の特徴では「良い singleton」と「悪い singleton」を分別できない</li>
     <li><b>結論の修正</b>: ギャップ 1「学習型採点器の欠如」は正しいが、それは<b>表層</b>だった。真のギャップは「<b>選択を学習可能にする特徴基盤</b>」— 多 view 推論コスト(16 回/画像)・semantic 確率マップ出力・大規模 ablation 検証 — を設計段階から用意していたかどうか。LightGBM 自体は商品ではなく、その前提条件の上にのみ機能する。つまり勝者との差は 1 つのモジュールではなく、<b>パイプラインの情報アーキテクチャ全体</b>だった</li>
   </ol>
+  <p><b>追補(singleton 救済ハイブリッド):</b> consensus ルールを基底に singleton のみをスコアで救済する設計も検証したが、<b>train fold 内で救済閾値を走査してすら pure consensus を超えられない</b>(best 0.4457/0.4476 vs pure 0.4471/0.4477)。全 τ で劣化・τ を下げるほど単調に悪化 — 我々の特徴基盤では学習スコアの利用価値は完全にゼロと確定。</p>
   <p style="font-size:13.5px;color:var(--muted)">検証コード: C:/work/solar_counterfactual/(build_selection_dataset.py・eval_learned_selection.py、8,737 クラスタ・圧縮 RLE ドメイン評価)。なお oracle 天井 0.586 と実用 0.458 の差 +0.128 が「適切な特徴基盤でのみ回収可能なポテンシャル」であることは変わらない — ただしその回収は我々が想定したより遥かに重い設計投資を要求する。</p>
 </div>
 
