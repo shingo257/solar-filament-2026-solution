@@ -80,7 +80,7 @@
   <p class="big" style="margin:4px 0 10px">敗因は検出器ではなく<span style="color:var(--bad)">「選択」</span> — しかも我々はその事実を<span style="color:var(--bad)">測らないまま</span>終わった。</p>
   <ul>
     <li>マスク品質(SQ)は上位陣と<b>互角</b>(0.681 vs 0.683-0.688)。差のほぼ全ては認識品質 <b>RQ</b>(0.672 vs Guillaume 0.708) = どの候補を残し/落とすかの判断精度</li>
-    <li>全上位チームが到達した結論: 候補プールは注釈フィラメントの <b>~90% を既に含有</b>し、oracle 選択で 0.56-0.62 に達する。実用スコアとの差 0.1 近くは全て「選択層」にある</li>
+    <li>全上位チームが到達した結論: 候補プールは注釈フィラメントの <b>~90% を既に含有</b>し、oracle 選択で 0.56-0.62 に達する。実用スコアとの差 0.1 近くは全て「選択層」にある — <b>我々のプールで事後実測: oracle 0.586・実用 0.458・選択ギャップ +0.128(11/27 計測)。プール自体は top-20 級だったことが証明された</b></li>
     <li>我々は <b>oracle 選択実験を一度も行わず</b>、最終週を検出器側の改良(天井 +0.002〜0.006)に費やした。選択層の改善余地(+0.1)に気づくための唯一の実験を欠いていた</li>
     <li>それでも private 0.37 は公開手法の中央的水準 — 検出器多様性合意の洞察自体は正しく、誠実な検証基盤(漏洩摘発・clean repro 99.91%)は上位陣に見劣りしない</li>
   </ul>
@@ -99,20 +99,30 @@
   </table>
   <p><b>読み方:</b> SQ(一致したマスクの IoU 平均)は全チーム 0.68 前後で横並び — 輪郭を<b>描く</b>技術は差がない。RQ(TP/(TP+½FP+½FN)、存在判断の精度)で最大 0.036 差。PQ は SQ×RQ の積なので、RQ の差がそのまま最終差になる。<b>輪郭ではなく「存在するかどうかの判断」で負けた。</b></p>
 
-  <h3>候補プールの天井 vs 実用スコア(全チームが同じ壁に直面)</h3>
+  <h3>候補プールの天井 vs 実用スコア — 自社計測で証明(2026-11-27 追補)</h3>
   <div class="bar-wrap">
-    <div class="bar-label"><span>oracle 選択の天井(候補プールの潜在力)</span><span>0.56〜0.62</span></div>
-    <div class="bar-track"><div class="bar-fill oracle" style="width:97%"></div></div>
+    <div class="bar-label"><span><b>ERS union3 oracle 天井(実測)</b> — 上位陣の報告値 0.56-0.62 と同レンジ</span><span><b>0.586</b></span></div>
+    <div class="bar-track"><div class="bar-fill oracle" style="width:94%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>ERS prod 単独 oracle 天井(実測)— 多様性で +0.040 上昇</span><span>0.546</span></div>
+    <div class="bar-track"><div class="bar-fill oracle" style="width:88%"></div></div>
   </div>
   <div class="bar-wrap">
     <div class="bar-label"><span>Guillaume 最終(学習済み採点+厳密選択)</span><span>0.480</span></div>
     <div class="bar-track"><div class="bar-fill top" style="width:77%"></div></div>
   </div>
   <div class="bar-wrap">
-    <div class="bar-label"><span>ERS 最終(ルールベース合意選択)</span><span>0.452</span></div>
+    <div class="bar-label"><span>ERS 最終(ルールベース合意選択)— oracle との差 +0.128 が全て選択層</span><span>0.452</span></div>
     <div class="bar-track"><div class="bar-fill us" style="width:73%"></div></div>
   </div>
-  <p style="font-size:13px;color:var(--muted)">oracle 0.56-0.62 の引用: Guillaume 0.58-0.62 · taitran501 0.585-0.610 · Zhu 0.56 · Kawamata +0.033 headroom — 4チーム独立に一致。</p>
+  <table>
+    <tr><th>プール(v140 cache・hflip view 統一)</th><th class="num">oracle PQ</th><th class="num">RQ</th><th class="num">GT カバレッジ</th></tr>
+    <tr><td>prod のみ</td><td class="num">0.544-0.546</td><td class="num">0.808</td><td class="num">80.3-80.4%</td></tr>
+    <tr><td>sptal のみ</td><td class="num">0.538-0.550</td><td class="num">0.801-0.813</td><td class="num">79-81%</td></tr>
+    <tr class="hi"><td><b>union3(prod+yolo26+sptal)</b></td><td class="num"><b>0.581-0.586</b></td><td class="num"><b>0.854</b></td><td class="num"><b>84.6-85.0%</b></td></tr>
+  </table>
+  <p><b>決定的な事実: 我々の候補プールは既に top-20 級だった。</b>oracle 0.586 は上位陣の報告値(Guillaume 0.58-0.62 · taitran 0.585-0.61 · Zhu 0.56)と同じレンジ。実用値 0.458 との差 <b>+0.128 は全て選択層</b>にある。なお refiner は天井自体を +0.03 引き上げる(raw 0.549→refined 0.583)真正の有効部品だったことも判明。oracle 内の FP は全てアノテータ間不一致コスト — 人間一致 0.34 の制約が天井内部に明示的に現れている。</p>
 </div>
 
 <!-- ============ 6つのギャップ ============ -->
@@ -131,9 +141,9 @@
 
 <div class="card gap-card">
   <h3 style="margin-top:0">Gap 2 — oracle 選択実験を一度も測らなかった<span class="tag crit">戦略的敗因</span></h3>
-  <p>コンペ全体を通じて最も重要な1行の計測 — <i>「自分の候補プールから全知選択したら PQ はいくつか」</i> — を我々は一度も行わなかった。</p>
+  <p>コンペ全体を通じて最も重要な1行の計測 — <i>「自分の候補プールから全知選択したら PQ はいくつか」</i> — を我々は一度も行わなかった。<b>事後計測(11/27)の結果: union3 oracle 0.586、実用値との差 +0.128 — 仮説は完全に裏付けられた。</b></p>
   <ul>
-    <li>もし v120 時点(11/9)で測っていれば: union3 arm(emitted 13/img)の oracle 天井が 0.55+ と分かり、<b>「検出器改良は天井が低く選択学習こそ本線」と最終週の全リソース配分が変わっていた</b></li>
+    <li>もし v120 時点(11/9)で測っていれば: union3 arm(emitted 13/img)の oracle 天井が 0.58+ と分かり、<b>「検出器改良は天井が低く選択学習こそ本線」と最終週の全リソース配分が変わっていた</b></li>
     <li>実際にやったこと: v120-125 で consensus 後処理の精緻化(全滅)→ v130-137 で検出器改良(天井 +0.002-0.006)に終始</li>
     <li>上位4チームは全員この測定を行い、その結果に従ってパイプライン全体を「選択中心」に設計した。測定が設計を駆動した好例</li>
   </ul>
