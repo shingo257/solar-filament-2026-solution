@@ -254,10 +254,48 @@
   </ul>
 </div>
 
+
+<h2>7. 勝者手法の原典調査 — 知識ギャップの正体特定(2026-11-28 追記)</h2>
+<div class="card">
+  <p>ギャップ (c)「方法論の知識」の具体的な正体を、一次資料の文献調査で特定した
+  (ml-literature-dig ワークフロー、詳細は DL-skill の
+  <code>selection-architecture-literature.md</code> に永続化)。</p>
+
+  <h3>勝者手法の各要素は発明ではなく文献の適用だった</h3>
+  <table>
+    <tr><th>勝者手法の要素</th><th>原典・実装アンカー</th></tr>
+    <tr><td>確率マップの成分木(component tree)</td><td>Salembier 1998 / Jones 1999 / Berger 2007(数学形態学)+ <b>higra</b> ライブラリに max_tree・extinction values の実装あり</td></tr>
+    <tr><td>木上の厳密選択(Tree-DP)</td><td><code>dp(u) = max(score(u), Σdp(children))</code> の O(|V|) 定式 + tree-cut 文献(arXiv 1506.03852/1505.06389)</td></tr>
+    <tr><td>候補採点の学習</td><td>Hosang CVPR 2017「Learning Non-Maximum Suppression」— detector は複数高スコアを出す設計なので選択は joint 処理が必須、という問題分析の原典</td></tr>
+    <tr><td>選択回避型デコード(代替)</td><td>StarDist / HoVer-Net / Cellpose — 混雑インスタンスをピクセル表現で分離。filament は非凸なので star-convex は不適合、flow 系は転用余地</td></tr>
+  </table>
+
+  <h3>調査の最大の発見 — 欠けていた特徴には30年前の定式があった</h3>
+  <p>§5.5 で「我々の特徴に無く勝者にあったもの」として特定した<b>レベル間・view 間の安定性特徴</b>は、
+  数学形態学の文献では <b>extinction value / persistence</b> として既に定式化され、
+  higra に実装まであった。つまり勝者の優位は発明ではなく<b>正しい文献を知っていたこと</b>であり、
+  我々の敗因 (c) は「探し方を知らなかった」ではなく「<b>探すべきものが何かを知らなかった</b>」
+  に帰着する — oracle 計測をしていれば「選択のための安定性特徴」という探索目標自体が
+  生まれていたはずで、敗因 (a)(oracle 未計測)が敗因 (c) を生んだ連鎖構造が見える。</p>
+
+  <h3>実装ロードマップ(次回そのまま実行可能)</h3>
+  <ol>
+    <li>確率マップ出力モデルを用意(semantic 系または instance 系の内部確率)</li>
+    <li>higra またはレベル閾値スキャンで成分木を構築</li>
+    <li>ノード特徴(確率質量・extinction/persistence・多 view/seed 一致度・幾何)で expected-IoU 寄与を LightGBM 学習 — cross-fold honest 評価</li>
+    <li>Tree-DP で厳密選択(採用判定は PQ/2 理論値)</li>
+    <li>選択後の境界を全解像度で再描画</li>
+  </ol>
+  <p>各段の間に oracle 計測を挟み、ギャップが最大の段にだけ投資する
+  (§5.5 の実験が示す通り、特徴基盤なしで 3-4 から始めても失敗する — 順序が本質)。</p>
+  <p style="font-size:13.5px;color:var(--muted)">一次資料リスト・ライセンス注記・原典チェーンの完全版は
+  DL-skill リポジトリ <code>skills/image-segmentation/references/selection-architecture-literature.md</code> に永続化済み。</p>
+</div>
+
 <div class="foot">
   出典: 各チーム公開 writeup(Guillaume 0.4801 · MXlop 12位 · DeeperNet · Artem · Kawamata · Zhu · Alok · taitran501)および v120-v143 自社実験記録(RESEARCH_LOG.md)。<br>
   ERS 最終: private 0.37(~156位/1,458)· public 0.40 · 選択提出 58363293(cons2of3_sptal_maj3)· OOF 0.45195。<br>
-  生成: 2026-11-27 · 反実仮想実測追記 2026-11-28 · ER SYSTEMS, Ltd.
+  生成: 2026-11-27 · 反実仮想実測・文献調査追記 2026-11-28 · ER SYSTEMS, Ltd.
 </div>
 
 </main>
