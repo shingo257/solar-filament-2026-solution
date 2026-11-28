@@ -53,7 +53,7 @@ def parse_submission_csv(path: Path) -> dict[str, list[np.ndarray]]:
             fid = row["filament_id"]
             stem = fid.rsplit("_", 1)[0]
             rle = {"size": list(IMAGE_SIZE), "counts": row["segmentation_rle"].encode("ascii")}
-            by_image[stem].append(mask_utils.decode(rle).astype(bool))
+            by_image[stem].append(rle)
     return dict(by_image)
 
 
@@ -86,23 +86,33 @@ def load_gt(json_path: Path) -> dict[str, list[tuple[str, list[np.ndarray]]]]:
                 rle = dict(seg)
                 if isinstance(rle["counts"], str):
                     rle["counts"] = rle["counts"].encode("ascii")
-            masks.append(mask_utils.decode(rle).astype(bool))
+            masks.append(rle)
         out[stem].append((str(iid), masks))
     return dict(out)
 
 
-def evaluate(preds: dict[str, list[np.ndarray]], gt: dict[str, list[tuple[str, list[np.ndarray]]]]) -> dict:
+def evaluate(preds: dict[str, list[dict]], gt: dict[str, list[tuple[str, list[dict]]]]) -> dict:
+    """圧縮 RLE ドメインで画像ごとに IoU 行列を計算して加算する。
+
+    mask_utils.iou は圧縮 RLE のまま正確な IoU を返す (decode 不要) ので、
+    全マスクをメモリに展開しない。行列の行は GT・列は pred で、
+    PanopticQuality.add_matrix の期待と一致する。
+    """
     pq = PanopticQuality()
     n_images = 0
     missing = []
     for stem, records in gt.items():
-        pred_masks = preds.get(stem)
-        if pred_masks is None:
+        pred_rles = preds.get(stem)
+        if pred_rles is None:
             missing.append(stem)
-            pred_masks = []
+            pred_rles = []
         n_images += 1
-        for _rec, gt_masks in records:
-            pq.add(gt_masks, pred_masks)
+        for _rec, gt_rles in records:
+            if gt_rles and pred_rles:
+                mat = np.asarray(mask_utils.iou(pred_rles, gt_rles, [0] * len(gt_rles)), np.float64)
+                pq.add_matrix(mat, len(gt_rles), len(pred_rles))
+            else:
+                pq.add_matrix(np.zeros((len(gt_rles), len(pred_rles))), len(gt_rles), len(pred_rles))
     s = pq.summary()
     s["images_evaluated"] = n_images
     s["images_missing_pred"] = len(missing)
